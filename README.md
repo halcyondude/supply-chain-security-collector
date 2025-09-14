@@ -101,6 +101,21 @@ This will create:
 You can also create your own input file in the same format.
 
 
+
+## About npx
+
+This project uses `npx` to run the CLI directly from your local dependencies, without requiring a global install. `npx` is a package runner that comes with npm (since version 5.2.0+). It allows you to execute binaries from your project's `node_modules/.bin` or fetch and run packages from the npm registry on demand.
+
+When you run a command like:
+
+```bash
+npx ts-node src/main.ts --help
+```
+
+`npx` ensures that the correct version of `ts-node` (and all dependencies) are used from your project, so you don't need to install anything globally. This makes it easy to run scripts and CLIs in a reproducible, project-local way.
+
+---
+
 ## CLI Usage
 
 The CLI supports the following options:

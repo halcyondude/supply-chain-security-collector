@@ -145,22 +145,31 @@ async function main() {
     // --- Modern CLI Table Summary (cli-table3) ---
     console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
 
+    // Define CI tool columns
+    const ciToolTypes = [
+  { key: 'sbom-generator', label: 'SBOM Gen' },
+  { key: 'signer', label: 'Signer' },
+  { key: 'goreleaser', label: 'Goreleaser' },
+  { key: 'sbom', label: 'SBOM' },
+  { key: 'signature', label: 'Signature' },
+  { key: 'attestation', label: 'Attestation' },
+    ];
+
     const table = new Table({
       head: [
         chalk.bold('Repo'),
-        chalk.bold('SBOM'),
-        chalk.bold('Signature'),
-        chalk.bold('Attestation'),
-        chalk.bold('CI Tools'),
+        ...ciToolTypes.map(t => chalk.bold(t.label)),
         chalk.bold('Latest Release'),
+        chalk.bold('Release Date'),
       ],
-      colWidths: [18, 7, 11, 13, 32, 16],
+      colWidths: [18, ...Array(ciToolTypes.length).fill(12), 16, 18],
       wordWrap: true,
       style: { head: [], border: [] },
     });
 
     // Aggregate stats
-    let sbomCount = 0, sigCount = 0, attCount = 0, ciCount = 0, total = 0;
+    let total = 0;
+    const ciToolCounts: Record<string, number> = Object.fromEntries(ciToolTypes.map(t => [t.key, 0]));
 
     for (const result of allAnalysisResults) {
       if (!result) continue;
@@ -169,22 +178,18 @@ async function main() {
       const summary = result.summary;
       const release = result.releases?.[0];
       const ciTools = Array.isArray(summary.sbomCiTools) ? summary.sbomCiTools : Array.from(summary.sbomCiTools || []);
-      // Flags
-      const sbom = summary.hasSbomArtifact ? chalk.greenBright('✔') : chalk.gray('✗');
-      const sig = summary.hasSignatureArtifact ? chalk.greenBright('✔') : chalk.gray('✗');
-      const att = summary.hasAttestationArtifact ? chalk.greenBright('✔') : chalk.gray('✗');
-      if (summary.hasSbomArtifact) sbomCount++;
-      if (summary.hasSignatureArtifact) sigCount++;
-      if (summary.hasAttestationArtifact) attCount++;
-      if (ciTools.length > 0) ciCount++;
-      table.push([
+      // Row: repo, then checkboxes for each CI tool type, then release
+      const row = [
         chalk.cyan(repo.name || ''),
-        sbom,
-        sig,
-        att,
-        ciTools.length > 0 ? chalk.white(ciTools.join(',')) : chalk.gray('-'),
+        ...ciToolTypes.map(t => {
+          const present = ciTools.includes(t.key);
+          if (present) ciToolCounts[t.key]++;
+          return present ? chalk.greenBright('✔') : chalk.gray('✗');
+        }),
         release ? chalk.white(release.tagName) : chalk.gray('-'),
-      ]);
+        release && release.createdAt ? chalk.white(new Date(release.createdAt).toISOString().slice(0, 10)) : chalk.gray('-'),
+      ];
+      table.push(row);
     }
 
     console.log(table.toString());
@@ -194,10 +199,7 @@ async function main() {
     console.log(
       chalk.bold('Totals: ') +
       `Repos: ${total}  ` +
-      chalk.greenBright(`SBOM: ${sbomCount}`) + '  ' +
-      chalk.greenBright(`Signature: ${sigCount}`) + '  ' +
-      chalk.greenBright(`Attestation: ${attCount}`) + '  ' +
-      chalk.magenta(`CI Tools: ${ciCount}`)
+      ciToolTypes.map(t => chalk.greenBright(`${t.label}: ${ciToolCounts[t.key]}`)).join('  ')
     );
     console.log(chalk.blue.bold('\n✨ Analysis complete.'));
   } else {
