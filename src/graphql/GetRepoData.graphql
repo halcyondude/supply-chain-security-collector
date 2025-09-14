@@ -1,0 +1,33 @@
+query GetRepoData($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    name
+    url
+    description
+    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        name
+        tagName
+        url
+        createdAt
+        releaseAssets(first: 50) {
+          nodes {
+            name
+            downloadUrl
+          }
+        }
+      }
+    }
+    workflows: object(expression: "HEAD:.github/workflows") {
+      ... on Tree {
+        entries {
+          name
+          object {
+            ... on Blob {
+              text
+            }
+          }
+        }
+      }
+    }
+  }
+}
