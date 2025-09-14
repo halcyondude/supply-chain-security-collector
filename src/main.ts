@@ -184,7 +184,7 @@ async function main() {
         ...ciToolTypes.map(t => {
           const present = ciTools.includes(t.key);
           if (present) ciToolCounts[t.key]++;
-          return present ? chalk.greenBright('✔') : chalk.gray('✗');
+          return present ? chalk.greenBright('✔') : '';
         }),
         release ? chalk.white(release.tagName) : chalk.gray('-'),
         release && release.createdAt ? chalk.white(new Date(release.createdAt).toISOString().slice(0, 10)) : chalk.gray('-'),
