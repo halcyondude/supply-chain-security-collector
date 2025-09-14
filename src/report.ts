@@ -7,13 +7,15 @@ import * as path from 'path';
 import { json2csv } from 'json-2-csv';
 import chalk from 'chalk';
 
+
 /**
  * Generate JSON and CSV reports from the analysis results.
  * @param analysisResults - Array of per-repository analysis objects (see analysis.ts)
+ * @param outputDir - Output directory for reports (optional, defaults to 'output')
  */
-export async function generateReports(analysisResults: any[]) {
+export async function generateReports(analysisResults: any[], outputDir?: string) {
   // Output directory for reports (created if missing)
-  const outputDir = path.join(process.cwd(), 'output');
+  outputDir = outputDir ? path.resolve(outputDir) : path.join(process.cwd(), 'output');
 
   try {
     // Ensure output directory exists

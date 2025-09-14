@@ -23,11 +23,13 @@ const CI_TOOL_KEYWORDS = {
 
 
 
+
 /**
  * Analyze a single repository's data for supply chain security signals.
  * @param repo - The repository object as returned by the GraphQL query (may be null/undefined)
  * @returns Analysis object with releases, workflows, and summary flags
  */
+export function analyzeRepositoryData(repo: Repository) {
   if (!repo) return null;
 
 

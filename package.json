@@ -18,21 +18,25 @@
   "license": "MIT",
   "dependencies": {
     "chalk": "4.1.2",
+    "commander": "^14.0.1",
     "dotenv": "^16.3.1",
     "graphql": "^16.8.1",
     "graphql-request": "^6.1.0",
     "js-yaml": "^4.1.0",
     "json-2-csv": "^4.1.0",
-    "node-cache": "^5.1.2"
+    "node-cache": "^5.1.2",
+    "node-fetch": "^2.7.0",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "5.0.0",
     "@graphql-codegen/client-preset": "4.1.0",
     "@graphql-codegen/typescript": "4.0.1",
-    "@graphql-codegen/typescript-operations": "4.0.1",
     "@graphql-codegen/typescript-graphql-request": "^6.0.0",
+    "@graphql-codegen/typescript-operations": "4.0.1",
     "@types/js-yaml": "4.0.9",
     "@types/node": "^20.8.9",
+    "@types/node-fetch": "^2.6.13",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }

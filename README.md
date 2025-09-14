@@ -67,5 +67,77 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
 Execute the main script from the project root:
 
 ```bash
-npm start
+
+## Usage
+
+### 1. Install dependencies
+
+```bash
+npm install
 ```
+
+### 2. Generate GraphQL types
+
+```bash
+npm run codegen
+```
+
+### 3. Prepare repository input files
+
+The tool now reads repository targets from input files (JSONL format, one `{ "owner": ..., "name": ... }` per line).
+
+To generate input files for CNCF Sandbox, Incubation, and Graduated projects:
+
+```bash
+chmod +x scripts/fetch-cncf-landscape.sh
+./scripts/fetch-cncf-landscape.sh
+```
+
+This will create:
+- `input/sandbox.jsonl`
+- `input/incubation.jsonl`
+- `input/graduated.jsonl`
+
+You can also create your own input file in the same format.
+
+### 4. Run in mock mode (no GitHub API required)
+
+```bash
+export MOCK_GITHUB=1
+npm start
+# Optionally specify input file:
+REPO_INPUT=input/sandbox.jsonl npm start
+```
+
+### 5. Run with real GitHub data
+
+Ensure you have a `.env` file with your `GITHUB_PAT` set.
+
+```bash
+npm start
+# Optionally specify input file:
+REPO_INPUT=input/graduated.jsonl npm start
+```
+
+
+### 6. View reports
+
+- JSON: `output/report.json`
+- CSV: `output/report.csv`
+
+## Validation & CI
+
+To validate your environment, code quality, and a basic mock run, use the provided validation script:
+
+```bash
+chmod +x validate.sh
+./validate.sh
+```
+
+This will:
+- Run ESLint (if available)
+- Type-check the codebase
+- Run tests (if defined)
+- Run the CLI in mock mode with a test input file
+
+All steps must pass for a successful validation.
