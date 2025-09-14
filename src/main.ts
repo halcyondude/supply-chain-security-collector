@@ -21,6 +21,7 @@ program
   .option('-i, --input <file>', 'Input JSONL file with repository list', 'input/sandbox.jsonl')
   .option('--mock', 'Run in mock mode (no GitHub API calls)', false)
   .option('-o, --output <dir>', 'Output directory for reports', 'output')
+  .option('-v, --verbose', 'Show detailed column explanations and artifact details', false)
   .helpOption('-h, --help', 'Display help for command');
 program.parse(process.argv);
 const opts = program.opts();
@@ -35,6 +36,7 @@ const cache = new NodeCache({ stdTTL: 86400 });
  * analysis, and report generation.
  */
 async function main() {
+  const verbose = opts.verbose;
   console.log(chalk.blue.bold('🚀 Starting GitHub Supply Chain Security Analysis...'));
 
   // Use CLI options or environment variables
@@ -139,6 +141,30 @@ async function main() {
 
   // Generate reports if any repositories were successfully analyzed
   if (allAnalysisResults.length > 0) {
+    if (verbose) {
+      // --- Verbose Legend and Column Explanations ---
+      console.log(chalk.bold.bgWhite.black('\n  Column Legend & Detection Logic  '));
+      const legendRows = [
+        [chalk.bold('Column'), chalk.bold('Description'), chalk.bold('Detection Logic')],
+        ['Repo', 'Repository name', 'From input file'],
+        ['SBOM Gen', 'SBOM generator tool in CI', 'Regex: syft|trivy|cdxgen|spdx-sbom-generator in workflow YAML'],
+        ['Signer', 'Signature/attestation tool in CI', 'Regex: cosign|sigstore|slsa-github-generator in workflow YAML'],
+        ['Goreleaser', 'Goreleaser used in CI', 'Regex: goreleaser/goreleaser-action in workflow YAML'],
+        ['SBOM', 'SBOM artifact in release', 'Filename: sbom|spdx|cyclonedx'],
+        ['Signature', 'Signature artifact in release', 'Extension: .sig, .asc, .pem, .pub'],
+        ['Attestation', 'Attestation artifact in release', 'Filename: attestation'],
+        ['Latest Release', 'Most recent release tag', 'GitHub Releases API'],
+        ['Release Date', 'Date of latest release', 'GitHub Releases API'],
+      ];
+      const legendTable = new Table({
+        head: legendRows[0],
+        colWidths: [16, 32, 48],
+        wordWrap: true,
+        style: { head: [], border: [] },
+      });
+      for (const row of legendRows.slice(1)) legendTable.push(row);
+      console.log(legendTable.toString());
+    }
     await generateReports(allAnalysisResults, outputDir);
 
 
@@ -194,8 +220,47 @@ async function main() {
 
     console.log(table.toString());
 
+    if (verbose) {
+      // --- Detailed Artifact Table ---
+      console.log(chalk.bold.bgWhite.black('\n  Artifact Details by Repository  '));
+      for (const result of allAnalysisResults) {
+        if (!result) continue;
+        const repo = result.repository;
+        // Parse org/repo from URL if possible
+        let orgRepo = repo.url && typeof repo.url === 'string' ? repo.url.replace('https://github.com/', '') : repo.name;
+        if (!orgRepo) orgRepo = repo.name;
+        for (const release of result.releases || []) {
+          if (release.artifacts && release.artifacts.length > 0) {
+            const artTable = new Table({
+              head: [chalk.bold('Repo'), chalk.bold('Artifact'), chalk.bold('Type(s)'), chalk.bold('Download URL')],
+              style: { head: [], border: [] },
+            });
+            for (const art of release.artifacts) {
+              const types = [];
+              if (art.isSbom) types.push(chalk.greenBright('SBOM'));
+              if (art.isSignature) types.push(chalk.greenBright('Signature'));
+              if (art.isAttestation) types.push(chalk.greenBright('Attestation'));
+              artTable.push([
+                chalk.white(orgRepo),
+                chalk.white(art.name),
+                types.join(', '),
+                art.downloadUrl ? chalk.blue.underline(art.downloadUrl) : chalk.gray('-'),
+              ]);
+            }
+            console.log(artTable.toString());
+          } else {
+            // Only print repo/release header if no artifacts
+            console.log(chalk.bold.underline(`\n${orgRepo}`));
+            if (repo.description) console.log(chalk.gray(repo.description));
+            console.log(chalk.bold(`  Release: `) + chalk.white(release.tagName) + chalk.gray(` (${release.createdAt ? new Date(release.createdAt).toISOString().slice(0,10) : '-'})`));
+            console.log(chalk.gray('    No artifacts found.'));
+          }
+        }
+      }
+    }
+
     // Legend and totals
-    console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present') + ', ' + chalk.gray('✗ = absent') + ', ' + chalk.gray('- = none'));
+  console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present') + ', ' + chalk.gray('- = none'));
     console.log(
       chalk.bold('Totals: ') +
       `Repos: ${total}  ` +

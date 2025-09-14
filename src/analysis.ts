@@ -40,6 +40,7 @@ export function analyzeRepositoryData(repo: Repository) {
     isSbom: boolean;
     isSignature: boolean;
     isAttestation: boolean;
+    downloadUrl?: string;
   };
   // ReleaseInfo: describes a single release and its artifacts
   type ReleaseInfo = {
@@ -106,6 +107,7 @@ export function analyzeRepositoryData(repo: Repository) {
         isSbom: ARTIFACT_KEYWORDS.SBOM.test(asset.name),
         isSignature: ARTIFACT_KEYWORDS.SIGNATURE.test(asset.name),
         isAttestation: ARTIFACT_KEYWORDS.ATTESTATION.test(asset.name),
+        downloadUrl: asset.downloadUrl,
       };
       releaseInfo.artifacts.push(artifact);
 
