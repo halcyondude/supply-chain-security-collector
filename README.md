@@ -26,33 +26,31 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
 
     ```bash
     git clone <repository_url>
-    cd github-supply-chain-analyzer
+    cd <project_root>
     ```
 
 2. **Install dependencies:**
 
-    ```bash
-    npm install
+    ```s
+    <project_root>/
+    ├── .env                  # For storing your GitHub PAT (not committed)
+    ├── .gitignore
+    ├── codegen.ts            # Configuration for GraphQL Code Generator
+    ├── package.json
+    ├── tsconfig.json
+    ├── src/
+    │   ├── main.ts           # Main script entry point
+    │   ├── analysis.ts       # Logic for analyzing artifacts and workflows
+    │   ├── config.ts         # Repository list configuration
+    │   ├── report.ts         # Logic for generating JSON and CSV reports
+    │   ├── generated/        # Auto-generated GraphQL SDK
+    │   └── graphql/
+    │       └── GetRepoData.graphql  # The GraphQL query file
+    ├── output/               # Generated reports (gitignored)
+    │   ├── report.json
+    │   └── report.csv
+    └── .cache/               # Cached API responses
     ```
-
-3. **Configure Environment Variables:**
-    Create a `.env` file in the root of the project and add your GitHub PAT:
-
-    ```env
-    GITHUB_PAT=ghp_YourPersonalAccessTokenHere
-    ```
-
-4. **Define Target Repositories:**
-    Open `src/config.ts` and add the owner/repo pairs you want to analyze to the `repositories` array.
-
-    ```typescript
-    // src/config.ts
-    export const repositories = [
-      { owner: 'kubernetes', name: 'kubernetes' },
-      { owner: 'sigstore', name: 'cosign' },
-      { owner: 'anchore', name: 'syft' },
-      // Add more repositories here
-    ];
     ```
 
 5. **Generate the GraphQL SDK:**
@@ -70,3 +68,4 @@ Execute the main script from the project root:
 
 ```bash
 npm start
+```
