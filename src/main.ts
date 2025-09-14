@@ -3,6 +3,7 @@ import 'dotenv/config';
 import { GraphQLClient } from 'graphql-request';
 import NodeCache from 'node-cache';
 import chalk from 'chalk';
+import Table from 'cli-table3';
 import { Command } from 'commander';
 import { gql } from './generated/gql';
 import * as fs from 'fs';
@@ -140,20 +141,23 @@ async function main() {
   if (allAnalysisResults.length > 0) {
     await generateReports(allAnalysisResults, outputDir);
 
-    // --- Modern CLI Compact Table Summary ---
+
+    // --- Modern CLI Table Summary (cli-table3) ---
     console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
 
-    // Table header
-    const header = [
-      chalk.bold('Repo'),
-      chalk.bold('SBOM'),
-      chalk.bold('Signature'),
-      chalk.bold('Attestation'),
-      chalk.bold('CI Tools'),
-      chalk.bold('Latest Release'),
-    ];
-    console.log(header.join('  |  '));
-    console.log('-'.repeat(90));
+    const table = new Table({
+      head: [
+        chalk.bold('Repo'),
+        chalk.bold('SBOM'),
+        chalk.bold('Signature'),
+        chalk.bold('Attestation'),
+        chalk.bold('CI Tools'),
+        chalk.bold('Latest Release'),
+      ],
+      colWidths: [18, 7, 11, 13, 32, 16],
+      wordWrap: true,
+      style: { head: [], border: [] },
+    });
 
     // Aggregate stats
     let sbomCount = 0, sigCount = 0, attCount = 0, ciCount = 0, total = 0;
@@ -173,16 +177,17 @@ async function main() {
       if (summary.hasSignatureArtifact) sigCount++;
       if (summary.hasAttestationArtifact) attCount++;
       if (ciTools.length > 0) ciCount++;
-      // Table row
-      console.log([
-        chalk.cyan(repo.name),
+      table.push([
+        chalk.cyan(repo.name || ''),
         sbom,
         sig,
         att,
         ciTools.length > 0 ? chalk.white(ciTools.join(',')) : chalk.gray('-'),
         release ? chalk.white(release.tagName) : chalk.gray('-'),
-      ].join('  |  '));
+      ]);
     }
+
+    console.log(table.toString());
 
     // Legend and totals
     console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present') + ', ' + chalk.gray('✗ = absent') + ', ' + chalk.gray('- = none'));

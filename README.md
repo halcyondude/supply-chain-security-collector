@@ -100,23 +100,60 @@ This will create:
 
 You can also create your own input file in the same format.
 
-### 4. Run in mock mode (no GitHub API required)
+
+## CLI Usage
+
+The CLI supports the following options:
+
+| Option                | Description                                              |
+|-----------------------|----------------------------------------------------------|
+| `-h, --help`          | Show help and usage information                          |
+| `-i, --input <file>`  | Input JSONL file with repository list (default: sandbox) |
+| `--mock`              | Run in mock mode (no GitHub API calls)                  |
+| `-o, --output <dir>`  | Output directory for reports (default: output)           |
+| `-V, --version`       | Show CLI version                                         |
+
+### Show help
 
 ```bash
-export MOCK_GITHUB=1
-npm start
-# Optionally specify input file:
-REPO_INPUT=input/sandbox.jsonl npm start
+npx ts-node src/main.ts --help
 ```
 
-### 5. Run with real GitHub data
+### Run in mock mode (no GitHub API required)
+
+```bash
+npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output
+```
+
+### Run with real GitHub data
 
 Ensure you have a `.env` file with your `GITHUB_PAT` set.
 
 ```bash
-npm start
-# Optionally specify input file:
-REPO_INPUT=input/graduated.jsonl npm start
+npx ts-node src/main.ts --input input/graduated.jsonl --output output
+```
+
+### Example output
+
+```
+🚀 Starting GitHub Supply Chain Security Analysis...
+🧪 MOCK MODE ENABLED: Using mock GitHub data.
+
+Processing repository: sigstore/cosign
+✅ Comprehensive JSON report saved to: .../output/report.json
+✅ CSV report saved to: .../output/report.csv
+
+    GitHub Supply Chain Security Summary  
+┌────────────────────┬───────┬────────────┬───────────────┬────────────────────────────────────────┬────────────────┐
+│ Repo               │ SBOM  │ Signature  │ Attestation   │ CI Tools                               │ Latest Release │
+├────────────────────┼───────┼────────────┼───────────────┼────────────────────────────────────────┼────────────────┤
+│ cosign             │ ✔     │ ✔          │ ✔             │ sbom,signature,attestation,sbom-gen... │ v2.2.1         │
+└────────────────────┴───────┴────────────┴───────────────┴────────────────────────────────────────┴────────────────┘
+
+Legend: ✔ = present, ✗ = absent, - = none
+Totals: Repos: 1  SBOM: 1  Signature: 1  Attestation: 1  CI Tools: 1
+
+✨ Analysis complete.
 ```
 
 
