@@ -4,10 +4,8 @@ export interface RepositoryTarget {
 }
 
 export const repositories: RepositoryTarget[] = [
-  { owner: 'kubernetes', name: 'kubernetes' },
-  { owner: 'sigstore', name: 'cosign' },
-  { owner: 'anchore', name: 'syft' },
-  { owner: 'spiffe', name: 'spire' },
-  { owner: 'babel', name: 'babel' },
-  { owner: 'tensorflow', name: 'tensorflow' },
+  { owner: 'sigstore', name: 'cosign' }, // SBOMs/signatures
+  { owner: 'anchore', name: 'syft' },    // CI security tools
+  { owner: 'github', name: 'docs' },     // Simple/large repo
+  { owner: 'nonexistent-org', name: 'nonexistent-repo-123' }, // Error handling
 ];

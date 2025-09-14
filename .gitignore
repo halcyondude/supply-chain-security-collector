@@ -1,0 +1,33 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# GraphQL Codegen
+src/generated/
+
+# Output and cache
+output/
+.cache/
+
+# Environment and secrets
+.env
+.env.*
+!*.env.template
+
+# IDE/editor
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Misc
+coverage/
+*.log
