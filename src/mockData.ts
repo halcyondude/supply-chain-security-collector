@@ -1,10 +1,20 @@
-// Mock data simulating the structure returned by the real GitHub GraphQL API
+// This file provides mock data for development and testing in MOCK_GITHUB=1 mode.
+// The structure matches the shape of the real GitHub GraphQL API response for GetRepoData.
+
 import { GetRepoDataQuery } from './generated/graphql';
 
+// Type for the mock data object: keys are owner_repo, values are GraphQL-like responses
 export type MockRepoDataType = {
   [key: string]: { repository: GetRepoDataQuery['repository'] };
 };
 
+/**
+ * mockRepoData provides static responses for specific repositories.
+ * - Keys are owner_repo (e.g., sigstore_cosign)
+ * - Values mimic the structure returned by the real GraphQL query
+ * - Used by main.ts when MOCK_GITHUB=1 to bypass network/API
+ * - Extend this object to add more test cases or edge scenarios
+ */
 export const mockRepoData: MockRepoDataType = {
   sigstore_cosign: {
     repository: {
