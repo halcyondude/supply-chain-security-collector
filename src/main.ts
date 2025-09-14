@@ -4,9 +4,10 @@ import NodeCache from 'node-cache';
 import chalk from 'chalk';
 
 
-import { getSdk } from './generated/graphql';
+import { gql } from './generated/gql';
 import { repositories, RepositoryTarget } from './config';
 import { analyzeRepositoryData } from './analysis';
+import { GetRepoDataQuery } from './generated/graphql';
 import { generateReports } from './report';
 import { mockRepoData } from './mockData';
 
@@ -22,7 +23,6 @@ async function main() {
     console.log(chalk.magenta.bold('🧪 MOCK MODE ENABLED: Using mock GitHub data.'));
   }
 
-  let sdk: ReturnType<typeof getSdk> | null = null;
   let client: GraphQLClient | null = null;
   if (!useMock) {
     const githubPat = process.env.GITHUB_PAT;
@@ -35,19 +35,19 @@ async function main() {
         Authorization: `Bearer ${githubPat}`,
       },
     });
-    sdk = getSdk(client);
   }
 
   const allAnalysisResults = [];
 
+  type Repository = GetRepoDataQuery['repository'];
   for (const repo of repositories) {
     const cacheKey = `${repo.owner}/${repo.name}`;
     console.log(`\nProcessing repository: ${chalk.cyan(cacheKey)}`);
 
-    let repoData;
+    let repoData: { repository: Repository } | null = null;
     if (useMock) {
       // Use mock data if available
-      const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_');
+      const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_') as keyof typeof mockRepoData;
       repoData = mockRepoData[mockKey] || null;
       if (!repoData) {
         console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
@@ -57,11 +57,12 @@ async function main() {
       const cachedData = cache.get(cacheKey);
       if (cachedData) {
         console.log(chalk.green('✅ Found data in cache.'));
-        repoData = cachedData;
+        repoData = cachedData as { repository: Repository };
       } else {
         console.log(chalk.yellow('🔄 Fetching data from GitHub API...'));
         try {
-          repoData = await sdk!.GetRepoData({ owner: repo.owner, name: repo.name });
+          const document = gql(`query GetRepoData($owner: String!, $name: String!) {\n  repository(owner: $owner, name: $name) {\n    name\n    url\n    description\n    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {\n      nodes {\n        name\n        tagName\n        url\n        createdAt\n        releaseAssets(first: 50) {\n          nodes {\n            name\n            downloadUrl\n          }\n        }\n      }\n    }\n    workflows: object(expression: \"HEAD:.github/workflows\") {\n      ... on Tree {\n        entries {\n          name\n          object {\n            ... on Blob {\n              text\n            }\n          }\n        }\n      }\n    }\n  }\n}\n`);
+          repoData = await client!.request(document as any, { owner: repo.owner, name: repo.name });
           cache.set(cacheKey, repoData);
           console.log(chalk.green('👍 Data fetched and cached successfully.'));
         } catch (error) {

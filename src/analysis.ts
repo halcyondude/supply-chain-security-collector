@@ -17,10 +17,43 @@ const CI_TOOL_KEYWORDS = {
   GORELEASER: /\b(goreleaser\/goreleaser-action)\b/i, // Goreleaser can generate SBOMs
 };
 
+
 export function analyzeRepositoryData(repo: Repository) {
   if (!repo) return null;
 
-  const analysis = {
+  type Artifact = {
+    name: string;
+    isSbom: boolean;
+    isSignature: boolean;
+    isAttestation: boolean;
+  };
+  type ReleaseInfo = {
+    tagName: string;
+    name: string | null | undefined;
+    createdAt: any;
+    artifacts: Artifact[];
+  };
+  type WorkflowInfo = {
+    name: string;
+    detectedSbomTools: string[];
+  };
+  type Analysis = {
+    repository: {
+      name: string;
+      url: any;
+      description?: string | null;
+    };
+    releases: ReleaseInfo[];
+    workflows: WorkflowInfo[];
+    summary: {
+      hasSbomArtifact: boolean;
+      hasSignatureArtifact: boolean;
+      hasAttestationArtifact: boolean;
+      sbomCiTools: string[] | Set<string>;
+    };
+  };
+
+  const analysis: Analysis = {
     repository: {
       name: repo.name,
       url: repo.url,
@@ -38,15 +71,17 @@ export function analyzeRepositoryData(repo: Repository) {
 
   // 1. Analyze Releases
   repo.releases.nodes?.forEach(release => {
-    const releaseInfo = {
+    if (!release) return;
+    const releaseInfo: ReleaseInfo = {
       tagName: release.tagName,
       name: release.name,
       createdAt: release.createdAt,
       artifacts: [],
     };
 
-    release.releaseAssets.nodes?.forEach(asset => {
-      const artifact = {
+    release.releaseAssets?.nodes?.forEach(asset => {
+      if (!asset) return;
+      const artifact: Artifact = {
         name: asset.name,
         isSbom: ARTIFACT_KEYWORDS.SBOM.test(asset.name),
         isSignature: ARTIFACT_KEYWORDS.SIGNATURE.test(asset.name),
@@ -54,6 +89,9 @@ export function analyzeRepositoryData(repo: Repository) {
       };
       releaseInfo.artifacts.push(artifact);
 
+      if (artifact.isSbom) (analysis.summary.sbomCiTools as Set<string>).add('sbom');
+      if (artifact.isSignature) (analysis.summary.sbomCiTools as Set<string>).add('signature');
+      if (artifact.isAttestation) (analysis.summary.sbomCiTools as Set<string>).add('attestation');
       if (artifact.isSbom) analysis.summary.hasSbomArtifact = true;
       if (artifact.isSignature) analysis.summary.hasSignatureArtifact = true;
       if (artifact.isAttestation) analysis.summary.hasAttestationArtifact = true;
@@ -61,10 +99,12 @@ export function analyzeRepositoryData(repo: Repository) {
     analysis.releases.push(releaseInfo);
   });
 
+
   // 2. Analyze CI Workflows
-  const tree = repo.workflows as { entries: any[] };
-  if (tree && tree.entries) {
+  const tree = repo.workflows as { entries?: any[] };
+  if (tree && Array.isArray(tree.entries)) {
     tree.entries.forEach(entry => {
+      if (!entry) return;
       const workflowInfo = {
         name: entry.name,
         detectedSbomTools: new Set<string>(),
@@ -76,15 +116,15 @@ export function analyzeRepositoryData(repo: Repository) {
           const yamlStr = typeof doc === 'string' ? doc : JSON.stringify(doc);
           if (CI_TOOL_KEYWORDS.SBOM_GENERATORS.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('sbom-generator');
-            analysis.summary.sbomCiTools.add('sbom-generator');
+            (analysis.summary.sbomCiTools as Set<string>).add('sbom-generator');
           }
           if (CI_TOOL_KEYWORDS.SIGNERS.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('signer');
-            analysis.summary.sbomCiTools.add('signer');
+            (analysis.summary.sbomCiTools as Set<string>).add('signer');
           }
           if (CI_TOOL_KEYWORDS.GORELEASER.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('goreleaser');
-            analysis.summary.sbomCiTools.add('goreleaser');
+            (analysis.summary.sbomCiTools as Set<string>).add('goreleaser');
           }
         } catch (e) {
           // Ignore YAML parse errors
@@ -98,7 +138,7 @@ export function analyzeRepositoryData(repo: Repository) {
   }
 
   // Finalize summary
-  analysis.summary.sbomCiTools = Array.from(analysis.summary.sbomCiTools);
+  analysis.summary.sbomCiTools = Array.from(analysis.summary.sbomCiTools as Set<string>);
 
   return analysis;
 }
