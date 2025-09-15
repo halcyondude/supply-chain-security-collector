@@ -235,7 +235,10 @@ async function main() {
     console.log(
       chalk.bold('Totals: ') +
       `Repos: ${total}  ` +
-      ciToolTypes.map(t => chalk.greenBright(`${t.label}: ${ciToolCounts[t.key]}`)).join('  ')
+      ciToolTypes.map(t => {
+        const count = ciToolCounts[t.key];
+        return `${t.label}: ` + chalk.greenBright.bold(`${count}/${total}`);
+      }).join('  ')
     );
     console.log(chalk.blue.bold('\n✨ Analysis complete.'));
   } else {

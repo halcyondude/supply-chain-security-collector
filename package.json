@@ -11,7 +11,8 @@
     "typecheck": "npx tsc --noEmit",
     "validate": "./validate-with-mocks.sh",
   "clean": "rm -rf dist output .cache src/generated",
-  "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts"
+  "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts",
+  "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose"
   },
   "keywords": [
     "github",

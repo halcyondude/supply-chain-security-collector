@@ -51,6 +51,7 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
     │   └── report.csv
     └── .cache/               # Cached API responses
     ```
+
     ```
 
 5. **Generate the GraphQL SDK:**
@@ -94,13 +95,12 @@ chmod +x scripts/fetch-cncf-landscape.sh
 ```
 
 This will create:
+
 - `input/sandbox.jsonl`
 - `input/incubation.jsonl`
 - `input/graduated.jsonl`
 
 You can also create your own input file in the same format.
-
-
 
 ## About npx
 
@@ -171,12 +171,10 @@ Totals: Repos: 1  SBOM: 1  Signature: 1  Attestation: 1  CI Tools: 1
 ✨ Analysis complete.
 ```
 
-
 ### 6. View reports
 
 - JSON: `output/report.json`
 - CSV: `output/report.csv`
-
 
 ## Validation, Cleaning, and Common Scripts
 
@@ -197,6 +195,7 @@ npm run validate
 ```
 
 This will:
+
 - Install dependencies
 - Run codegen
 - Lint the codebase (if ESLint is installed)
@@ -221,14 +220,11 @@ This will remove all build artifacts, output, cache, and generated code. Use bef
 
 This project uses [GraphQL Code Generator](https://www.graphql-code-generator.com/) to create a fully-typed TypeScript SDK for the GitHub GraphQL API. The following practices make this a robust, maintainable, and lint-free codegen setup:
 
-
 ### Why Use GraphQL Codegen?
 
 - **Type Safety**: All API calls are type-checked end-to-end, reducing runtime errors.
 - **Productivity**: No need to hand-write types for queries or responses.
 - **Maintainability**: Schema or query changes are automatically reflected in generated types.
-
-
 
 ### How We Integrate Codegen
 
@@ -239,15 +235,12 @@ This project uses [GraphQL Code Generator](https://www.graphql-code-generator.co
 - **Strict Linting**: Hand-written code is always ESLint clean. Generated files are allowed to use `any` if required by the codegen tool, but you can further tune codegen plugins to minimize this.
 - **Watch Mode**: For rapid development, you can use codegen in watch mode to regenerate types on every schema or query change.
 
-
-
 ### Lint-Free Codegen Tips
 
 - **Tune Plugins**: Use the latest `@graphql-codegen/typescript` and related plugins, and enable strict options to minimize `any` in generated code.
 - **Disable Lint for Generated Files**: Add `/* eslint-disable */` to the top of generated files, or exclude them in your ESLint config, to avoid polluting lint results.
 - **Schema Provenance**: Always check in the exact schema used for codegen, and document how to update it.
 - **CI Integration**: Run codegen and lint as part of your CI pipeline to catch schema/query drift early.
-
 
 ### Example: Running Codegen
 
@@ -294,12 +287,14 @@ For more, see the [GraphQL Code Generator docs](https://www.graphql-code-generat
 The TypeScript GraphQL Code Generator may produce code that triggers strict ESLint rules (e.g., `no-explicit-any`, `no-unused-vars`). This is a known and accepted limitation of codegen tools, as they must support a wide range of schemas and queries.
 
 **Best Practices in this Project:**
+
 - All generated files are placed in `src/generated/`.
 - The codegen config adds `/* eslint-disable */` to the top of every generated file.
 - `.eslintignore` includes `src/generated/` to ensure ESLint does not report or fail on generated code.
 - Only hand-written code is required to be 100% ESLint clean.
 
 **You should:**
+
 - Never manually edit files in `src/generated/`.
 - If you see lint errors in generated files, they can be safely ignored.
 - If you see lint errors in your own code, fix them before committing or merging.
