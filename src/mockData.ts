@@ -16,7 +16,8 @@ import * as fs from 'fs';
 
 export function getMockApiResponse(query: string, owner: string, repo: string, variant?: string): unknown {
   const base = path.join(__dirname, 'mockdata');
-  const fileName = [query, owner, repo, variant].filter(Boolean).join('-') + '.json';
+  // Use underscores as separators to avoid ambiguity with dashes in org/repo names
+  const fileName = [query, owner, repo, variant].filter(Boolean).join('_') + '.json';
   const filePath = path.join(base, fileName);
   if (!fs.existsSync(filePath)) {
     throw new Error(`Mock data file not found: ${filePath}`);
