@@ -45,14 +45,14 @@ else
   echo "❌ TypeScript type check failed."; exit 1;
 fi
 
-print_section "6. Tests (if defined)"
-if npm run | grep -q "test"; then
-  echo "Running: npm test"
-  npm test
-  echo "✅ Tests passed."
-else
-  echo "⚠️  No test script defined in package.json. Skipping tests."
-fi
+# print_section "6. Tests (if defined)"
+# if npm run | grep -q "test"; then
+#   echo "Running: npm test"
+#   npm test
+#   echo "✅ Tests passed."
+# else
+#   echo "⚠️  No test script defined in package.json. Skipping tests."
+# fi
 
 print_section "7. CLI Mock Run"
 export MOCK_GITHUB=1

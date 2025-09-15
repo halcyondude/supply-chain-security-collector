@@ -1,7 +1,7 @@
 // src/api.ts
 // This module encapsulates all interactions with the GitHub GraphQL API.
 
-import { GraphQLClient } from 'graphql-request';
+import { GraphQLClient, ClientError } from 'graphql-request';
 import chalk from 'chalk';
 import { GetRepoDataDocument, GetRepoDataQuery } from './generated/graphql';
 
@@ -40,46 +40,49 @@ export async function fetchRepositoryData(
   }
 
   try {
-    // Use rawRequest to get access to response headers for rate limit info
-    const response = await client.rawRequest<GetRepoDataQuery>(GetRepoDataDocument, variables);
-    const headers = response.headers;
-    const rateLimitRemaining = headers.get('x-ratelimit-remaining');
-    const rateLimitReset = headers.get('x-ratelimit-reset');
+    // Use request to get the typed data object
+    const data = await client.request<GetRepoDataQuery>(GetRepoDataDocument, variables);
 
     if (verbose) {
-      console.log(
-        chalk.green(`[API] Success for ${repoIdentifier}.`),
-        chalk.yellow(`(Rate Limit Remaining: ${rateLimitRemaining})`)
-      );
-
-      // Log the reset time only if the rate limit is getting low
-      if (rateLimitReset && rateLimitRemaining && Number(rateLimitRemaining) < 100) {
-        const resetTime = new Date(Number(rateLimitReset) * 1000);
-        console.log(chalk.red.bold(`[API] Warning: Low rate limit. Resets at: ${resetTime.toLocaleTimeString()}`));
-      }
+      console.log(chalk.green(`[API] Success for ${repoIdentifier}.`));
     }
 
-    // The GitHub API returns `data: { repository: null }` for non-existent or private repos.
-    if (response.data?.repository === null) {
+    // The GitHub API returns { repository: null } for non-existent or private repos.
+    if (data.repository === null) {
       console.log(chalk.yellow(`[API] Repository not found or access denied for ${repoIdentifier}. Skipping.`));
       return null;
     }
 
-    // Check for specific GraphQL errors returned in the body
-    if (response.errors) {
-        console.error(chalk.red(`[API] GraphQL errors returned for ${repoIdentifier}:`), JSON.stringify(response.errors, null, 2));
-        return null;
-    }
+    return data;
+  } catch (error: unknown) {
+    console.error(chalk.red.bold(`[API] Request failed for ${repoIdentifier}.`));
 
-    return response.data;
-  } catch (error: any) {
-    console.error(chalk.red.bold(`[API] Network or authentication error for ${repoIdentifier}.`));
-
-    if (error.response) {
-      console.error(chalk.red('  Response Status:'), error.response.status);
-      console.error(chalk.red('  GraphQL Errors:'), JSON.stringify(error.response.errors, null, 2));
+    // graphql-request throws an error with a .response property on GraphQL or HTTP errors
+    if (error instanceof ClientError) {
+      if (error.response.status !== undefined) {
+        console.error(chalk.red('  HTTP Status:'), error.response.status);
+      }
+      if (error.response.errors) {
+        console.error(chalk.red('  GraphQL Errors:'), JSON.stringify(error.response.errors, null, 2));
+      }
+      // Try to surface rate limit info if present
+      const { headers } = error.response;
+      if (headers && typeof (headers as Headers).get === 'function') {
+        const h = headers as Headers;
+        const remaining = h.get('x-ratelimit-remaining');
+        const reset = h.get('x-ratelimit-reset');
+        if (remaining !== null) {
+          console.error(chalk.yellow('  Rate Limit Remaining:'), remaining);
+        }
+        if (reset !== null) {
+          const resetTime = new Date(Number(reset) * 1000);
+          console.error(chalk.yellow('  Rate Limit Resets At:'), resetTime.toLocaleTimeString());
+        }
+      }
+    } else if (error instanceof Error) {
+      console.error(chalk.red('  Error Details:'), error.message);
     } else {
-        console.error(chalk.red('  Error Details:'), error.message);
+      console.error(chalk.red('  An unknown error occurred:'), error);
     }
     return null;
   }

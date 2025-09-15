@@ -111,27 +111,88 @@ async function main() {
     );
 
     if (verbose) {
-      // ... (verbose legend table logic remains the same)
+      console.log(chalk.bold.bgWhite.black('\n  Column Legend & Detection Logic  '));
+      const legendRows = [
+        [chalk.bold('Column'), chalk.bold('Description'), chalk.bold('Detection Logic')],
+        ['Repo', 'Repository name', 'From input file'],
+        ['SBOM Gen', 'SBOM generator tool in CI', 'Regex: syft|trivy|cdxgen|spdx-sbom-generator in workflow YAML'],
+        ['Signer', 'Signature/attestation tool in CI', 'Regex: cosign|sigstore|slsa-github-generator in workflow YAML'],
+        ['Goreleaser', 'Goreleaser used in CI', 'Regex: goreleaser/goreleaser-action in workflow YAML'],
+        ['SBOM', 'SBOM artifact in release', 'Filename: sbom|spdx|cyclonedx'],
+        ['Signature', 'Signature artifact in release', 'Extension: .sig, .asc, .pem, .pub'],
+        ['Attestation', 'Attestation artifact in release', 'Filename: attestation'],
+        ['Latest Release', 'Most recent release tag', 'GitHub Releases API'],
+        ['Release Date', 'Date of latest release', 'GitHub Releases API'],
+      ];
+      const legendTable = new Table({
+        head: legendRows[0],
+        colWidths: [16, 32, 48],
+        wordWrap: true,
+        style: { head: [], border: [] },
+      });
+      for (const row of legendRows.slice(1)) legendTable.push(row);
+      console.log(legendTable.toString());
     }
-    
-    // FIX: Pass the 'validAnalysisResults' to the report generator.
-    // This fixes the 'unused variable' lint error and is also a logical bug fix.
     await generateReports(validAnalysisResults, outputDir);
 
     console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
-    // ... (summary table logic remains the same, but will correctly use validAnalysisResults)
+
+        const ciToolTypes = [
+      { key: 'sbom-generator', label: 'SBOM Gen' },
+      { key: 'signer', label: 'Signer' },
+      { key: 'goreleaser', label: 'Goreleaser' },
+      { key: 'sbom', label: 'SBOM' },
+      { key: 'signature', label: 'Signature' },
+      { key: 'attestation', label: 'Attestation' },
+    ];
+
     const table = new Table({
-        // ...
+      head: [
+        chalk.bold('Repo'),
+        ...ciToolTypes.map(t => chalk.bold(t.label)),
+        chalk.bold('Latest Release'),
+        chalk.bold('Release Date'),
+      ],
+      colWidths: [18, ...Array(ciToolTypes.length).fill(12), 16, 18],
+      wordWrap: true,
+      style: { head: [], border: [] },
     });
+
+    const ciToolCounts: Record<string, number> = Object.fromEntries(ciToolTypes.map(t => [t.key, 0]));
+
     for (const result of validAnalysisResults) {
-        // ...
+      const repo = result.repository;
+      const summary = result.summary;
+      const release = result.releases?.[0];
+      const ciTools = summary.sbomCiTools;
+      const row = [
+        chalk.cyan(repo.name || ''),
+        ...ciToolTypes.map(t => {
+          const present = ciTools.includes(t.key);
+          if (present) ciToolCounts[t.key]++;
+          return present ? chalk.greenBright('✔') : '';
+        }),
+        release ? chalk.white(release.tagName) : chalk.gray('-'),
+        release && release.createdAt ? chalk.white(new Date(release.createdAt).toISOString().slice(0, 10)) : chalk.gray('-'),
+      ];
+      table.push(row);
     }
+
     console.log(table.toString());
 
+    const totalsSummary = ciToolTypes
+      .map(t => `${chalk.bold(t.label)}: ${chalk.yellow(ciToolCounts[t.key])}`)
+      .join('  ');
+    
+    console.log(
+      chalk.blue.bold(`\nTotals: Repos: ${chalk.yellow(validAnalysisResults.length)}  ${totalsSummary}`)
+    );
 
   } else {
     console.log(chalk.yellow('No data was analyzed. Reports will not be generated.'));
   }
+
+  console.log(chalk.blue.bold('\n✨ Analysis complete.'));
 }
 
 main().catch((error) => {
