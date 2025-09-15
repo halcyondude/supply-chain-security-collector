@@ -1,4 +1,4 @@
-
+// src/analysis.ts
 // Import YAML parser for extracting workflow tool info from GitHub Actions YAML files
 import * as yaml from 'js-yaml';
 // Import the generated GraphQL types for type safety and data shape reference
@@ -21,17 +21,13 @@ const CI_TOOL_KEYWORDS = {
   GORELEASER: /\b(goreleaser\/goreleaser-action)\b/i, // Goreleaser can generate SBOMs
 };
 
-
-
-
 /**
  * Analyze a single repository's data for supply chain security signals.
  * @param repo - The repository object as returned by the GraphQL query (may be null/undefined)
- * @returns Analysis object with releases, workflows, and summary flags
+ * @returns Analysis object with releases, workflows, and summary flags, or null if repo is null.
  */
 export function analyzeRepositoryData(repo: Repository) {
   if (!repo) return null;
-
 
   // --- Data shape definitions for clarity ---
   // Artifact: describes a single release asset and its detected security properties
@@ -67,9 +63,13 @@ export function analyzeRepositoryData(repo: Repository) {
       hasSbomArtifact: boolean;
       hasSignatureArtifact: boolean;
       hasAttestationArtifact: boolean;
-      sbomCiTools: string[] | Set<string>;
+      // FIX: Ensure this is always an array for consistency
+      sbomCiTools: string[];
     };
   };
+
+  // Use a local Set to collect CI tools detected, then convert to array at the end
+  const collectedSbomCiTools = new Set<string>();
 
   // Initialize the analysis object for this repository
   const analysis: Analysis = {
@@ -84,7 +84,7 @@ export function analyzeRepositoryData(repo: Repository) {
       hasSbomArtifact: false,
       hasSignatureArtifact: false,
       hasAttestationArtifact: false,
-      sbomCiTools: new Set<string>(),
+      sbomCiTools: [], // FIX: Initialize as an empty array
     },
   };
 
@@ -112,9 +112,9 @@ export function analyzeRepositoryData(repo: Repository) {
       releaseInfo.artifacts.push(artifact);
 
       // Track which types of artifacts are present for summary and reporting
-      if (artifact.isSbom) (analysis.summary.sbomCiTools as Set<string>).add('sbom');
-      if (artifact.isSignature) (analysis.summary.sbomCiTools as Set<string>).add('signature');
-      if (artifact.isAttestation) (analysis.summary.sbomCiTools as Set<string>).add('attestation');
+      if (artifact.isSbom) collectedSbomCiTools.add('sbom'); // FIX: Use local set
+      if (artifact.isSignature) collectedSbomCiTools.add('signature'); // FIX: Use local set
+      if (artifact.isAttestation) collectedSbomCiTools.add('attestation'); // FIX: Use local set
       if (artifact.isSbom) analysis.summary.hasSbomArtifact = true;
       if (artifact.isSignature) analysis.summary.hasSignatureArtifact = true;
       if (artifact.isAttestation) analysis.summary.hasAttestationArtifact = true;
@@ -143,15 +143,15 @@ export function analyzeRepositoryData(repo: Repository) {
           // Detect SBOM generators, signers, and goreleaser usage in workflow
           if (CI_TOOL_KEYWORDS.SBOM_GENERATORS.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('sbom-generator');
-            (analysis.summary.sbomCiTools as Set<string>).add('sbom-generator');
+            collectedSbomCiTools.add('sbom-generator'); // FIX: Use local set
           }
           if (CI_TOOL_KEYWORDS.SIGNERS.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('signer');
-            (analysis.summary.sbomCiTools as Set<string>).add('signer');
+            collectedSbomCiTools.add('signer'); // FIX: Use local set
           }
           if (CI_TOOL_KEYWORDS.GORELEASER.test(yamlStr)) {
             workflowInfo.detectedSbomTools.add('goreleaser');
-            (analysis.summary.sbomCiTools as Set<string>).add('goreleaser');
+            collectedSbomCiTools.add('goreleaser'); // FIX: Use local set
           }
         } catch {
           // Ignore YAML parse errors; not all workflow files are valid YAML
@@ -165,8 +165,8 @@ export function analyzeRepositoryData(repo: Repository) {
     });
   }
 
-  // Finalize summary: convert sbomCiTools Set to array for serialization
-  analysis.summary.sbomCiTools = Array.from(analysis.summary.sbomCiTools as Set<string>);
+  // Finalize summary: convert collectedSbomCiTools Set to array for serialization
+  analysis.summary.sbomCiTools = Array.from(collectedSbomCiTools); // FIX: Assign the final array
 
   // Return the full analysis object for this repository
   return analysis;

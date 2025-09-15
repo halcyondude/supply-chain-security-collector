@@ -1,4 +1,4 @@
-
+// src/report.ts
 // This module handles report generation for the analyzer.
 // It outputs both a comprehensive JSON file and a flattened CSV for easy review.
 
@@ -8,6 +8,7 @@ import { json2csv } from 'json-2-csv';
 import chalk from 'chalk';
 import { analyzeRepositoryData } from './analysis';
 
+// AnalysisResult can be null, so we need to handle that.
 type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
 
 /**
@@ -23,15 +24,22 @@ export async function generateReports(analysisResults: AnalysisResult[], outputD
     // Ensure output directory exists
     await fs.mkdir(outputDir, { recursive: true });
 
+    // FIX: Filter out any null results before processing
+    const validAnalysisResults = analysisResults.filter(
+      (res): res is Exclude<AnalysisResult, null> => res !== null
+    );
+
     // --- JSON Report ---
     // Full, structured data for all analyzed repositories
     const jsonPath = path.join(outputDir, 'report.json');
-    await fs.writeFile(jsonPath, JSON.stringify(analysisResults, null, 2));
+    // FIX: Use validAnalysisResults for JSON report
+    await fs.writeFile(jsonPath, JSON.stringify(validAnalysisResults, null, 2));
     console.log(chalk.green(`✅ Comprehensive JSON report saved to: ${jsonPath}`));
 
     // --- CSV Report ---
     // Flattened, row-based summary for spreadsheet review
-    const flattenedData = analysisResults.map(res => {
+    // FIX: Use validAnalysisResults for CSV report
+    const flattenedData = validAnalysisResults.map(res => {
       // Use the latest release for summary columns (if any)
       const latestRelease = res.releases?.[0] || {};
       return {
@@ -43,6 +51,7 @@ export async function generateReports(analysisResults: AnalysisResult[], outputD
         has_signature_artifact: res.summary.hasSignatureArtifact,
         has_attestation_artifact: res.summary.hasAttestationArtifact,
         // CI tool detection (comma-separated list)
+        // FIX: sbomCiTools is now guaranteed to be string[] from analysis.ts
         sbom_ci_tools_detected: (res.summary.sbomCiTools || []).join(','),
         // Latest release info
         latest_release_tag: latestRelease.tagName || 'N/A',
