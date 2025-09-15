@@ -1,7 +1,6 @@
 // src/main.ts
 
 import 'dotenv/config';
-import NodeCache from 'node-cache';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { Command } from 'commander';
@@ -9,7 +8,7 @@ import * as fs from 'fs';
 
 import { analyzeRepositoryData } from './analysis';
 import { generateReports } from './report';
-import { mockRepoData } from './mockData';
+import { getMockApiResponse } from './mockData';
 import { createApiClient, fetchRepositoryData } from './api';
 import { GetRepoDataQuery } from './generated/graphql';
 
@@ -35,7 +34,7 @@ program
 program.parse(process.argv);
 const opts = program.opts();
 
-const cache = new NodeCache({ stdTTL: 86400 });
+// Removed cache logic
 
 /**
  * Fetches, analyzes, and caches data for a single repository.
@@ -48,29 +47,22 @@ async function fetchAndAnalyzeRepo(
   useMock: boolean,
   verbose: boolean
 ): Promise<AnalysisResult | null> {
-  const cacheKey = `${repo.owner}/${repo.name}`;
-  console.log(`\nProcessing repository: ${chalk.cyan(cacheKey)}`);
+  const repoKey = `${repo.owner}/${repo.name}`;
+  console.log(`\nProcessing repository: ${chalk.cyan(repoKey)}`);
 
   let repoData: GetRepoDataQuery | null = null;
+
   if (useMock) {
-    const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_') as keyof typeof mockRepoData;
-    repoData = mockRepoData[mockKey] || null;
-    if (!repoData) {
+    try {
+      // Always use the real API response shape: { data: { repository: ... } }
+      const mockResponse = getMockApiResponse('GetRepoData', repo.owner, repo.name) as { data: GetRepoDataQuery };
+      repoData = mockResponse.data;
+    } catch {
       console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
       return null;
     }
   } else {
-    const cachedData = cache.get<GetRepoDataQuery>(cacheKey);
-    if (cachedData) {
-      console.log(chalk.green('✅ Found data in cache.'));
-      repoData = cachedData;
-    } else {
-      repoData = await fetchRepositoryData(client!, { owner: repo.owner, name: repo.name }, verbose);
-      if (repoData) {
-        cache.set(cacheKey, repoData);
-        if (verbose) console.log(chalk.green('👍 Data cached successfully.'));
-      }
-    }
+    repoData = await fetchRepositoryData(client!, { owner: repo.owner, name: repo.name }, verbose);
   }
 
   if (repoData && repoData.repository) {

@@ -3,7 +3,7 @@ query GetRepoData($owner: String!, $name: String!) {
     name
     url
     description
-    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {
+    releases(last: 1, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         name
         tagName
