@@ -46,7 +46,7 @@ export function analyzeRepositoryData(repo: Repository) {
   type ReleaseInfo = {
     tagName: string;
     name: string | null | undefined;
-    createdAt: any;
+    createdAt: string;
     artifacts: Artifact[];
   };
   // WorkflowInfo: describes a single GitHub Actions workflow and detected tools
@@ -58,7 +58,7 @@ export function analyzeRepositoryData(repo: Repository) {
   type Analysis = {
     repository: {
       name: string;
-      url: any;
+      url: string;
       description?: string | null;
     };
     releases: ReleaseInfo[];
@@ -125,7 +125,7 @@ export function analyzeRepositoryData(repo: Repository) {
 
   // --- Analyze CI Workflows ---
   // If workflows are present, parse each YAML and look for security tool usage
-  const tree = repo.workflows as { entries?: any[] };
+  const tree = repo.workflows as { entries?: { name: string; object?: { text?: string } }[] };
   if (tree && Array.isArray(tree.entries)) {
     tree.entries.forEach(entry => {
       if (!entry) return;
@@ -153,7 +153,7 @@ export function analyzeRepositoryData(repo: Repository) {
             workflowInfo.detectedSbomTools.add('goreleaser');
             (analysis.summary.sbomCiTools as Set<string>).add('goreleaser');
           }
-        } catch (e) {
+        } catch {
           // Ignore YAML parse errors; not all workflow files are valid YAML
         }
       }

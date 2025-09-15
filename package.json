@@ -6,7 +6,12 @@
   "scripts": {
     "start": "ts-node src/main.ts",
     "build": "tsc",
-    "codegen": "graphql-codegen --config codegen.ts"
+    "codegen": "graphql-codegen --config codegen.ts",
+    "lint": "npx eslint src/",
+    "typecheck": "npx tsc --noEmit",
+    "validate": "./validate-with-mocks.sh",
+  "clean": "rm -rf dist output .cache src/generated",
+  "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts"
   },
   "keywords": [
     "github",
@@ -38,6 +43,9 @@
     "@types/js-yaml": "4.0.9",
     "@types/node": "^20.8.9",
     "@types/node-fetch": "^2.6.13",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
   }

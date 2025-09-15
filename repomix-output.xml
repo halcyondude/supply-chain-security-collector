@@ -1,0 +1,1942 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: schema/github-v15.26.0.graphql
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+input/
+  graduated.jsonl
+  incubation.jsonl
+  sandbox.jsonl
+  test-single.jsonl
+schema/
+  download-schema.sh
+scripts/
+  fetch-cncf-landscape.sh
+  fetch-cncf-landscape.ts
+src/
+  graphql/
+    GetRepoData.graphql
+  analysis.ts
+  config.ts
+  main.ts
+  mockData.ts
+  report.ts
+.env.template
+.eslintignore
+.gitignore
+CODEGEN-GUIDE.md
+codegen.ts
+eslint.config.js
+package.json
+README.md
+tsconfig.json
+validate-with-mocks.sh
+validate.sh
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path=".eslintignore">
+src/generated/
+node_modules/
+dist/
+.cache/
+output/
+*.js
+</file>
+
+<file path="CODEGEN-GUIDE.md">
+### **Developer Guide: Mastering GraphQL Code Generation for Type-Safe TypeScript**
+
+This guide provides a set of principles and best practices for using `graphql-codegen` to create a robust, maintainable, and type-safe data layer in a TypeScript application. The recommendations are synthesized from leading industry guidance from The Guild, Apollo GraphQL, and the official GraphQL blog.
+
+#### **1. The Core Principle: Type Safety Comes from Operations, Not the Schema**
+
+The most common and critical mistake is generating TypeScript types directly from the entire GraphQL schema. A GraphQL response's shape is determined *only* by the fields requested in the query, not the full shape of the type on the server.
+
+**The Golden Rule:** **Always generate your types based on the specific `documents` (your queries, mutations, and fragments) your application actually uses.**
+
+*   **Why?** If you generate types from the schema, you get types with all possible fields. Your application code might then try to access a field you didn't request in your query, leading to runtime errors that TypeScript cannot catch. Generating from operations ensures the types perfectly match the data returned from the API for that specific query.
+
+#### **2. The Modern Standard: The `client` Preset and Typed `gql` Function**
+
+The latest versions of `graphql-codegen` have simplified the setup process immensely with the `client` preset. This is the recommended approach for all new projects.
+
+This preset automatically configures the optimal plugins for a client-side application and, most importantly, provides a type-safe `gql` function.
+
+**Configuration (`codegen.ts`):**
+
+Your configuration should be minimal and powerful, pointing to your schema and your operation documents.
+
+```typescript
+import { CodegenConfig } from "@graphql-codegen/cli";
+
+const config: CodegenConfig = {
+  // URL to your running GraphQL server or a local schema file
+  schema: "http://localhost:4000/graphql",
+
+  // Globs pointing to files with GraphQL operations
+  documents: ["src/**/*.ts", "src/**/*.tsx", "src/graphql/**/*.graphql"],
+
+  // Discard generated files that are no longer needed
+  prune: true,
+
+  generates: {
+    "./src/__generated__/": {
+      preset: "client",
+      presetConfig: {
+        // Use this to name the gql function tag for better readability
+        gqlTagName: "gql",
+      },
+    },
+  },
+};
+
+export default config;
+```
+
+**Using the Typed `gql` Function:**
+
+The key benefit of this preset is the typed `gql` function it generates. Instead of importing `gql` from `@apollo/client` or `graphql-tag`, you import it from your generated directory.
+
+1.  **Import the generated `gql` function:**
+    ```typescript
+    // src/components/MyComponent.tsx
+    import { gql } from "../__generated__"; // Correct path to your generated folder
+    import { useQuery } from "@apollo/client";
+
+    // DO NOT import from '@apollo/client' or 'graphql-tag'
+    // import { gql } from '@apollo/client'; // <--- THIS IS NO LONGER THE BEST PRACTICE
+    ```
+
+2.  **Write your GraphQL operations:**
+    ```typescript
+    const GET_LAUNCH_DETAILS = gql(`
+      query GetLaunchDetails($launchId: ID!) {
+        launch(id: $launchId) {
+          id
+          mission {
+            name # Autocomplete for fields is provided here!
+          }
+        }
+      }
+    `);
+    ```
+    This `gql` function is now "schema-aware." It will provide **autocomplete** for fields within the template literal and raise **type errors** if you query for a field that doesn't exist on the schema. This provides an immediate, powerful feedback loop directly in your editor. The function returns a fully typed document, ensuring that the `data` variable from `useQuery` is also perfectly typed.
+
+#### **3. Best Practice: Co-locate Fragments with Components**
+
+For component-based architectures (like React or Vue), the best pattern is to co-locate a component's data requirements with its source code using GraphQL fragments.
+
+*   **What it is:** A component defines exactly the data it needs in a `.graphql` file sitting right next to the component file (e.g., `src/components/TrackCard/TrackCard.fragment.graphql`).
+*   **Why it's better:**
+    *   **Encapsulation:** The component is self-contained. You know its data dependencies just by looking at its directory.
+    *   **Reusability:** You can easily reuse the component and its fragment in different queries across the application.
+    *   **Maintainability:** If you need to add or remove a field from the component, you only have to edit its local fragment. Codegen automatically updates all queries using it.
+
+**Example Workflow:**
+
+1.  **Create the Fragment:** Define the data needed for a `TrackCard` component.
+
+    *File: `src/components/TrackCard/TrackCard.fragment.graphql`*
+    ```graphql
+    fragment TrackCardFields on Track {
+      id
+      title
+      thumbnail
+      author {
+        id
+        name
+      }
+    }
+    ```
+
+2.  **Compose the Main Query:** A parent component's query can then include this fragment using the `#import` syntax.
+
+    *File: `src/pages/HomePage/Tracks.query.graphql`*
+    ```graphql
+    #import "../../components/TrackCard/TrackCard.fragment.graphql"
+
+    query GetTracksForHome {
+      tracksForHome {
+        ...TrackCardFields
+      }
+    }
+    ```
+    *Note: `graphql-codegen` will automatically bundle the imported fragment into the final query.*
+
+3.  **Use the Generated Types:** Codegen will create a `TrackCardFieldsFragment` type. Use this to type your component's props for perfect type safety.
+
+    *File: `src/components/TrackCard/TrackCard.tsx`*
+    ```typescript
+    import { gql } from "../../__generated__";
+    import { TrackCardFieldsFragment } from "../../__generated__/graphql"; // Auto-generated type
+
+    // Define the fragment document using the generated gql function
+    export const TrackCardFragment = gql(`
+      fragment TrackCardFields on Track { ... }
+    `);
+
+    interface TrackCardProps {
+      track: TrackCardFieldsFragment; // Use the generated fragment type!
+    }
+
+    export const TrackCard = ({ track }: TrackCardProps) => {
+      // ... component logic, with fully typed track properties
+    };
+    ```
+
+#### **4. Development Workflow Integration**
+
+To ensure your types are always in sync, integrate `graphql-codegen` into your development workflow.
+
+1.  **Add a `package.json` script:**
+    ```json
+    "scripts": {
+      "generate": "graphql-codegen"
+    }
+    ```
+    This allows you to run `npm run generate` to manually regenerate types.
+
+2.  **Use Watch Mode:** For the best developer experience, run the generator in watch mode. It will automatically re-run whenever you save a change to your schema or any of your document files.
+    ```bash
+    npm run generate -- --watch
+    ```
+
+---
+**Citations:**
+ The Guild - GraphQL Code Generator Best Practices
+ Apollo GraphQL - Lift-off Part 1: Codegen
+ GraphQL.org - Announcing a new generation of GraphQL Code Generator: `gql` function with full type-safety
+</file>
+
+<file path="eslint.config.js">
+// Modern ESLint flat config for TypeScript (ESLint v9+)
+import { defineConfig } from "eslint/config";
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+
+export default [
+  {
+    ignores: [
+      "node_modules/",
+      "dist/",
+      ".cache/",
+      "output/",
+      "*.js",
+      "src/generated/"
+    ]
+  },
+  {
+    files: ["**/*.ts"],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: "./tsconfig.json",
+        sourceType: "module",
+        ecmaVersion: 2022,
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint,
+    },
+    rules: {
+      ...tseslint.configs.recommended.rules,
+      "@typescript-eslint/no-unused-vars": ["error"],
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/no-explicit-any": "warn"
+    },
+  }
+];
+</file>
+
+<file path="validate-with-mocks.sh">
+#!/usr/bin/env bash
+# validate-with-mocks.sh - Trust-building validation for GitHub Supply Chain Security Analyzer
+# Usage: ./validate-with-mocks.sh
+
+set -euo pipefail
+
+print_section() {
+  echo
+  echo "============================================================"
+  echo "== $1"
+  echo "============================================================"
+}
+
+print_section "1. Environment & Prerequisites"
+node -v && npm -v && which npx && which ts-node && echo "✅ Node.js, npm, npx, ts-node found."
+
+if [ -f .env ]; then
+  echo "✅ .env file found."
+else
+  echo "⚠️  .env file not found. (Not required for mock validation)"
+fi
+
+print_section "2. Dependency Installation"
+echo "Running: npm install --color=always"
+npm install --color=always
+
+print_section "3. TypeScript Code Generation"
+echo "Running: npm run codegen"
+npm run codegen
+
+print_section "4. Linting (ESLint)"
+if npx eslint --version >/dev/null 2>&1; then
+  echo "Running: npx eslint src/"
+  npx eslint src/
+  echo "✅ ESLint passed."
+else
+  echo "⚠️  ESLint not installed. Skipping lint."
+fi
+
+print_section "5. Type Checking (tsc)"
+echo "Running: npx tsc --noEmit"
+if npx tsc --noEmit; then
+  echo "✅ TypeScript type check passed."
+else
+  echo "❌ TypeScript type check failed."; exit 1;
+fi
+
+print_section "6. Tests (if defined)"
+if npm run | grep -q "test"; then
+  echo "Running: npm test"
+  npm test
+  echo "✅ Tests passed."
+else
+  echo "⚠️  No test script defined in package.json. Skipping tests."
+fi
+
+print_section "7. CLI Mock Run"
+export MOCK_GITHUB=1
+INPUT_FILE=input/test-single.jsonl
+if [ -f "$INPUT_FILE" ]; then
+  echo "Running: npx ts-node src/main.ts --mock --input $INPUT_FILE --output output"
+  npx ts-node src/main.ts --mock --input "$INPUT_FILE" --output output
+  echo "✅ CLI mock run completed."
+else
+  echo "❌ $INPUT_FILE not found. Cannot run CLI mock validation."; exit 1;
+fi
+
+print_section "8. Report File Checks"
+if [ -f output/report.json ]; then
+  echo "✅ output/report.json generated."
+else
+  echo "❌ output/report.json missing!"; exit 1;
+fi
+if [ -f output/report.csv ]; then
+  echo "✅ output/report.csv generated."
+else
+  echo "❌ output/report.csv missing!"; exit 1;
+fi
+
+print_section "ALL VALIDATION STEPS PASSED"
+echo "🎉 All checks passed. Your environment and codebase are healthy and ready!"
+</file>
+
+<file path="input/graduated.jsonl">
+{"owner":"kubeedge","name":"kubeedge"}
+{"owner":"goharbor","name":"harbor"}
+{"owner":"cert-manager","name":"cert-manager"}
+{"owner":"falcosecurity","name":"falco"}
+{"owner":"in-toto","name":"in-toto"}
+{"owner":"open-policy-agent","name":"opa"}
+{"owner":"theupdateframework","name":"python-tuf"}
+{"owner":"spiffe","name":"spiffe"}
+{"owner":"spiffe","name":"spire"}
+{"owner":"cubeFS","name":"cubefs"}
+{"owner":"rook","name":"rook"}
+{"owner":"containerd","name":"containerd"}
+{"owner":"cri-o","name":"cri-o"}
+{"owner":"cilium","name":"cilium"}
+{"owner":"kedacore","name":"keda"}
+{"owner":"knative","name":"serving"}
+{"owner":"kubernetes","name":"kubernetes"}
+{"owner":"coredns","name":"coredns"}
+{"owner":"etcd-io","name":"etcd"}
+{"owner":"envoyproxy","name":"envoy"}
+{"owner":"istio","name":"istio"}
+{"owner":"linkerd","name":"linkerd2"}
+{"owner":"tikv","name":"tikv"}
+{"owner":"vitessio","name":"vitess"}
+{"owner":"cloudevents","name":"spec"}
+{"owner":"dapr","name":"dapr"}
+{"owner":"helm","name":"helm"}
+{"owner":"argoproj","name":"argo-cd"}
+{"owner":"fluxcd","name":"flux2"}
+{"owner":"fluent","name":"fluentd"}
+{"owner":"jaegertracing","name":"jaeger"}
+{"owner":"prometheus","name":"prometheus"}
+</file>
+
+<file path="input/incubation.jsonl">
+{"owner":"cloud-custodian","name":"cloud-custodian"}
+{"owner":"metal3-io","name":"baremetal-operator"}
+{"owner":"openyurtio","name":"openyurt"}
+{"owner":"dragonflyoss","name":"dragonfly"}
+{"owner":"keycloak","name":"keycloak"}
+{"owner":"kubescape","name":"kubescape"}
+{"owner":"kyverno","name":"kyverno"}
+{"owner":"notaryproject","name":"notation"}
+{"owner":"longhorn","name":"longhorn"}
+{"owner":"containernetworking","name":"cni"}
+{"owner":"crossplane","name":"crossplane"}
+{"owner":"karmada-io","name":"karmada"}
+{"owner":"kubeflow","name":"kubeflow"}
+{"owner":"volcano-sh","name":"volcano"}
+{"owner":"wasmCloud","name":"wasmCloud"}
+{"owner":"grpc","name":"grpc"}
+{"owner":"projectcontour","name":"contour"}
+{"owner":"emissary-ingress","name":"emissary"}
+{"owner":"nats-io","name":"nats-server"}
+{"owner":"strimzi","name":"strimzi-kafka-operator"}
+{"owner":"artifacthub","name":"hub"}
+{"owner":"backstage","name":"backstage"}
+{"owner":"buildpacks","name":"pack"}
+{"owner":"kubevela","name":"kubevela"}
+{"owner":"kubevirt","name":"kubevirt"}
+{"owner":"operator-framework","name":"operator-sdk"}
+{"owner":"openkruise","name":"kruise"}
+{"owner":"flatcar","name":"Flatcar"}
+{"owner":"open-feature","name":"spec"}
+{"owner":"chaos-mesh","name":"chaos-mesh"}
+{"owner":"litmuschaos","name":"litmus"}
+{"owner":"opencost","name":"opencost"}
+{"owner":"cortexproject","name":"cortex"}
+{"owner":"open-telemetry","name":"community"}
+{"owner":"thanos-io","name":"thanos"}
+</file>
+
+<file path="input/sandbox.jsonl">
+{"owner":"project-akri","name":"akri"}
+{"owner":"runatlantis","name":"atlantis"}
+{"owner":"cdk8s-team","name":"cdk8s"}
+{"owner":"kagent-dev","name":"kagent"}
+{"owner":"kairos-io","name":"kairos"}
+{"owner":"kcl-lang","name":"kcl"}
+{"owner":"kitops-ml","name":"kitops"}
+{"owner":"kptdev","name":"kpt"}
+{"owner":"kubean-io","name":"kubean"}
+{"owner":"KusionStack","name":"kusion"}
+{"owner":"meshery","name":"meshery"}
+{"owner":"opentofu","name":"opentofu"}
+{"owner":"runmedev","name":"runme"}
+{"owner":"tinkerbell","name":"tinkerbell"}
+{"owner":"distribution","name":"distribution"}
+{"owner":"project-zot","name":"zot"}
+{"owner":"bank-vaults","name":"bank-vaults"}
+{"owner":"bpfman","name":"bpfman"}
+{"owner":"cartography-cncf","name":"cartography"}
+{"owner":"confidential-containers","name":"confidential-containers"}
+{"owner":"containerssh","name":"containerssh"}
+{"owner":"project-copacetic","name":"copacetic"}
+{"owner":"dexidp","name":"dex"}
+{"owner":"external-secrets","name":"external-secrets"}
+{"owner":"hexa-org","name":"policy-orchestrator"}
+{"owner":"keylime","name":"keylime"}
+{"owner":"kubearmor","name":"kubearmor"}
+{"owner":"kubewarden","name":"kubewarden-controller"}
+{"owner":"opcr-io","name":"policy"}
+{"owner":"openfga","name":"openfga"}
+{"owner":"oscal-compass","name":"compliance-trestle"}
+{"owner":"paralus","name":"paralus"}
+{"owner":"parallaxsecond","name":"parsec"}
+{"owner":"ratify-project","name":"ratify"}
+{"owner":"slimtoolkit","name":"slim"}
+{"owner":"getsops","name":"sops"}
+{"owner":"tokenetes","name":"tokenetes"}
+{"owner":"AthenZ","name":"athenz"}
+{"owner":"carina-io","name":"carina"}
+{"owner":"hwameistor","name":"hwameistor"}
+{"owner":"k8up-io","name":"k8up"}
+{"owner":"kanisterio","name":"kanister"}
+{"owner":"openebs","name":"openebs"}
+{"owner":"oras-project","name":"oras"}
+{"owner":"piraeusdatastore","name":"piraeus-operator"}
+{"owner":"v6d-io","name":"v6d"}
+{"owner":"containers","name":"composefs"}
+{"owner":"containers","name":"bootc"}
+{"owner":"hyperlight-dev","name":"hyperlight"}
+{"owner":"inclavare-containers","name":"inclavare-containers"}
+{"owner":"kuasar-io","name":"kuasar"}
+{"owner":"lima-vm","name":"lima"}
+{"owner":"containers","name":"podman"}
+{"owner":"urunc-dev","name":"urunc"}
+{"owner":"virtual-kubelet","name":"virtual-kubelet"}
+{"owner":"interTwin-eu","name":"interLink"}
+{"owner":"WasmEdge","name":"WasmEdge"}
+{"owner":"youki-dev","name":"youki"}
+{"owner":"antrea-io","name":"antrea"}
+{"owner":"kubeovn","name":"kube-ovn"}
+{"owner":"kube-vip","name":"kube-vip"}
+{"owner":"networkservicemesh","name":"api"}
+{"owner":"ovn-kubernetes","name":"ovn-kubernetes"}
+{"owner":"spidernet-io","name":"spiderpool"}
+{"owner":"submariner-io","name":"submariner"}
+{"owner":"armadaproject","name":"armada"}
+{"owner":"projectcapsule","name":"capsule"}
+{"owner":"clusternet","name":"clusternet"}
+{"owner":"clusterpedia-io","name":"clusterpedia"}
+{"owner":"eraser-dev","name":"eraser"}
+{"owner":"fluid-cloudnative","name":"fluid"}
+{"owner":"Project-HAMi","name":"HAMi"}
+{"owner":"kcp-dev","name":"kcp"}
+{"owner":"k0sproject","name":"k0s"}
+{"owner":"koordinator-sh","name":"koordinator"}
+{"owner":"kube-rs","name":"kube"}
+{"owner":"kubefleet-dev","name":"kubefleet"}
+{"owner":"kubeslice","name":"kubeslice"}
+{"owner":"kubestellar","name":"kubestellar"}
+{"owner":"kubereboot","name":"kured"}
+{"owner":"open-cluster-management-io","name":"ocm"}
+{"owner":"OpenFunction","name":"OpenFunction"}
+{"owner":"serverless-devs","name":"serverless-devs"}
+{"owner":"k8gb-io","name":"k8gb"}
+{"owner":"xline-kv","name":"Xline"}
+{"owner":"connectrpc","name":"connect-go"}
+{"owner":"bfenetworks","name":"bfe"}
+{"owner":"loxilb-io","name":"loxilb"}
+{"owner":"metallb","name":"metallb"}
+{"owner":"easegress-io","name":"easegress"}
+{"owner":"kgateway-dev","name":"kgateway"}
+{"owner":"kuadrant","name":"kuadrant-operator"}
+{"owner":"aeraki-mesh","name":"aeraki"}
+{"owner":"kmesh-net","name":"kmesh"}
+{"owner":"kumahq","name":"kuma"}
+{"owner":"sermant-io","name":"Sermant"}
+{"owner":"service-mesh-performance","name":"service-mesh-performance"}
+{"owner":"cloudnative-pg","name":"cloudnative-pg"}
+{"owner":"openGemini","name":"openGemini"}
+{"owner":"schemahero","name":"schemahero"}
+{"owner":"drasi-project","name":"drasi-platform"}
+{"owner":"pravega","name":"pravega"}
+{"owner":"tremor-rs","name":"tremor-runtime"}
+{"owner":"carvel-dev","name":"ytt"}
+{"owner":"devfile","name":"api"}
+{"owner":"devspace-sh","name":"devspace"}
+{"owner":"ko-build","name":"ko"}
+{"owner":"konveyor","name":"operator"}
+{"owner":"kudobuilder","name":"kudo"}
+{"owner":"microcks","name":"microcks"}
+{"owner":"modelpack","name":"model-spec"}
+{"owner":"podman-desktop","name":"podman-desktop"}
+{"owner":"getporter","name":"porter"}
+{"owner":"radius-project","name":"radius"}
+{"owner":"score-spec","name":"spec"}
+{"owner":"serverlessworkflow","name":"specification"}
+{"owner":"shipwright-io","name":"build"}
+{"owner":"project-stacker","name":"stacker"}
+{"owner":"telepresenceio","name":"telepresence"}
+{"owner":"vscode-kubernetes-tools","name":"vscode-kubernetes-tools"}
+{"owner":"xregistry","name":"server"}
+{"owner":"open-gitops","name":"project"}
+{"owner":"pipe-cd","name":"pipecd"}
+{"owner":"werf","name":"werf"}
+{"owner":"kube-burner","name":"kube-burner"}
+{"owner":"k3s-io","name":"k3s"}
+{"owner":"kubeclipper","name":"kubeclipper"}
+{"owner":"cozystack","name":"cozystack"}
+{"owner":"SlimPlanet","name":"SlimFaas"}
+{"owner":"chaosblade-io","name":"chaosblade"}
+{"owner":"krkn-chaos","name":"krkn"}
+{"owner":"inspektor-gadget","name":"inspektor-gadget"}
+{"owner":"k8sgpt-ai","name":"k8sgpt"}
+{"owner":"sustainable-computing-io","name":"kepler"}
+{"owner":"kuberhealthy","name":"kuberhealthy"}
+{"owner":"kube-logging","name":"logging-operator"}
+{"owner":"perses","name":"perses"}
+{"owner":"pixie-io","name":"pixie"}
+{"owner":"trickstercache","name":"trickster"}
+{"owner":"spinframework","name":"spin-operator"}
+{"owner":"container2wasm","name":"container2wasm"}
+{"owner":"kaito-project","name":"kaito"}
+</file>
+
+<file path="input/test-single.jsonl">
+{"owner": "sigstore", "name": "cosign"}
+</file>
+
+<file path="schema/download-schema.sh">
+#!/bin/sh
+# Download the exact, unmodified GitHub GraphQL schema SDL for v15.26.0
+# Usage: ./download-schema.sh
+
+curl -sSL https://raw.githubusercontent.com/octokit/graphql-schema/v15.26.0/schema.graphql -o github-v15.26.0.graphql
+</file>
+
+<file path="scripts/fetch-cncf-landscape.sh">
+#!/bin/bash
+# Fetch the CNCF landscape YAML and generate repo lists for Sandbox, Incubation, and Graduated projects.
+set -e
+
+CNCF_YML_URL="https://raw.githubusercontent.com/cncf/landscape/refs/heads/master/landscape.yml"
+YML_FILE="landscape.yml"
+
+# Download the latest CNCF landscape.yml
+echo "Downloading CNCF landscape.yml..."
+curl -sSL "$CNCF_YML_URL" -o "$YML_FILE"
+
+# Parse and extract repo lists for each maturity level using yq (requires yq installed)
+for maturity in sandbox incubation graduated; do
+  echo "Extracting $maturity projects..."
+  yq -r \
+    '.landscape[] | select(.maturity == "'"$maturity'"') | .repo_url' \
+    "$YML_FILE" | \
+    grep -Eo 'github.com/[^/]+/[^/]+$' | \
+    awk -F/ '{print "{ \"owner\": \"" $2 "\", \"name\": \"" $3 "\" },"}' > "input/$maturity.jsonl"
+done
+
+echo "Done. See input/sandbox.jsonl, input/incubation.jsonl, input/graduated.jsonl."
+</file>
+
+<file path="scripts/fetch-cncf-landscape.ts">
+// This script fetches the CNCF landscape YAML and generates input files for Sandbox, Incubation, and Graduated projects.
+// It is intended to be run with: npx ts-node scripts/fetch-cncf-landscape.ts
+// Requires: node-fetch and yaml (install with npm install node-fetch@2 yaml)
+
+import fetch from 'node-fetch';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'yaml';
+
+// URL of the CNCF landscape YAML file
+const CNCF_YML_URL = 'https://raw.githubusercontent.com/cncf/landscape/refs/heads/master/landscape.yml';
+const OUTPUT_DIR = path.join(__dirname, '../input');
+const YML_FILE = path.join(__dirname, 'landscape.yml');
+
+// Helper type for a repo entry
+interface RepoTarget {
+  owner: string;
+  name: string;
+}
+
+// Helper function to recursively find all items with a repo_url and project maturity
+function findRepos(obj: any, maturity: string, results: RepoTarget[] = []): RepoTarget[] {
+  if (obj && typeof obj === 'object') {
+    // If this object has a repo_url and project field, check maturity
+    if (obj.repo_url && obj.project && typeof obj.repo_url === 'string' && typeof obj.project === 'string') {
+      // Normalize maturity field (incubating vs incubation)
+      const normalized = obj.project.toLowerCase().replace('incubating', 'incubation');
+      if (normalized === maturity) {
+        // Extract owner and name from the repo_url
+        const match = obj.repo_url.match(/github.com\/([^/]+)\/([^/]+)$/);
+        if (match) {
+          results.push({ owner: match[1], name: match[2] });
+        }
+      }
+    }
+    // Recurse into all properties
+    for (const key of Object.keys(obj)) {
+      findRepos(obj[key], maturity, results);
+    }
+  } else if (Array.isArray(obj)) {
+    for (const item of obj) {
+      findRepos(item, maturity, results);
+    }
+  }
+  return results;
+}
+
+async function main() {
+  // Ensure output directory exists
+  if (!fs.existsSync(OUTPUT_DIR)) {
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  }
+
+  // Download the YAML file
+  console.log('Downloading CNCF landscape.yml...');
+  const res = await fetch(CNCF_YML_URL);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch YAML: ${res.statusText}`);
+  }
+  const ymlText = await res.text();
+  fs.writeFileSync(YML_FILE, ymlText);
+
+  // Parse YAML
+  const doc = yaml.parse(ymlText);
+
+  // For each maturity, extract repos and write to JSONL
+  for (const maturity of ['sandbox', 'incubation', 'graduated']) {
+    console.log(`Extracting ${maturity} projects...`);
+    const repos = findRepos(doc, maturity);
+    const outPath = path.join(OUTPUT_DIR, `${maturity}.jsonl`);
+    const lines = repos.map(r => JSON.stringify(r)).join('\n');
+    fs.writeFileSync(outPath, lines + (lines ? '\n' : ''));
+    console.log(`  Wrote ${repos.length} repos to ${outPath}`);
+  }
+
+  console.log('Done.');
+}
+
+main().catch(err => {
+  console.error('Error:', err);
+  process.exit(1);
+});
+</file>
+
+<file path="src/graphql/GetRepoData.graphql">
+query GetRepoData($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    name
+    url
+    description
+    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        name
+        tagName
+        url
+        createdAt
+        releaseAssets(first: 50) {
+          nodes {
+            name
+            downloadUrl
+          }
+        }
+      }
+    }
+    workflows: object(expression: "HEAD:.github/workflows") {
+      ... on Tree {
+        entries {
+          name
+          object {
+            ... on Blob {
+              text
+            }
+          }
+        }
+      }
+    }
+  }
+}
+</file>
+
+<file path=".env.template">
+GITHUB_PAT=ghp_YourPersonalAccessTokenHere
+</file>
+
+<file path=".gitignore">
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# TypeScript
+dist/
+build/
+*.tsbuildinfo
+
+# GraphQL Codegen
+src/generated/
+
+# Output and cache
+output/
+.cache/
+
+# Environment and secrets
+.env
+.env.*
+!*.env.template
+
+# IDE/editor
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Misc
+coverage/
+*.log
+
+
+AGENTS.md
+PLAN.md
+SYSTEM.md
+repomix-output.json
+TEST_PLAN.md
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"]
+}
+</file>
+
+<file path="validate.sh">
+#!/usr/bin/env bash
+# validate.sh - Run all validation checks for the GitHub Supply Chain Security Analyzer
+# Usage: ./validate.sh
+
+set -euo pipefail
+
+# 1. Lint (if available)
+if npx eslint --version >/dev/null 2>&1; then
+  echo "🔍 Running ESLint..."
+  npx eslint src/ || { echo "❌ ESLint failed"; exit 1; }
+else
+  echo "⚠️  ESLint not installed. Skipping lint."
+fi
+
+# 2. Type check
+if npx tsc --noEmit; then
+  echo "✅ TypeScript type check passed."
+else
+  echo "❌ TypeScript type check failed."; exit 1;
+fi
+
+# 3. Run tests (if test script exists)
+if npm run | grep -q "test"; then
+  echo "🧪 Running tests..."
+  npm test || { echo "❌ Tests failed"; exit 1; }
+else
+  echo "⚠️  No test script defined in package.json. Skipping tests."
+fi
+
+# 4. Try mock run
+export MOCK_GITHUB=1
+INPUT_FILE=input/test-single.jsonl
+if [ -f "$INPUT_FILE" ]; then
+  echo "🚦 Running CLI in mock mode with $INPUT_FILE..."
+  npx ts-node src/main.ts --mock --input "$INPUT_FILE"
+else
+  echo "⚠️  $INPUT_FILE not found. Skipping mock run."
+fi
+
+echo "🎉 Validation complete."
+</file>
+
+<file path="codegen.ts">
+import type { CodegenConfig } from '@graphql-codegen/cli';
+import 'dotenv/config';
+
+const config: CodegenConfig = {
+  overwrite: true,
+  schema: 'schema/github-v15.26.0.graphql',
+  documents: ['src/**/*.ts', 'src/**/*.tsx', 'src/graphql/**/*.graphql'],
+  prune: true,
+  generates: {
+    'src/generated/': {
+      preset: 'client',
+      schema: 'schema/github-v15.26.0.graphql',
+      documents: ['src/graphql/**/*.graphql'],
+      plugins: [
+        {
+          add: { content: '/* eslint-disable */' }
+        }
+      ],
+      presetConfig: {
+        gqlTagName: 'gql',
+      },
+      config: {
+        avoidOptionals: true,
+        strictScalars: true,
+        maybeValue: 'T | undefined',
+        enumsAsTypes: true,
+        scalars: {
+          DateTime: 'string',
+          Date: 'string',
+          URI: 'string',
+          GitObjectID: 'string',
+          GitTimestamp: 'string',
+          HTML: 'string',
+          X509Certificate: 'string',
+          Base64String: 'string',
+          BigInt: 'string',
+          GitRefname: 'string',
+          GitSSHRemote: 'string',
+          PreciseDateTime: 'string',
+        },
+      },
+    },
+    'src/generated/graphql.ts': {
+      schema: 'schema/github-v15.26.0.graphql',
+      documents: ['src/graphql/**/*.graphql'],
+      plugins: [
+        'typescript',
+        'typescript-operations',
+        {
+          add: { content: '/* eslint-disable */' }
+        }
+      ],
+      config: {
+        avoidOptionals: true,
+        strictScalars: true,
+        maybeValue: 'T | undefined',
+        enumsAsTypes: true,
+        scalars: {
+          DateTime: 'string',
+          Date: 'string',
+          URI: 'string',
+          GitObjectID: 'string',
+          GitTimestamp: 'string',
+          HTML: 'string',
+          X509Certificate: 'string',
+          Base64String: 'string',
+          BigInt: 'string',
+          GitRefname: 'string',
+          GitSSHRemote: 'string',
+          PreciseDateTime: 'string',
+        },
+      },
+    },
+  },
+  ignoreNoDocuments: true,
+};
+
+export default config;
+</file>
+
+<file path="src/config.ts">
+// RepositoryTarget defines the shape of a repository to analyze
+export interface RepositoryTarget {
+  owner: string; // GitHub organization or user
+  name: string;  // Repository name
+}
+
+/**
+ * List of repositories to analyze.
+ * - Add or remove entries to control which repos are scanned.
+ * - Used by main.ts to drive analysis and reporting.
+ * - In mock mode, only repos present in src/mockData.ts will return data.
+ */
+export const repositories: RepositoryTarget[] = [
+  { owner: 'sigstore', name: 'cosign' }, // Example: repo with SBOMs/signatures
+  { owner: 'anchore', name: 'syft' },    // Example: repo with CI security tools
+  { owner: 'github', name: 'docs' },     // Example: large/simple repo
+  { owner: 'nonexistent-org', name: 'nonexistent-repo-123' }, // Example: triggers error handling
+];
+</file>
+
+<file path="src/mockData.ts">
+// This file provides mock data for development and testing in MOCK_GITHUB=1 mode.
+// The structure matches the shape of the real GitHub GraphQL API response for GetRepoData.
+
+import { GetRepoDataQuery } from './generated/graphql';
+
+// Type for the mock data object: keys are owner_repo, values are GraphQL-like responses
+export type MockRepoDataType = {
+  [key: string]: { repository: GetRepoDataQuery['repository'] };
+};
+
+/**
+ * mockRepoData provides static responses for specific repositories.
+ * - Keys are owner_repo (e.g., sigstore_cosign)
+ * - Values mimic the structure returned by the real GraphQL query
+ * - Used by main.ts when MOCK_GITHUB=1 to bypass network/API
+ * - Extend this object to add more test cases or edge scenarios
+ */
+export const mockRepoData: MockRepoDataType = {
+  sigstore_cosign: {
+    repository: {
+      name: 'cosign',
+      url: 'https://github.com/sigstore/cosign',
+      description: 'Container Signing, Verification and Storage in an OCI registry.',
+      releases: {
+        nodes: [
+          {
+            name: 'v2.2.1',
+            tagName: 'v2.2.1',
+            url: 'https://github.com/sigstore/cosign/releases/tag/v2.2.1',
+            createdAt: '2024-08-01T00:00:00Z',
+            releaseAssets: {
+              nodes: [
+                { name: 'cosign_2.2.1_Linux_x86_64.tar.gz', downloadUrl: 'https://github.com/sigstore/cosign/releases/download/v2.2.1/cosign_2.2.1_Linux_x86_64.tar.gz' },
+                { name: 'cosign_2.2.1_checksums.txt', downloadUrl: 'https://github.com/sigstore/cosign/releases/download/v2.2.1/cosign_2.2.1_checksums.txt' },
+                { name: 'cosign_2.2.1_sbom.spdx.json', downloadUrl: 'https://github.com/sigstore/cosign/releases/download/v2.2.1/cosign_2.2.1_sbom.spdx.json' },
+                { name: 'cosign_2.2.1.sig', downloadUrl: 'https://github.com/sigstore/cosign/releases/download/v2.2.1/cosign_2.2.1.sig' },
+                { name: 'cosign_2.2.1.attestation', downloadUrl: 'https://github.com/sigstore/cosign/releases/download/v2.2.1/cosign_2.2.1.attestation' }
+              ]
+            }
+          }
+        ]
+      },
+      workflows: {
+        entries: [
+          {
+            name: 'release.yml',
+            object: { text: 'uses: goreleaser/goreleaser-action\nrun: syft' }
+          }
+        ]
+      }
+    }
+  },
+  anchore_syft: {
+    repository: {
+      name: 'syft',
+      url: 'https://github.com/anchore/syft',
+      description: 'CLI tool and library for generating SBOMs',
+      releases: {
+        nodes: [
+          {
+            name: 'v0.100.0',
+            tagName: 'v0.100.0',
+            url: 'https://github.com/anchore/syft/releases/tag/v0.100.0',
+            createdAt: '2024-07-01T00:00:00Z',
+            releaseAssets: {
+              nodes: [
+                { name: 'syft_0.100.0_Linux_x86_64.tar.gz', downloadUrl: 'https://github.com/anchore/syft/releases/download/v0.100.0/syft_0.100.0_Linux_x86_64.tar.gz' },
+                { name: 'syft_0.100.0_sbom.cyclonedx.json', downloadUrl: 'https://github.com/anchore/syft/releases/download/v0.100.0/syft_0.100.0_sbom.cyclonedx.json' },
+                { name: 'syft_0.100.0.sig', downloadUrl: 'https://github.com/anchore/syft/releases/download/v0.100.0/syft_0.100.0.sig' }
+              ]
+            }
+          }
+        ]
+      },
+      workflows: {
+        entries: [
+          {
+            name: 'ci.yml',
+            object: { text: 'run: syft\nuses: anchore/sbom-action' }
+          }
+        ]
+      }
+    }
+  },
+  github_docs: {
+    repository: {
+      name: 'docs',
+      url: 'https://github.com/github/docs',
+      description: 'Documentation for GitHub',
+      releases: { nodes: [] },
+      workflows: { entries: [] }
+    }
+  },
+  nonexistent: { repository: null }
+};
+</file>
+
+<file path="src/report.ts">
+// This module handles report generation for the analyzer.
+// It outputs both a comprehensive JSON file and a flattened CSV for easy review.
+
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { json2csv } from 'json-2-csv';
+import chalk from 'chalk';
+import { analyzeRepositoryData } from './analysis';
+
+type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
+
+/**
+ * Generate JSON and CSV reports from the analysis results.
+ * @param analysisResults - Array of per-repository analysis objects (see analysis.ts)
+ * @param outputDir - Output directory for reports (optional, defaults to 'output')
+ */
+export async function generateReports(analysisResults: AnalysisResult[], outputDir?: string) {
+  // Output directory for reports (created if missing)
+  outputDir = outputDir ? path.resolve(outputDir) : path.join(process.cwd(), 'output');
+
+  try {
+    // Ensure output directory exists
+    await fs.mkdir(outputDir, { recursive: true });
+
+    // --- JSON Report ---
+    // Full, structured data for all analyzed repositories
+    const jsonPath = path.join(outputDir, 'report.json');
+    await fs.writeFile(jsonPath, JSON.stringify(analysisResults, null, 2));
+    console.log(chalk.green(`✅ Comprehensive JSON report saved to: ${jsonPath}`));
+
+    // --- CSV Report ---
+    // Flattened, row-based summary for spreadsheet review
+    const flattenedData = analysisResults.map(res => {
+      // Use the latest release for summary columns (if any)
+      const latestRelease = res.releases?.[0] || {};
+      return {
+        // Repository metadata
+        repository_name: res.repository.name,
+        repository_url: res.repository.url,
+        // Security artifact flags
+        has_sbom_artifact: res.summary.hasSbomArtifact,
+        has_signature_artifact: res.summary.hasSignatureArtifact,
+        has_attestation_artifact: res.summary.hasAttestationArtifact,
+        // CI tool detection (comma-separated list)
+        sbom_ci_tools_detected: (res.summary.sbomCiTools || []).join(','),
+        // Latest release info
+        latest_release_tag: latestRelease.tagName || 'N/A',
+        latest_release_analyzed_at: latestRelease.createdAt || 'N/A',
+      };
+    });
+
+    const csvPath = path.join(outputDir, 'report.csv');
+    const csv = await json2csv(flattenedData);
+    await fs.writeFile(csvPath, csv);
+    console.log(chalk.green(`✅ CSV report saved to: ${csvPath}`));
+
+  } catch (error) {
+    // Log and fail gracefully if report generation fails
+    console.error(chalk.red('Failed to generate reports:'), error);
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "github-supply-chain-analyzer",
+  "version": "1.0.0",
+  "description": "Analyzes GitHub repos for supply chain security artifacts.",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "ts-node src/main.ts",
+    "build": "tsc",
+    "codegen": "graphql-codegen --config codegen.ts",
+    "lint": "npx eslint src/",
+    "typecheck": "npx tsc --noEmit",
+    "validate": "./validate-with-mocks.sh",
+    "clean": "rm -rf dist output .cache src/generated"
+  },
+  "keywords": [
+    "github",
+    "graphql",
+    "sbom",
+    "supply-chain-security"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "4.1.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.1",
+    "dotenv": "^16.3.1",
+    "graphql": "^16.8.1",
+    "graphql-request": "^6.1.0",
+    "js-yaml": "^4.1.0",
+    "json-2-csv": "^4.1.0",
+    "node-cache": "^5.1.2",
+    "node-fetch": "^2.7.0",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": "5.0.0",
+    "@graphql-codegen/client-preset": "4.1.0",
+    "@graphql-codegen/typescript": "4.0.1",
+    "@graphql-codegen/typescript-graphql-request": "^6.0.0",
+    "@graphql-codegen/typescript-operations": "4.0.1",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "^20.8.9",
+    "@types/node-fetch": "^2.6.13",
+    "@typescript-eslint/eslint-plugin": "^8.43.0",
+    "@typescript-eslint/parser": "^8.43.0",
+    "eslint": "^9.35.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
+</file>
+
+<file path="src/analysis.ts">
+// Import YAML parser for extracting workflow tool info from GitHub Actions YAML files
+import * as yaml from 'js-yaml';
+// Import the generated GraphQL types for type safety and data shape reference
+import { GetRepoDataQuery } from './generated/graphql';
+
+// The Repository type matches the shape of the 'repository' field returned by the GetRepoData GraphQL query
+type Repository = GetRepoDataQuery['repository'];
+
+// Regex patterns to identify potential SBOM/security artifacts in release asset names
+const ARTIFACT_KEYWORDS = {
+  SBOM: /\b(sbom|spdx|cyclonedx)\b/i,
+  SIGNATURE: /\.(sig|asc|pem|pub)$/i,
+  ATTESTATION: /attestation/i,
+};
+
+// Regex patterns to identify security tools in GitHub Actions workflow YAML content
+const CI_TOOL_KEYWORDS = {
+  SBOM_GENERATORS: /\b(syft|trivy|cdxgen|spdx-sbom-generator)\b/i,
+  SIGNERS: /\b(cosign|sigstore|slsa-github-generator)\b/i,
+  GORELEASER: /\b(goreleaser\/goreleaser-action)\b/i, // Goreleaser can generate SBOMs
+};
+
+
+
+
+/**
+ * Analyze a single repository's data for supply chain security signals.
+ * @param repo - The repository object as returned by the GraphQL query (may be null/undefined)
+ * @returns Analysis object with releases, workflows, and summary flags
+ */
+export function analyzeRepositoryData(repo: Repository) {
+  if (!repo) return null;
+
+
+  // --- Data shape definitions for clarity ---
+  // Artifact: describes a single release asset and its detected security properties
+  type Artifact = {
+    name: string;
+    isSbom: boolean;
+    isSignature: boolean;
+    isAttestation: boolean;
+    downloadUrl?: string;
+  };
+  // ReleaseInfo: describes a single release and its artifacts
+  type ReleaseInfo = {
+    tagName: string;
+    name: string | null | undefined;
+    createdAt: string;
+    artifacts: Artifact[];
+  };
+  // WorkflowInfo: describes a single GitHub Actions workflow and detected tools
+  type WorkflowInfo = {
+    name: string;
+    detectedSbomTools: string[];
+  };
+  // Analysis: the main output structure for a repository
+  type Analysis = {
+    repository: {
+      name: string;
+      url: string;
+      description?: string | null;
+    };
+    releases: ReleaseInfo[];
+    workflows: WorkflowInfo[];
+    summary: {
+      hasSbomArtifact: boolean;
+      hasSignatureArtifact: boolean;
+      hasAttestationArtifact: boolean;
+      sbomCiTools: string[] | Set<string>;
+    };
+  };
+
+  // Initialize the analysis object for this repository
+  const analysis: Analysis = {
+    repository: {
+      name: repo.name,
+      url: repo.url,
+      description: repo.description,
+    },
+    releases: [],
+    workflows: [],
+    summary: {
+      hasSbomArtifact: false,
+      hasSignatureArtifact: false,
+      hasAttestationArtifact: false,
+      sbomCiTools: new Set<string>(),
+    },
+  };
+
+  // --- Analyze Releases ---
+  // For each release, extract artifact info and flag SBOM/signature/attestation presence
+  repo.releases.nodes?.forEach(release => {
+    if (!release) return;
+    const releaseInfo: ReleaseInfo = {
+      tagName: release.tagName,
+      name: release.name,
+      createdAt: release.createdAt,
+      artifacts: [],
+    };
+
+    // For each asset in the release, check for SBOM, signature, attestation by filename
+    release.releaseAssets?.nodes?.forEach(asset => {
+      if (!asset) return;
+      const artifact: Artifact = {
+        name: asset.name,
+        isSbom: ARTIFACT_KEYWORDS.SBOM.test(asset.name),
+        isSignature: ARTIFACT_KEYWORDS.SIGNATURE.test(asset.name),
+        isAttestation: ARTIFACT_KEYWORDS.ATTESTATION.test(asset.name),
+        downloadUrl: asset.downloadUrl,
+      };
+      releaseInfo.artifacts.push(artifact);
+
+      // Track which types of artifacts are present for summary and reporting
+      if (artifact.isSbom) (analysis.summary.sbomCiTools as Set<string>).add('sbom');
+      if (artifact.isSignature) (analysis.summary.sbomCiTools as Set<string>).add('signature');
+      if (artifact.isAttestation) (analysis.summary.sbomCiTools as Set<string>).add('attestation');
+      if (artifact.isSbom) analysis.summary.hasSbomArtifact = true;
+      if (artifact.isSignature) analysis.summary.hasSignatureArtifact = true;
+      if (artifact.isAttestation) analysis.summary.hasAttestationArtifact = true;
+    });
+    analysis.releases.push(releaseInfo);
+  });
+
+
+  // --- Analyze CI Workflows ---
+  // If workflows are present, parse each YAML and look for security tool usage
+  const tree = repo.workflows as { entries?: { name: string; object?: { text?: string } }[] };
+  if (tree && Array.isArray(tree.entries)) {
+    tree.entries.forEach(entry => {
+      if (!entry) return;
+      // Each workflow file is represented as a tree entry with a name and text content
+      const workflowInfo = {
+        name: entry.name,
+        detectedSbomTools: new Set<string>(),
+      };
+      const content = entry.object?.text;
+      if (content) {
+        try {
+          // Parse YAML and flatten to string for regex matching
+          const doc = yaml.load(content);
+          const yamlStr = typeof doc === 'string' ? doc : JSON.stringify(doc);
+          // Detect SBOM generators, signers, and goreleaser usage in workflow
+          if (CI_TOOL_KEYWORDS.SBOM_GENERATORS.test(yamlStr)) {
+            workflowInfo.detectedSbomTools.add('sbom-generator');
+            (analysis.summary.sbomCiTools as Set<string>).add('sbom-generator');
+          }
+          if (CI_TOOL_KEYWORDS.SIGNERS.test(yamlStr)) {
+            workflowInfo.detectedSbomTools.add('signer');
+            (analysis.summary.sbomCiTools as Set<string>).add('signer');
+          }
+          if (CI_TOOL_KEYWORDS.GORELEASER.test(yamlStr)) {
+            workflowInfo.detectedSbomTools.add('goreleaser');
+            (analysis.summary.sbomCiTools as Set<string>).add('goreleaser');
+          }
+        } catch {
+          // Ignore YAML parse errors; not all workflow files are valid YAML
+        }
+      }
+      // Store detected tools for this workflow
+      analysis.workflows.push({
+        ...workflowInfo,
+        detectedSbomTools: Array.from(workflowInfo.detectedSbomTools),
+      });
+    });
+  }
+
+  // Finalize summary: convert sbomCiTools Set to array for serialization
+  analysis.summary.sbomCiTools = Array.from(analysis.summary.sbomCiTools as Set<string>);
+
+  // Return the full analysis object for this repository
+  return analysis;
+}
+</file>
+
+<file path="README.md">
+# GitHub Supply Chain Security Analyzer
+
+A powerful command-line tool for analyzing release artifacts and CI/CD workflows in GitHub repositories to identify software supply chain security metadata like SBOMs.
+
+## Features
+
+- **Comprehensive Data Collection**: Fetches repository details, descriptions, and links.
+- **Release Analysis**: Gathers the last 3 releases and inspects all associated artifacts.
+- **Artifact Identification**: Automatically flags potential SBOMs (SPDX, CycloneDX), signatures (`.sig`, `.asc`), and other attestations.
+- **CI/CD Workflow Inspection**: Enumerates all GitHub Actions workflows and analyzes their content for common SBOM generation tools (e.g., `syft`, `trivy`, `cdxgen`).
+- **Type-Safe API Calls**: Uses GraphQL Code Generator to create a fully-typed TypeScript SDK for the GitHub API.
+- **Smart Caching**: Caches API responses to speed up subsequent runs and reduce API usage.
+- **Dual-Format Reporting**: Generates a detailed `report.json` and an easy-to-use `report.csv`.
+
+## Prerequisites
+
+- **Node.js**: Version 18.x or later.
+- **npm**: Comes bundled with Node.js.
+- **GitHub Personal Access Token (PAT)**: You need a PAT with the `repo` scope to query repository data.
+  - Go to [GitHub Developer Settings](https://github.com/settings/tokens) to generate a new token (classic).
+  - Ensure it has `repo` scope to access public and private repository data.
+
+## Installation & Setup
+
+1. **Clone the repository:**
+
+    ```bash
+    git clone <repository_url>
+    cd <project_root>
+    ```
+
+2. **Install dependencies:**
+
+    ```s
+    <project_root>/
+    ├── .env                  # For storing your GitHub PAT (not committed)
+    ├── .gitignore
+    ├── codegen.ts            # Configuration for GraphQL Code Generator
+    ├── package.json
+    ├── tsconfig.json
+    ├── src/
+    │   ├── main.ts           # Main script entry point
+    │   ├── analysis.ts       # Logic for analyzing artifacts and workflows
+    │   ├── config.ts         # Repository list configuration
+    │   ├── report.ts         # Logic for generating JSON and CSV reports
+    │   ├── generated/        # Auto-generated GraphQL SDK
+    │   └── graphql/
+    │       └── GetRepoData.graphql  # The GraphQL query file
+    ├── output/               # Generated reports (gitignored)
+    │   ├── report.json
+    │   └── report.csv
+    └── .cache/               # Cached API responses
+    ```
+    ```
+
+5. **Generate the GraphQL SDK:**
+    This step introspects the GitHub GraphQL schema and generates a typed SDK based on your queries.
+
+    ```bash
+    npm run codegen
+    ```
+
+    You only need to re-run this if you change the GraphQL queries in `src/graphql/`.
+
+## Running the Analysis
+
+Execute the main script from the project root:
+
+```bash
+
+## Usage
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Generate GraphQL types
+
+```bash
+npm run codegen
+```
+
+### 3. Prepare repository input files
+
+The tool now reads repository targets from input files (JSONL format, one `{ "owner": ..., "name": ... }` per line).
+
+To generate input files for CNCF Sandbox, Incubation, and Graduated projects:
+
+```bash
+chmod +x scripts/fetch-cncf-landscape.sh
+./scripts/fetch-cncf-landscape.sh
+```
+
+This will create:
+- `input/sandbox.jsonl`
+- `input/incubation.jsonl`
+- `input/graduated.jsonl`
+
+You can also create your own input file in the same format.
+
+
+
+## About npx
+
+This project uses `npx` to run the CLI directly from your local dependencies, without requiring a global install. `npx` is a package runner that comes with npm (since version 5.2.0+). It allows you to execute binaries from your project's `node_modules/.bin` or fetch and run packages from the npm registry on demand.
+
+When you run a command like:
+
+```bash
+npx ts-node src/main.ts --help
+```
+
+`npx` ensures that the correct version of `ts-node` (and all dependencies) are used from your project, so you don't need to install anything globally. This makes it easy to run scripts and CLIs in a reproducible, project-local way.
+
+---
+
+## CLI Usage
+
+The CLI supports the following options:
+
+| Option                | Description                                              |
+|-----------------------|----------------------------------------------------------|
+| `-h, --help`          | Show help and usage information                          |
+| `-i, --input <file>`  | Input JSONL file with repository list (default: sandbox) |
+| `--mock`              | Run in mock mode (no GitHub API calls)                  |
+| `-o, --output <dir>`  | Output directory for reports (default: output)           |
+| `-V, --version`       | Show CLI version                                         |
+
+### Show help
+
+```bash
+npx ts-node src/main.ts --help
+```
+
+### Run in mock mode (no GitHub API required)
+
+```bash
+npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output
+```
+
+### Run with real GitHub data
+
+Ensure you have a `.env` file with your `GITHUB_PAT` set.
+
+```bash
+npx ts-node src/main.ts --input input/graduated.jsonl --output output
+```
+
+### Example output
+
+```
+🚀 Starting GitHub Supply Chain Security Analysis...
+🧪 MOCK MODE ENABLED: Using mock GitHub data.
+
+Processing repository: sigstore/cosign
+✅ Comprehensive JSON report saved to: .../output/report.json
+✅ CSV report saved to: .../output/report.csv
+
+    GitHub Supply Chain Security Summary  
+┌────────────────────┬───────┬────────────┬───────────────┬────────────────────────────────────────┬────────────────┐
+│ Repo               │ SBOM  │ Signature  │ Attestation   │ CI Tools                               │ Latest Release │
+├────────────────────┼───────┼────────────┼───────────────┼────────────────────────────────────────┼────────────────┤
+│ cosign             │ ✔     │ ✔          │ ✔             │ sbom,signature,attestation,sbom-gen... │ v2.2.1         │
+└────────────────────┴───────┴────────────┴───────────────┴────────────────────────────────────────┴────────────────┘
+
+Legend: ✔ = present, ✗ = absent, - = none
+Totals: Repos: 1  SBOM: 1  Signature: 1  Attestation: 1  CI Tools: 1
+
+✨ Analysis complete.
+```
+
+
+### 6. View reports
+
+- JSON: `output/report.json`
+- CSV: `output/report.csv`
+
+
+## Validation, Cleaning, and Common Scripts
+
+This project provides convenient npm scripts for all common development and validation tasks:
+
+| Script              | Description                                                      |
+|---------------------|------------------------------------------------------------------|
+| `npm run validate`  | Runs the full trust-building validation script (`validate-with-mocks.sh`). Checks lint, type, CLI mock run, and report output. |
+| `npm run lint`      | Runs ESLint on all hand-written code in `src/`                   |
+| `npm run typecheck` | Runs TypeScript type checking (`tsc --noEmit`)                   |
+| `npm run codegen`   | Regenerates GraphQL types and SDK from schema and queries         |
+| `npm run clean`     | Removes build, output, cache, and generated directories           |
+
+### Example: Full Validation
+
+```bash
+npm run validate
+```
+
+This will:
+- Install dependencies
+- Run codegen
+- Lint the codebase (if ESLint is installed)
+- Type-check the codebase
+- Run tests (if defined)
+- Run the CLI in mock mode with a test input file
+- Check for generated report files
+
+All steps must pass for a successful validation.
+
+### Example: Clean the Project
+
+```bash
+npm run clean
+```
+
+This will remove all build artifacts, output, cache, and generated code. Use before a fresh build or troubleshooting.
+
+---
+
+## GraphQL Code Generation: Best Practices (Exemplar)
+
+This project uses [GraphQL Code Generator](https://www.graphql-code-generator.com/) to create a fully-typed TypeScript SDK for the GitHub GraphQL API. The following practices make this a robust, maintainable, and lint-free codegen setup:
+
+
+### Why Use GraphQL Codegen?
+
+- **Type Safety**: All API calls are type-checked end-to-end, reducing runtime errors.
+- **Productivity**: No need to hand-write types for queries or responses.
+- **Maintainability**: Schema or query changes are automatically reflected in generated types.
+
+
+
+### How We Integrate Codegen
+
+- **Config File**: All codegen options are in `codegen.ts` for transparency and reproducibility.
+- **Versioned Schema**: The GraphQL schema is checked in and versioned, ensuring CI reproducibility and provenance.
+- **Pre-Scripts**: `npm run codegen` is run before builds/tests to ensure types are always up to date.
+- **Generated Directory**: All generated files are placed in `src/generated/` and excluded from linting (see ESLint config).
+- **Strict Linting**: Hand-written code is always ESLint clean. Generated files are allowed to use `any` if required by the codegen tool, but you can further tune codegen plugins to minimize this.
+- **Watch Mode**: For rapid development, you can use codegen in watch mode to regenerate types on every schema or query change.
+
+
+
+### Lint-Free Codegen Tips
+
+- **Tune Plugins**: Use the latest `@graphql-codegen/typescript` and related plugins, and enable strict options to minimize `any` in generated code.
+- **Disable Lint for Generated Files**: Add `/* eslint-disable */` to the top of generated files, or exclude them in your ESLint config, to avoid polluting lint results.
+- **Schema Provenance**: Always check in the exact schema used for codegen, and document how to update it.
+- **CI Integration**: Run codegen and lint as part of your CI pipeline to catch schema/query drift early.
+
+
+### Example: Running Codegen
+
+```bash
+npm run codegen
+```
+
+This will generate or update all TypeScript types and SDKs in `src/generated/` based on your current schema and queries.
+
+### Example: codegen.ts
+
+```ts
+import type { CodegenConfig } from '@graphql-codegen/cli';
+
+const config: CodegenConfig = {
+  schema: './src/graphql/schema.graphql',
+  documents: ['./src/graphql/**/*.graphql'],
+  generates: {
+    './src/generated/graphql.ts': {
+      plugins: [
+        'typescript',
+        'typescript-operations',
+        'typescript-graphql-request',
+      ],
+    },
+  },
+  hooks: {
+    afterAllFileWrite: ['prettier --write'],
+  },
+};
+export default config;
+```
+
+---
+
+For more, see the [GraphQL Code Generator docs](https://www.graphql-code-generator.com/) and this repo's `codegen.ts` for a real-world, production-ready example.
+
+---
+
+## Linting and Generated Code
+
+### Why are there ESLint warnings in `src/generated/`?
+
+The TypeScript GraphQL Code Generator may produce code that triggers strict ESLint rules (e.g., `no-explicit-any`, `no-unused-vars`). This is a known and accepted limitation of codegen tools, as they must support a wide range of schemas and queries.
+
+**Best Practices in this Project:**
+- All generated files are placed in `src/generated/`.
+- The codegen config adds `/* eslint-disable */` to the top of every generated file.
+- `.eslintignore` includes `src/generated/` to ensure ESLint does not report or fail on generated code.
+- Only hand-written code is required to be 100% ESLint clean.
+
+**You should:**
+- Never manually edit files in `src/generated/`.
+- If you see lint errors in generated files, they can be safely ignored.
+- If you see lint errors in your own code, fix them before committing or merging.
+
+This approach is recommended by the GraphQL Code Generator maintainers and is standard in the TypeScript ecosystem.
+</file>
+
+<file path="src/main.ts">
+import 'dotenv/config';
+import { GraphQLClient } from 'graphql-request';
+import NodeCache from 'node-cache';
+import chalk from 'chalk';
+import Table from 'cli-table3';
+import { Command } from 'commander';
+import { gql } from './generated/gql';
+import * as fs from 'fs';
+import * as path from 'path';
+import { analyzeRepositoryData } from './analysis';
+import { GetRepoDataQuery } from './generated/graphql';
+import { generateReports } from './report';
+import { mockRepoData } from './mockData';
+
+const program = new Command();
+program
+  .name('github-supply-chain-analyzer')
+  .description('Analyze GitHub repositories for supply chain security artifacts')
+  .version('1.0.0')
+  .option('-i, --input <file>', 'Input JSONL file with repository list', 'input/sandbox.jsonl')
+  .option('--mock', 'Run in mock mode (no GitHub API calls)', false)
+  .option('-o, --output <dir>', 'Output directory for reports', 'output')
+  .option('-v, --verbose', 'Show detailed column explanations and artifact details', false)
+  .helpOption('-h, --help', 'Display help for command');
+program.parse(process.argv);
+const opts = program.opts();
+
+// Initialize cache with a 24-hour TTL (used only in real API mode)
+const cache = new NodeCache({ stdTTL: 86400 });
+
+
+/**
+ * Main entry point for the CLI tool.
+ * Handles environment setup, repository iteration, data fetching (mock or real),
+ * analysis, and report generation.
+ */
+async function main() {
+  const verbose = opts.verbose;
+  console.log(chalk.blue.bold('🚀 Starting GitHub Supply Chain Security Analysis...'));
+
+  // Use CLI options or environment variables
+  const useMock = opts.mock || process.env.MOCK_GITHUB === '1';
+  const inputFile = opts.input || process.env.REPO_INPUT || path.join(__dirname, '../input/sandbox.jsonl');
+  const outputDir = opts.output || 'output';
+
+  if (opts.help) {
+    program.help();
+    return;
+  }
+
+  if (useMock) {
+    console.log(chalk.magenta.bold('🧪 MOCK MODE ENABLED: Using mock GitHub data.'));
+  }
+
+  // Initialize GraphQL client for real API mode
+  let client: GraphQLClient | null = null;
+  if (!useMock) {
+    const githubPat = process.env.GITHUB_PAT;
+    if (!githubPat) {
+      // Fail fast if no PAT is set
+      console.error(chalk.red.bold('Error: GITHUB_PAT environment variable not set.'));
+      process.exit(1);
+    }
+    client = new GraphQLClient('https://api.github.com/graphql', {
+      headers: {
+        Authorization: `Bearer ${githubPat}`,
+      },
+    });
+  }
+
+  // Collect all analysis results for reporting
+  const allAnalysisResults = [];
+
+  // The Repository type matches the GraphQL schema for type safety
+  type Repository = GetRepoDataQuery['repository'];
+  type RepositoryTarget = { owner: string; name: string };
+
+  if (!fs.existsSync(inputFile)) {
+    console.error(chalk.red.bold(`Input file not found: ${inputFile}`));
+    program.help();
+    process.exit(1);
+  }
+  // Read and parse the input file (expects JSONL: one {owner, name} per line)
+  const repoLines = fs.readFileSync(inputFile, 'utf-8').split('\n').filter(Boolean);
+  const repositories: RepositoryTarget[] = repoLines.map(line => {
+    try {
+      return JSON.parse(line);
+    } catch {
+      console.error(chalk.red(`Invalid JSON in input file: ${line}`));
+      process.exit(1);
+    }
+  });
+
+  for (const repo of repositories) {
+    // Each repo is identified by owner/name (e.g., sigstore/cosign)
+    const cacheKey = `${repo.owner}/${repo.name}`;
+    console.log(`\nProcessing repository: ${chalk.cyan(cacheKey)}`);
+
+    // repoData will hold the GraphQL response for this repo
+    let repoData: { repository: Repository } | null = null;
+    if (useMock) {
+      // In mock mode, look up static data by key (owner_name)
+      const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_') as keyof typeof mockRepoData;
+      repoData = mockRepoData[mockKey] || null;
+      if (!repoData) {
+        // Warn and skip if no mock data is available
+        console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
+        continue;
+      }
+    } else {
+      // In real mode, check cache first to avoid redundant API calls
+      const cachedData = cache.get(cacheKey);
+      if (cachedData) {
+        console.log(chalk.green('✅ Found data in cache.'));
+        repoData = cachedData as { repository: Repository };
+      } else {
+        // Build and execute the GraphQL query for this repo
+        console.log(chalk.yellow('🔄 Fetching data from GitHub API...'));
+        try {
+          // The query is defined in src/graphql/GetRepoData.graphql and codegen'd
+          const document = gql(`query GetRepoData($owner: String!, $name: String!) {\n  repository(owner: $owner, name: $name) {\n    name\n    url\n    description\n    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {\n      nodes {\n        name\n        tagName\n        url\n        createdAt\n        releaseAssets(first: 50) {\n          nodes {\n            name\n            downloadUrl\n          }\n        }\n      }\n    }\n    workflows: object(expression: \"HEAD:.github/workflows\") {\n      ... on Tree {\n        entries {\n          name\n          object {\n            ... on Blob {\n              text\n            }\n          }\n        }\n      }\n    }\n  }\n}\n`);
+          repoData = await client!.request(document, { owner: repo.owner, name: repo.name });
+          cache.set(cacheKey, repoData);
+          console.log(chalk.green('👍 Data fetched and cached successfully.'));
+        } catch (error) {
+          // Log and skip on API/network errors
+          console.error(chalk.red(`Failed to fetch data for ${cacheKey}:`), error);
+          continue;
+        }
+      }
+    }
+
+    // Only analyze if data is present (mock or real)
+    if (repoData && repoData.repository) {
+      // Analyze the repository for supply chain security signals
+  const analysisResult = analyzeRepositoryData(repoData.repository);
+      allAnalysisResults.push(analysisResult);
+    }
+  }
+
+  // Generate reports if any repositories were successfully analyzed
+  if (allAnalysisResults.length > 0) {
+    if (verbose) {
+      // --- Verbose Legend and Column Explanations ---
+      console.log(chalk.bold.bgWhite.black('\n  Column Legend & Detection Logic  '));
+      const legendRows = [
+        [chalk.bold('Column'), chalk.bold('Description'), chalk.bold('Detection Logic')],
+        ['Repo', 'Repository name', 'From input file'],
+        ['SBOM Gen', 'SBOM generator tool in CI', 'Regex: syft|trivy|cdxgen|spdx-sbom-generator in workflow YAML'],
+        ['Signer', 'Signature/attestation tool in CI', 'Regex: cosign|sigstore|slsa-github-generator in workflow YAML'],
+        ['Goreleaser', 'Goreleaser used in CI', 'Regex: goreleaser/goreleaser-action in workflow YAML'],
+        ['SBOM', 'SBOM artifact in release', 'Filename: sbom|spdx|cyclonedx'],
+        ['Signature', 'Signature artifact in release', 'Extension: .sig, .asc, .pem, .pub'],
+        ['Attestation', 'Attestation artifact in release', 'Filename: attestation'],
+        ['Latest Release', 'Most recent release tag', 'GitHub Releases API'],
+        ['Release Date', 'Date of latest release', 'GitHub Releases API'],
+      ];
+      const legendTable = new Table({
+        head: legendRows[0],
+        colWidths: [16, 32, 48],
+        wordWrap: true,
+        style: { head: [], border: [] },
+      });
+      for (const row of legendRows.slice(1)) legendTable.push(row);
+      console.log(legendTable.toString());
+    }
+    await generateReports(allAnalysisResults, outputDir);
+
+
+    // --- Modern CLI Table Summary (cli-table3) ---
+    console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
+
+    // Define CI tool columns
+    const ciToolTypes = [
+  { key: 'sbom-generator', label: 'SBOM Gen' },
+  { key: 'signer', label: 'Signer' },
+  { key: 'goreleaser', label: 'Goreleaser' },
+  { key: 'sbom', label: 'SBOM' },
+  { key: 'signature', label: 'Signature' },
+  { key: 'attestation', label: 'Attestation' },
+    ];
+
+    const table = new Table({
+      head: [
+        chalk.bold('Repo'),
+        ...ciToolTypes.map(t => chalk.bold(t.label)),
+        chalk.bold('Latest Release'),
+        chalk.bold('Release Date'),
+      ],
+      colWidths: [18, ...Array(ciToolTypes.length).fill(12), 16, 18],
+      wordWrap: true,
+      style: { head: [], border: [] },
+    });
+
+    // Aggregate stats
+    let total = 0;
+    const ciToolCounts: Record<string, number> = Object.fromEntries(ciToolTypes.map(t => [t.key, 0]));
+
+    for (const result of allAnalysisResults) {
+      if (!result) continue;
+      total++;
+      const repo = result.repository;
+      const summary = result.summary;
+      const release = result.releases?.[0];
+      const ciTools = Array.isArray(summary.sbomCiTools) ? summary.sbomCiTools : Array.from(summary.sbomCiTools || []);
+      // Row: repo, then checkboxes for each CI tool type, then release
+      const row = [
+        chalk.cyan(repo.name || ''),
+        ...ciToolTypes.map(t => {
+          const present = ciTools.includes(t.key);
+          if (present) ciToolCounts[t.key]++;
+          return present ? chalk.greenBright('✔') : '';
+        }),
+        release ? chalk.white(release.tagName) : chalk.gray('-'),
+        release && release.createdAt ? chalk.white(new Date(release.createdAt).toISOString().slice(0, 10)) : chalk.gray('-'),
+      ];
+      table.push(row);
+    }
+
+    console.log(table.toString());
+
+    if (verbose) {
+      // --- Detailed Artifact Table ---
+      console.log(chalk.bold.bgWhite.black('\n  Artifact Details by Repository  '));
+      for (const result of allAnalysisResults) {
+        if (!result) continue;
+        const repo = result.repository;
+        // Parse org/repo from URL if possible
+        let orgRepo = repo.url && typeof repo.url === 'string' ? repo.url.replace('https://github.com/', '') : repo.name;
+        if (!orgRepo) orgRepo = repo.name;
+        for (const release of result.releases || []) {
+          if (release.artifacts && release.artifacts.length > 0) {
+            const artTable = new Table({
+              head: [chalk.bold('Repo'), chalk.bold('Artifact'), chalk.bold('Type(s)'), chalk.bold('Download URL')],
+              style: { head: [], border: [] },
+            });
+            for (const art of release.artifacts) {
+              const types = [];
+              if (art.isSbom) types.push(chalk.greenBright('SBOM'));
+              if (art.isSignature) types.push(chalk.greenBright('Signature'));
+              if (art.isAttestation) types.push(chalk.greenBright('Attestation'));
+              artTable.push([
+                chalk.white(orgRepo),
+                chalk.white(art.name),
+                types.join(', '),
+                art.downloadUrl ? chalk.blue.underline(art.downloadUrl) : chalk.gray('-'),
+              ]);
+            }
+            console.log(artTable.toString());
+          } else {
+            // Only print repo/release header if no artifacts
+            console.log(chalk.bold.underline(`\n${orgRepo}`));
+            if (repo.description) console.log(chalk.gray(repo.description));
+            console.log(chalk.bold(`  Release: `) + chalk.white(release.tagName) + chalk.gray(` (${release.createdAt ? new Date(release.createdAt).toISOString().slice(0,10) : '-'})`));
+            console.log(chalk.gray('    No artifacts found.'));
+          }
+        }
+      }
+    }
+
+    // Legend and totals
+  console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present') + ', ' + chalk.gray('- = none'));
+    console.log(
+      chalk.bold('Totals: ') +
+      `Repos: ${total}  ` +
+      ciToolTypes.map(t => chalk.greenBright(`${t.label}: ${ciToolCounts[t.key]}`)).join('  ')
+    );
+    console.log(chalk.blue.bold('\n✨ Analysis complete.'));
+  } else {
+    console.log(chalk.yellow('No data was analyzed. Reports will not be generated.'));
+  }
+}
+
+// Start the CLI tool and handle any unexpected errors
+main().catch((error) => {
+  console.error(chalk.red.bold('An unexpected error occurred:'), error);
+});
+</file>
+
+</files>

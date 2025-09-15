@@ -1,17 +1,18 @@
-
 import 'dotenv/config';
 import { GraphQLClient } from 'graphql-request';
 import NodeCache from 'node-cache';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 import { Command } from 'commander';
-import { gql } from './generated/gql';
 import * as fs from 'fs';
 import * as path from 'path';
 import { analyzeRepositoryData } from './analysis';
-import { GetRepoDataQuery } from './generated/graphql';
 import { generateReports } from './report';
 import { mockRepoData } from './mockData';
+
+// import the generated TypedDocumentNode for our query.
+// This object contains the query string and its associated types.
+import { GetRepoDataDocument, GetRepoDataQuery } from './generated/graphql';
 
 const program = new Command();
 program
@@ -86,7 +87,7 @@ async function main() {
   const repositories: RepositoryTarget[] = repoLines.map(line => {
     try {
       return JSON.parse(line);
-    } catch (e) {
+    } catch {
       console.error(chalk.red(`Invalid JSON in input file: ${line}`));
       process.exit(1);
     }
@@ -118,9 +119,9 @@ async function main() {
         // Build and execute the GraphQL query for this repo
         console.log(chalk.yellow('🔄 Fetching data from GitHub API...'));
         try {
-          // The query is defined in src/graphql/GetRepoData.graphql and codegen'd
-          const document = gql(`query GetRepoData($owner: String!, $name: String!) {\n  repository(owner: $owner, name: $name) {\n    name\n    url\n    description\n    releases(last: 3, orderBy: { field: CREATED_AT, direction: DESC }) {\n      nodes {\n        name\n        tagName\n        url\n        createdAt\n        releaseAssets(first: 50) {\n          nodes {\n            name\n            downloadUrl\n          }\n        }\n      }\n    }\n    workflows: object(expression: \"HEAD:.github/workflows\") {\n      ... on Tree {\n        entries {\n          name\n          object {\n            ... on Blob {\n              text\n            }\n          }\n        }\n      }\n    }\n  }\n}\n`);
-          repoData = await client!.request(document as any, { owner: repo.owner, name: repo.name });
+          // Use the imported `GetRepoDataDocument` directly.
+          // This is the primary benefit of the codegen setup.
+          repoData = await client!.request(GetRepoDataDocument, { owner: repo.owner, name: repo.name });
           cache.set(cacheKey, repoData);
           console.log(chalk.green('👍 Data fetched and cached successfully.'));
         } catch (error) {
@@ -134,12 +135,12 @@ async function main() {
     // Only analyze if data is present (mock or real)
     if (repoData && repoData.repository) {
       // Analyze the repository for supply chain security signals
-      const analysisResult = analyzeRepositoryData(repoData.repository as any);
+      const analysisResult = analyzeRepositoryData(repoData.repository);
       allAnalysisResults.push(analysisResult);
     }
   }
 
-  // Generate reports if any repositories were successfully analyzed
+  // --- Report Generation and Display ---
   if (allAnalysisResults.length > 0) {
     if (verbose) {
       // --- Verbose Legend and Column Explanations ---
@@ -173,12 +174,12 @@ async function main() {
 
     // Define CI tool columns
     const ciToolTypes = [
-  { key: 'sbom-generator', label: 'SBOM Gen' },
-  { key: 'signer', label: 'Signer' },
-  { key: 'goreleaser', label: 'Goreleaser' },
-  { key: 'sbom', label: 'SBOM' },
-  { key: 'signature', label: 'Signature' },
-  { key: 'attestation', label: 'Attestation' },
+      { key: 'sbom-generator', label: 'SBOM Gen' },
+      { key: 'signer', label: 'Signer' },
+      { key: 'goreleaser', label: 'Goreleaser' },
+      { key: 'sbom', label: 'SBOM' },
+      { key: 'signature', label: 'Signature' },
+      { key: 'attestation', label: 'Attestation' },
     ];
 
     const table = new Table({
@@ -260,7 +261,7 @@ async function main() {
     }
 
     // Legend and totals
-  console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present') + ', ' + chalk.gray('- = none'));
+    console.log('\n' + chalk.bold('Legend:') + ' ' + chalk.greenBright('✔ = present'));
     console.log(
       chalk.bold('Totals: ') +
       `Repos: ${total}  ` +
