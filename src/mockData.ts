@@ -87,8 +87,30 @@ export const mockRepoData: MockRepoDataType = {
       name: 'docs',
       url: 'https://github.com/github/docs',
       description: 'Documentation for GitHub',
-      releases: { nodes: [] },
-      workflows: { entries: [] }
+      releases: {
+        nodes: [
+          {
+            name: 'v1.0.0',
+            tagName: 'v1.0.0',
+            url: 'https://github.com/github/docs/releases/tag/v1.0.0',
+            createdAt: '2024-06-01T00:00:00Z',
+            releaseAssets: {
+              nodes: [
+                { name: 'docs_1.0.0_Linux_x86_64.tar.gz', downloadUrl: 'https://github.com/github/docs/releases/download/v1.0.0/docs_1.0.0_Linux_x86_64.tar.gz' },
+                { name: 'docs_1.0.0_sbom.spdx.json', downloadUrl: 'https://github.com/github/docs/releases/download/v1.0.0/docs_1.0.0_sbom.spdx.json' }
+              ]
+            }
+          }
+        ]
+      },
+      workflows: {
+        entries: [
+          {
+            name: 'docs-ci.yml',
+            object: { text: 'run: echo "docs build"' }
+          }
+        ]
+      }
     }
   },
   nonexistent: { repository: null }

@@ -53,6 +53,7 @@ export function analyzeRepositoryData(repo: Repository) {
   // Analysis: the main output structure for a repository
   type Analysis = {
     repository: {
+      owner: string;
       name: string;
       url: string;
       description?: string | null;
@@ -74,6 +75,7 @@ export function analyzeRepositoryData(repo: Repository) {
   // Initialize the analysis object for this repository
   const analysis: Analysis = {
     repository: {
+      owner: (repo as any).owner ?? '',
       name: repo.name,
       url: repo.url,
       description: repo.description,

@@ -44,7 +44,7 @@ export async function generateReports(analysisResults: AnalysisResult[], outputD
       const latestRelease = res.releases?.[0] || {};
       return {
         // Repository metadata
-        repository_name: res.repository.name,
+        repository_name: res.repository.owner ? `${res.repository.owner}/${res.repository.name}` : res.repository.name,
         repository_url: res.repository.url,
         // Security artifact flags
         has_sbom_artifact: res.summary.hasSbomArtifact,

@@ -12,7 +12,8 @@
     "validate": "./validate-with-mocks.sh",
   "clean": "rm -rf dist output .cache src/generated",
   "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts",
-  "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose"
+  "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
+  "validate:three-repos": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose"
   },
   "keywords": [
     "github",
