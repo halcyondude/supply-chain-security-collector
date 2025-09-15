@@ -9,7 +9,6 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
 - **Artifact Identification**: Automatically flags potential SBOMs (SPDX, CycloneDX), signatures (`.sig`, `.asc`), and other attestations.
 - **CI/CD Workflow Inspection**: Enumerates all GitHub Actions workflows and analyzes their content for common SBOM generation tools (e.g., `syft`, `trivy`, `cdxgen`).
 - **Type-Safe API Calls**: Uses GraphQL Code Generator to create a fully-typed TypeScript SDK for the GitHub API.
-- **Smart Caching**: Caches API responses to speed up subsequent runs and reduce API usage.
 - **Dual-Format Reporting**: Generates a detailed `report.json` and an easy-to-use `report.csv`.
 
 ### Example output
