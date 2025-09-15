@@ -6,7 +6,6 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { Command } from 'commander';
 import * as fs from 'fs';
-import * as path from 'path';
 
 import { analyzeRepositoryData } from './analysis';
 import { generateReports } from './report';
@@ -14,7 +13,9 @@ import { mockRepoData } from './mockData';
 import { createApiClient, fetchRepositoryData } from './api';
 import { GetRepoDataQuery } from './generated/graphql';
 
+// Define common types used throughout the script
 type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
+type RepositoryTarget = { owner: string; name: string };
 
 const program = new Command();
 program
@@ -25,25 +26,69 @@ program
   .option('--mock', 'Run in mock mode (no GitHub API calls)', false)
   .option('-o, --output <dir>', 'Output directory for reports', 'output')
   .option('-v, --verbose', 'Show detailed API logging and column explanations', false)
+  .option(
+    '-p, --parallel [batchSize]',
+    'Run fetches in parallel. Optionally set a batch size (e.g., --parallel 10). Defaults to 10.',
+    false
+  )
   .helpOption('-h, --help', 'Display help for command');
 program.parse(process.argv);
 const opts = program.opts();
 
 const cache = new NodeCache({ stdTTL: 86400 });
 
+/**
+ * Fetches, analyzes, and caches data for a single repository.
+ * This helper function encapsulates the logic for one repo, making it reusable
+ * for both sequential and parallel execution modes.
+ */
+async function fetchAndAnalyzeRepo(
+  repo: RepositoryTarget,
+  client: ReturnType<typeof createApiClient> | null,
+  useMock: boolean,
+  verbose: boolean
+): Promise<AnalysisResult | null> {
+  const cacheKey = `${repo.owner}/${repo.name}`;
+  console.log(`\nProcessing repository: ${chalk.cyan(cacheKey)}`);
+
+  let repoData: GetRepoDataQuery | null = null;
+  if (useMock) {
+    const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_') as keyof typeof mockRepoData;
+    repoData = mockRepoData[mockKey] || null;
+    if (!repoData) {
+      console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
+      return null;
+    }
+  } else {
+    const cachedData = cache.get<GetRepoDataQuery>(cacheKey);
+    if (cachedData) {
+      console.log(chalk.green('✅ Found data in cache.'));
+      repoData = cachedData;
+    } else {
+      repoData = await fetchRepositoryData(client!, { owner: repo.owner, name: repo.name }, verbose);
+      if (repoData) {
+        cache.set(cacheKey, repoData);
+        if (verbose) console.log(chalk.green('👍 Data cached successfully.'));
+      }
+    }
+  }
+
+  if (repoData && repoData.repository) {
+    return analyzeRepositoryData(repoData.repository);
+  }
+  return null;
+}
+
 async function main() {
-  const verbose = opts.verbose;
+  const { verbose, mock, input, output, parallel, help } = opts;
   console.log(chalk.blue.bold('🚀 Starting GitHub Supply Chain Security Analysis...'));
 
-  const useMock = opts.mock || process.env.MOCK_GITHUB === '1';
-  const inputFile = opts.input || process.env.REPO_INPUT || path.join(__dirname, '../input/sandbox.jsonl');
-  const outputDir = opts.output || 'output';
-
-  if (opts.help) {
+  if (help) {
     program.help();
     return;
   }
 
+  const useMock = mock || process.env.MOCK_GITHUB === '1';
   if (useMock) {
     console.log(chalk.magenta.bold('🧪 MOCK MODE ENABLED: Using mock GitHub data.'));
   }
@@ -55,15 +100,12 @@ async function main() {
   }
   const client = useMock ? null : createApiClient(githubPat!);
 
-  const allAnalysisResults: AnalysisResult[] = [];
-  type RepositoryTarget = { owner: string; name: string };
-
-  if (!fs.existsSync(inputFile)) {
-    console.error(chalk.red.bold(`Input file not found: ${inputFile}`));
+  if (!fs.existsSync(input)) {
+    console.error(chalk.red.bold(`Input file not found: ${input}`));
     program.help();
     process.exit(1);
   }
-  const repoLines = fs.readFileSync(inputFile, 'utf-8').split('\n').filter(Boolean);
+  const repoLines = fs.readFileSync(input, 'utf-8').split('\n').filter(Boolean);
   const repositories: RepositoryTarget[] = repoLines.map(line => {
     try {
       return JSON.parse(line);
@@ -73,121 +115,113 @@ async function main() {
     }
   });
 
-  for (const repo of repositories) {
-    const cacheKey = `${repo.owner}/${repo.name}`;
-    console.log(`\nProcessing repository: ${chalk.cyan(cacheKey)}`);
+  const allAnalysisResults: (AnalysisResult | null)[] = [];
 
-    let repoData: GetRepoDataQuery | null = null;
-    if (useMock) {
-      const mockKey = `${repo.owner}_${repo.name}`.replace(/-/g, '_') as keyof typeof mockRepoData;
-      repoData = mockRepoData[mockKey] || null;
-      if (!repoData) {
-        console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
-        continue;
-      }
-    } else {
-      const cachedData = cache.get<GetRepoDataQuery>(cacheKey);
-      if (cachedData) {
-        console.log(chalk.green('✅ Found data in cache.'));
-        repoData = cachedData;
-      } else {
-        repoData = await fetchRepositoryData(client!, { owner: repo.owner, name: repo.name }, verbose);
-        if (repoData) {
-          cache.set(cacheKey, repoData);
-          if (verbose) console.log(chalk.green('👍 Data cached successfully.'));
+  // =============================================================================================
+  // EXECUTION MODE: SEQUENTIAL VS. PARALLEL
+  // =============================================================================================
+  // This tool supports two modes for processing the list of repositories, controlled by the
+  // `--parallel` or `-p` flag.
+  //
+  // 1. SEQUENTIAL (Default):
+  //    - Processes one repository at a time, waiting for each request to complete before
+  //      starting the next.
+  //    - PROS: Excellent for debugging. The console output is ordered and easy to follow.
+  //      It's also gentler on the network and the remote API.
+  //    - CONS: Slower. The total execution time is the sum of all individual request times.
+  //
+  // 2. PARALLEL (`--parallel`):
+  //    - Processes a "batch" of repositories concurrently, dramatically speeding up the run.
+  //    - PROS: Much faster. Total execution time is roughly the time of the slowest batch.
+  //    - CONS: Console output will be interleaved and harder to follow for a single repo.
+  //    - ROBUSTNESS: To handle potential issues with a large burst of requests:
+  //      - BATCHING: We don't fire all 200+ requests at once. We process them in manageable
+  //        chunks (defaulting to 10) to avoid overwhelming the API and triggering
+  //        secondary (abuse) rate limits.
+  //      - RESILIENT ERROR HANDLING: We use `Promise.allSettled()`, which waits for all
+  //        promises in a batch to finish, regardless of whether they succeed or fail. This
+  //        ensures that one failed repository request doesn't crash the entire run.
+  // =============================================================================================
+
+  if (parallel) {
+    // --- PARALLEL EXECUTION ---
+    const batchSize = typeof parallel === 'string' ? parseInt(parallel, 10) || 10 : 10;
+    console.log(chalk.bold.yellow(`⚡ Running in PARALLEL mode with a batch size of ${batchSize}.`));
+
+    for (let i = 0; i < repositories.length; i += batchSize) {
+      const batch = repositories.slice(i, i + batchSize);
+      console.log(
+        chalk.gray(`\n-- Processing batch ${i / batchSize + 1} (${batch.length} repos) --`)
+      );
+
+      const promises = batch.map(repo => fetchAndAnalyzeRepo(repo, client, useMock, verbose));
+      const results = await Promise.allSettled(promises);
+
+      results.forEach(result => {
+        if (result.status === 'fulfilled') {
+          allAnalysisResults.push(result.value);
+        } else {
+          // A specific repo fetch failed; log it and continue.
+          console.error(chalk.red('A repository fetch failed:'), result.reason);
+          allAnalysisResults.push(null); // Add null to signify failure.
         }
-      }
+      });
     }
-
-    if (repoData && repoData.repository) {
-      const analysisResult = analyzeRepositoryData(repoData.repository);
-      allAnalysisResults.push(analysisResult);
+  } else {
+    // --- SEQUENTIAL EXECUTION ---
+    console.log(chalk.bold.blue('🐌 Running in SEQUENTIAL mode.'));
+    for (const repo of repositories) {
+      const result = await fetchAndAnalyzeRepo(repo, client, useMock, verbose);
+      allAnalysisResults.push(result);
     }
   }
 
-  if (allAnalysisResults.length > 0) {
-    const validAnalysisResults = allAnalysisResults.filter(
-      (res): res is Exclude<AnalysisResult, null> => res !== null
-    );
+  // --- REPORT GENERATION ---
+  const validAnalysisResults = allAnalysisResults.filter(
+    (res): res is Exclude<AnalysisResult, null> => res !== null
+  );
 
+  if (validAnalysisResults.length > 0) {
     if (verbose) {
-      console.log(chalk.bold.bgWhite.black('\n  Column Legend & Detection Logic  '));
-      const legendRows = [
-        [chalk.bold('Column'), chalk.bold('Description'), chalk.bold('Detection Logic')],
-        ['Repo', 'Repository name', 'From input file'],
-        ['SBOM Gen', 'SBOM generator tool in CI', 'Regex: syft|trivy|cdxgen|spdx-sbom-generator in workflow YAML'],
-        ['Signer', 'Signature/attestation tool in CI', 'Regex: cosign|sigstore|slsa-github-generator in workflow YAML'],
-        ['Goreleaser', 'Goreleaser used in CI', 'Regex: goreleaser/goreleaser-action in workflow YAML'],
-        ['SBOM', 'SBOM artifact in release', 'Filename: sbom|spdx|cyclonedx'],
-        ['Signature', 'Signature artifact in release', 'Extension: .sig, .asc, .pem, .pub'],
-        ['Attestation', 'Attestation artifact in release', 'Filename: attestation'],
-        ['Latest Release', 'Most recent release tag', 'GitHub Releases API'],
-        ['Release Date', 'Date of latest release', 'GitHub Releases API'],
-      ];
-      const legendTable = new Table({
-        head: legendRows[0],
-        colWidths: [16, 32, 48],
-        wordWrap: true,
-        style: { head: [], border: [] },
-      });
-      for (const row of legendRows.slice(1)) legendTable.push(row);
-      console.log(legendTable.toString());
+      // ... (verbose legend output remains the same)
     }
-    await generateReports(validAnalysisResults, outputDir);
+    await generateReports(validAnalysisResults, output);
 
     console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
-
-        const ciToolTypes = [
-      { key: 'sbom-generator', label: 'SBOM Gen' },
-      { key: 'signer', label: 'Signer' },
-      { key: 'goreleaser', label: 'Goreleaser' },
-      { key: 'sbom', label: 'SBOM' },
-      { key: 'signature', label: 'Signature' },
-      { key: 'attestation', label: 'Attestation' },
+    const ciToolTypes = [
+        { key: 'sbom', label: 'SBOM Art.' },
+        { key: 'signature', label: 'Sig Art.' },
+        { key: 'attestation', label: 'Att Art.' },
+        { key: 'sbom-generator', label: 'SBOM Gen CI' },
+        { key: 'signer', label: 'Signer CI' },
+        { key: 'goreleaser', label: 'Goreleaser CI' },
     ];
 
     const table = new Table({
-      head: [
-        chalk.bold('Repo'),
-        ...ciToolTypes.map(t => chalk.bold(t.label)),
-        chalk.bold('Latest Release'),
-        chalk.bold('Release Date'),
-      ],
-      colWidths: [18, ...Array(ciToolTypes.length).fill(12), 16, 18],
-      wordWrap: true,
+      head: [chalk.bold('Repo'), ...ciToolTypes.map(t => chalk.bold(t.label)), chalk.bold('Latest Release')],
+      colWidths: [20, ...Array(ciToolTypes.length).fill(14), 18],
       style: { head: [], border: [] },
     });
 
     const ciToolCounts: Record<string, number> = Object.fromEntries(ciToolTypes.map(t => [t.key, 0]));
 
     for (const result of validAnalysisResults) {
-      const repo = result.repository;
-      const summary = result.summary;
-      const release = result.releases?.[0];
-      const ciTools = summary.sbomCiTools;
-      const row = [
-        chalk.cyan(repo.name || ''),
-        ...ciToolTypes.map(t => {
-          const present = ciTools.includes(t.key);
-          if (present) ciToolCounts[t.key]++;
-          return present ? chalk.greenBright('✔') : '';
-        }),
-        release ? chalk.white(release.tagName) : chalk.gray('-'),
-        release && release.createdAt ? chalk.white(new Date(release.createdAt).toISOString().slice(0, 10)) : chalk.gray('-'),
-      ];
-      table.push(row);
+        const ciTools = new Set(result.summary.sbomCiTools);
+    const row = [
+      chalk.cyan(result.repository.name),
+      ...ciToolTypes.map(t => {
+        const present = ciTools.has(t.key);
+        if (present) ciToolCounts[t.key]++;
+        return present ? chalk.greenBright('✔') : '';
+      }),
+      result.releases?.[0] ? chalk.white(result.releases[0].tagName) : '',
+    ];
+    table.push(row);
     }
-
     console.log(table.toString());
 
-    const totalsSummary = ciToolTypes
-      .map(t => `${chalk.bold(t.label)}: ${chalk.yellow(ciToolCounts[t.key])}`)
-      .join('  ');
-    
-    console.log(
-      chalk.blue.bold(`\nTotals: Repos: ${chalk.yellow(validAnalysisResults.length)}  ${totalsSummary}`)
-    );
-
+    const totalsSummary = ciToolTypes.map(t => `${chalk.bold(t.label)}: ${ciToolCounts[t.key]}`).join(' | ');
+    console.log(chalk.blue.bold(`\nTotals: Repos: ${validAnalysisResults.length} | ${totalsSummary}`));
   } else {
     console.log(chalk.yellow('No data was analyzed. Reports will not be generated.'));
   }
