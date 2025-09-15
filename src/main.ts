@@ -48,7 +48,7 @@ async function fetchAndAnalyzeRepo(
   verbose: boolean
 ): Promise<AnalysisResult | null> {
   const repoKey = `${repo.owner}/${repo.name}`;
-  console.log(`\nProcessing repository: ${chalk.cyan(repoKey)}`);
+  console.log(`Processing repository: ${chalk.cyan(repoKey)}`);
 
   let repoData: GetRepoDataQuery | null = null;
 
@@ -177,7 +177,7 @@ async function main() {
     if (verbose) {
       // ... (verbose legend output remains the same)
     }
-    await generateReports(validAnalysisResults, output);
+  await generateReports(validAnalysisResults, output, input);
 
     console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
     const ciToolTypes = [

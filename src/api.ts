@@ -27,7 +27,6 @@ export function createApiClient(token: string): GraphQLClient {
  * @param verbose - A flag to enable or disable detailed logging.
  * @returns The GraphQL query result, or null if the fetch fails or the repository is not found.
  */
-// FIX: Added 'export' to make this function visible to other modules.
 export async function fetchRepositoryData(
   client: GraphQLClient,
   variables: { owner: string; name: string },

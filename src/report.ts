@@ -16,9 +16,16 @@ type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
  * @param analysisResults - Array of per-repository analysis objects (see analysis.ts)
  * @param outputDir - Output directory for reports (optional, defaults to 'output')
  */
-export async function generateReports(analysisResults: AnalysisResult[], outputDir?: string) {
+export async function generateReports(analysisResults: AnalysisResult[], outputDir?: string, inputFileName?: string) {
   // Output directory for reports (created if missing)
   outputDir = outputDir ? path.resolve(outputDir) : path.join(process.cwd(), 'output');
+
+  // Determine base name for report files from input file
+  let baseName = 'report';
+  if (inputFileName) {
+    const inputBase = path.basename(inputFileName, path.extname(inputFileName));
+    baseName = inputBase;
+  }
 
   try {
     // Ensure output directory exists
@@ -29,17 +36,15 @@ export async function generateReports(analysisResults: AnalysisResult[], outputD
       (res): res is Exclude<AnalysisResult, null> => res !== null
     );
 
-    // --- JSON Report ---
-    // Full, structured data for all analyzed repositories
-    const jsonPath = path.join(outputDir, 'report.json');
-    // FIX: Use validAnalysisResults for JSON report
-    await fs.writeFile(jsonPath, JSON.stringify(validAnalysisResults, null, 2));
-    console.log(chalk.green(`✅ Comprehensive JSON report saved to: ${jsonPath}`));
+  // --- JSON Report ---
+  // Full, structured data for all analyzed repositories
+  const jsonPath = path.join(outputDir, `${baseName}.json`);
+  await fs.writeFile(jsonPath, JSON.stringify(validAnalysisResults, null, 2));
+  console.log(chalk.green(`✅ Comprehensive JSON report saved to: ${jsonPath}`));
 
-    // --- CSV Report ---
-    // Flattened, row-based summary for spreadsheet review
-    // FIX: Use validAnalysisResults for CSV report
-    const flattenedData = validAnalysisResults.map(res => {
+  // --- CSV Report ---
+  // Flattened, row-based summary for spreadsheet review
+  const flattenedData = validAnalysisResults.map(res => {
       // Use the latest release for summary columns (if any)
       const latestRelease = res.releases?.[0] || {};
       return {
@@ -59,10 +64,10 @@ export async function generateReports(analysisResults: AnalysisResult[], outputD
       };
     });
 
-    const csvPath = path.join(outputDir, 'report.csv');
-    const csv = await json2csv(flattenedData);
-    await fs.writeFile(csvPath, csv);
-    console.log(chalk.green(`✅ CSV report saved to: ${csvPath}`));
+  const csvPath = path.join(outputDir, `${baseName}.csv`);
+  const csv = await json2csv(flattenedData);
+  await fs.writeFile(csvPath, csv);
+  console.log(chalk.green(`✅ CSV report saved to: ${csvPath}`));
 
   } catch (error) {
     // Log and fail gracefully if report generation fails

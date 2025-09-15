@@ -14,7 +14,7 @@
   "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts",
   "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
   "validate:three-repos": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose",
-  "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output --verbose"
+  "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output"
   },
   "keywords": [
     "github",

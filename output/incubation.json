@@ -1,0 +1,3280 @@
+[
+  {
+    "repository": {
+      "owner": "",
+      "name": "cloud-custodian",
+      "url": "https://github.com/cloud-custodian/cloud-custodian",
+      "description": "Rules engine for cloud security, cost optimization, and governance, DSL in yaml for policies to query, filter, and take actions on resources"
+    },
+    "releases": [
+      {
+        "tagName": "0.8.4",
+        "name": "v0.8.4",
+        "createdAt": "2016-04-29T22:19:51Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "docker.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "functional.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "baremetal-operator",
+      "url": "https://github.com/metal3-io/baremetal-operator",
+      "description": "Bare metal host provisioning integration for Kubernetes"
+    },
+    "releases": [
+      {
+        "tagName": "capm3-v0.3.2",
+        "name": "capm3-v0.3.2",
+        "createdAt": "2020-06-17T07:23:21Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "build-images-action.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "dependabot.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-fixture-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test-optional-periodic.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test-periodic-main.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test-periodic-release-0.10.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test-periodic-release-0.8.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test-periodic-release-0.9.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "golangci-lint.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "osv-scanner-scan.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pipeline.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-gh-workflow-approve.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-link-check.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-verifier.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scheduled-link-check.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "unit.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "openyurt",
+      "url": "https://github.com/openyurtio/openyurt",
+      "description": "OpenYurt - Extending your native Kubernetes to edge(project under CNCF)"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0-beta.1",
+        "name": "v0.1.0-beta.1",
+        "createdAt": "2021-05-26T08:09:58Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "back-port.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "markdown-link-check.config.json",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "registry.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release-assets.yaml",
+        "detectedSbomTools": [
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "rerun-failed-workflows.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sonarcloud.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync-charts.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "trivy-scan.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "goreleaser",
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "dragonfly",
+      "url": "https://github.com/dragonflyoss/dragonfly",
+      "description": "Dragonfly is an open source P2P-based file distribution and image acceleration system. It is hosted by the Cloud Native Computing Foundation (CNCF) as an Incubating Level Project."
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "v0.1.0",
+        "createdAt": "2021-08-12T07:00:12Z",
+        "artifacts": [
+          {
+            "name": "Dragonfly2-0.1.0-darwin-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/dragonflyoss/dragonfly/releases/download/v0.1.0/Dragonfly2-0.1.0-darwin-amd64.tar.gz"
+          },
+          {
+            "name": "checksums.txt",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/dragonflyoss/dragonfly/releases/download/v0.1.0/checksums.txt"
+          },
+          {
+            "name": "Dragonfly2-0.1.0-linux-amd64.deb",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/dragonflyoss/dragonfly/releases/download/v0.1.0/Dragonfly2-0.1.0-linux-amd64.deb"
+          },
+          {
+            "name": "Dragonfly2-0.1.0-linux-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/dragonflyoss/dragonfly/releases/download/v0.1.0/Dragonfly2-0.1.0-linux-amd64.tar.gz"
+          },
+          {
+            "name": "Dragonfly2-0.1.0-linux-amd64.rpm",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/dragonflyoss/dragonfly/releases/download/v0.1.0/Dragonfly2-0.1.0-linux-amd64.rpm"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "auto-assign.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "check-size.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "compatibility-e2e.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "docker.yml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer"
+        ]
+      },
+      {
+        "name": "e2e-nydus.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-rate-limit.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "lint.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-labels.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yml",
+        "detectedSbomTools": [
+          "signer",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator",
+        "signer",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "keycloak",
+      "url": "https://github.com/keycloak/keycloak",
+      "description": "Open Source Identity and Access Management For Modern Applications and Services"
+    },
+    "releases": [
+      {
+        "tagName": "12.0.0",
+        "name": "",
+        "createdAt": "2020-12-16T12:02:56Z",
+        "artifacts": [
+          {
+            "name": "keycloak.x-preview-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak.x-preview-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak.x-preview-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak.x-preview-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.zip"
+          },
+          {
+            "name": "keycloak.x-preview-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak.x-preview-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak.x-preview-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-api-docs-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-api-docs-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-api-docs-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-api-docs-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-api-docs-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-api-docs-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-examples-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-examples-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-examples-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-examples-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-examples-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-examples-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-overlay-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-overlay-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-as7-adapter-dist-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-as7-adapter-dist-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-eap6-adapter-dist-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-eap6-adapter-dist-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-fuse-adapter-dist-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-fuse-adapter-dist-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.tar.gz.sha1"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.zip"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.zip.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.zip.md5"
+          },
+          {
+            "name": "keycloak-jetty92-adapter-dist-12.0.0.zip.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty92-adapter-dist-12.0.0.zip.sha1"
+          },
+          {
+            "name": "keycloak-jetty93-adapter-dist-12.0.0.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty93-adapter-dist-12.0.0.tar.gz"
+          },
+          {
+            "name": "keycloak-jetty93-adapter-dist-12.0.0.tar.gz.md5",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty93-adapter-dist-12.0.0.tar.gz.md5"
+          },
+          {
+            "name": "keycloak-jetty93-adapter-dist-12.0.0.tar.gz.sha1",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/keycloak/keycloak/releases/download/12.0.0/keycloak-jetty93-adapter-dist-12.0.0.tar.gz.sha1"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "aurora-delete.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "documentation.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "guides.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "js-ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "label.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "operator-ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "quarkus-next.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "schedule-nightly.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "snyk-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stability-base-reruns.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stability-base.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stability-clustering.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stability-js-ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "trivy-analysis.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "weblate.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kubescape",
+      "url": "https://github.com/kubescape/kubescape",
+      "description": "Kubescape is an open-source Kubernetes security platform for your IDE, CI/CD pipelines, and clusters. It includes risk analysis, security, compliance, and misconfiguration scanning, saving Kubernetes users and administrators precious time, effort, and resources."
+    },
+    "releases": [
+      {
+        "tagName": "v0.0.5",
+        "name": "Release v0.0.5",
+        "createdAt": "2021-08-12T13:15:31Z",
+        "artifacts": [
+          {
+            "name": "kubescape",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/kubescape/kubescape/releases/download/v0.0.5/kubescape"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "00-pr-scanner.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "02-release.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "README.md",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "a-pr-scanner.yaml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "b-binary-build-and-e2e-tests.yaml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "build-image.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "c-create-release.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "comments.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "d-publish-image.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "e-post-release.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "z-close-typos-issues.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "signer",
+        "sbom-generator",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kyverno",
+      "url": "https://github.com/kyverno/kyverno",
+      "description": "Cloud Native Policy Management"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "Release 0.1.0",
+        "createdAt": "2019-05-24T01:09:15Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "check-actions.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "check-milestone-label.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "cherry-pick-on-merge.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "clean-stale-branches.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "cli.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "comment-commands.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "conformance.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "devcontainer-build.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "helm-release.yaml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "helm-test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "images-build.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "images-publish.yaml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer"
+        ]
+      },
+      {
+        "name": "lint.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "load-testing.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nancy.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-update.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yaml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "report-on-vulnerabilities.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "scorecard.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sonarcloud.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify-codegen.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "signer",
+        "sbom-generator",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "notation",
+      "url": "https://github.com/notaryproject/notation",
+      "description": "A CLI tool to sign and verify artifacts"
+    },
+    "releases": [
+      {
+        "tagName": "v0.7.0-alpha.1",
+        "name": "v0.7.0-alpha.1",
+        "createdAt": "2021-10-20T17:20:49Z",
+        "artifacts": [
+          {
+            "name": "notation_0.7.0-alpha.1_linux_amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_linux_amd64.tar.gz"
+          },
+          {
+            "name": "notation_0.7.0-alpha.1_checksums.txt",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_checksums.txt"
+          },
+          {
+            "name": "notation_0.7.0-alpha.1_linux_arm64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_linux_arm64.tar.gz"
+          },
+          {
+            "name": "notation_0.7.0-alpha.1_darwin_arm64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_darwin_arm64.tar.gz"
+          },
+          {
+            "name": "notation_0.7.0-alpha.1_windows_amd64.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_windows_amd64.zip"
+          },
+          {
+            "name": "notation_0.7.0-alpha.1_darwin_amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/notaryproject/notation/releases/download/v0.7.0-alpha.1/notation_0.7.0-alpha.1_darwin_amd64.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "add-to-project.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "license-checker.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release-github.yml",
+        "detectedSbomTools": [
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "longhorn",
+      "url": "https://github.com/longhorn/longhorn",
+      "description": "Cloud-Native distributed storage built on and for Kubernetes"
+    },
+    "releases": [
+      {
+        "tagName": "v0.2.0",
+        "name": "Longhorn v0.2.0 Release",
+        "createdAt": "2018-03-23T21:53:32Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "add-issue-to-projects.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "auto-author-assign.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "backport-pr.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "check-sprint-last-day.py",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "close-issue.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codespell.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "conventional-commits.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "create-issue.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "create-release-task-issues.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "periodic-issue-sprint-update.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-review-reminder.py",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-review-reminder.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scan-and-notify-testing-items.py",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scan-and-notify-testing-items.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update-branch-image-tags.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update-community-issue.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update-longhorn-issue.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "validate-yamls.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wont-fix.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "cni",
+      "url": "https://github.com/containernetworking/cni",
+      "description": "Container Network Interface - networking for Linux containers"
+    },
+    "releases": [
+      {
+        "tagName": "v0.2.0",
+        "name": "v0.2.0",
+        "createdAt": "2016-04-27T16:17:07Z",
+        "artifacts": [
+          {
+            "name": "cni-v0.2.0.tgz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/containernetworking/cni/releases/download/v0.2.0/cni-v0.2.0.tgz"
+          },
+          {
+            "name": "cni-v0.2.0.aci",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/containernetworking/cni/releases/download/v0.2.0/cni-v0.2.0.aci"
+          },
+          {
+            "name": "cni-v0.2.0.aci.sig",
+            "isSbom": false,
+            "isSignature": true,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/containernetworking/cni/releases/download/v0.2.0/cni-v0.2.0.aci.sig"
+          },
+          {
+            "name": "cni-v0.2.0.tgz.sig",
+            "isSbom": false,
+            "isSignature": true,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/containernetworking/cni/releases/download/v0.2.0/cni-v0.2.0.tgz.sig"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "commands.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": true,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "signature"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "crossplane",
+      "url": "https://github.com/crossplane/crossplane",
+      "description": "The Cloud Native Control Plane"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "Initial Release",
+        "createdAt": "2018-12-04T15:27:33Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "backport.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "commands.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "promote.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "renovate.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scan.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "stale.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tag.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "karmada",
+      "url": "https://github.com/karmada-io/karmada",
+      "description": "Open, Multi-Cloud, Multi-Cluster Kubernetes Orchestration"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "karmada v0.1.0 release",
+        "createdAt": "2020-12-04T13:28:24Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "OWNERS",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci-image-scanning-on-schedule.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "ci-image-scanning.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "ci-schedule-compatibility.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci-schedule.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "dockerhub-latest-chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "dockerhub-latest-image.yml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "dockerhub-released-chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "dockerhub-released-image.yml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "installation-chart.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "installation-cli.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "installation-operator.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer"
+        ]
+      },
+      {
+        "name": "swr-latest-image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "swr-released-image.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator",
+        "signer"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kubeflow",
+      "url": "https://github.com/kubeflow/kubeflow",
+      "description": "Machine Learning Toolkit for Kubernetes"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0-rc.0",
+        "name": "v0.1.0-rc.0",
+        "createdAt": "2018-03-27T23:44:03Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "approve_gh_workflows.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "common_frontend_tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "example_notebook_servers_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "example_notebook_servers_publish_TEMPLATE.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "jwa_backend_unittests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "jwa_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "jwa_frontend_tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "jwa_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "jwa_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nb_controller_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nb_controller_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nb_controller_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "notebook_controller_unit_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pvcviewer_controller_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pvcviewer_controller_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pvcviewer_controller_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pvcviewer_controller_unit_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "python_lint.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "semantic_prs.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tb_controller_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tb_controller_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tb_controller_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "triage_issues.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "twa_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "twa_frontend_tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "twa_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "twa_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "vwa_docker_publish.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "vwa_frontend_tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "vwa_integration_test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "vwa_multi_arch_test.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "volcano",
+      "url": "https://github.com/volcano-sh/volcano",
+      "description": "A Cloud Native Batch System (Project under CNCF)"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1",
+        "name": "v0.1",
+        "createdAt": "2019-05-11T04:02:04Z",
+        "artifacts": [
+          {
+            "name": "vkctl-linux-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/volcano-sh/volcano/releases/download/v0.1/vkctl-linux-amd64.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "code_verify.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_dra.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_hypernode.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_parallel_jobs.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_scheduling_actions.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_scheduling_basic.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_sequence.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_spark.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_vcctl.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "licenses_lint.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release_chart.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "workflows-approve.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "wasmCloud",
+      "url": "https://github.com/wasmCloud/wasmCloud",
+      "description": "wasmCloud is an open source Cloud Native Computing Foundation (CNCF) project that enables teams to build, manage, and scale polyglot apps across any cloud, K8s, or edge."
+    },
+    "releases": [
+      {
+        "tagName": "wasmcloud-control-interface-v0.1.0",
+        "name": "Release wasmcloud-control-interface-v0.1.0",
+        "createdAt": "2021-02-16T17:18:09Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "artifacthub.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "benchmark-chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "benchmark.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "check-conventional-commits.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "dco-merge-group.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "example-components.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "example-docs.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "example-providers.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "k6runner.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "license-check.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "mirror-docker-image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nix.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "oci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "provider.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release-and-build.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "secrets-nats-kv.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update-example-providers.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wash-plugins.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wash.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wasmcloud-host-chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wasmcloud-platform-chart.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wasmcloud.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wit-wasmcloud-identity.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wit-wasmcloud-lattice-bus.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wit-wasmcloud-postgres.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "wit-wasmcloud-secrets.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "grpc",
+      "url": "https://github.com/grpc/grpc",
+      "description": "C++ based gRPC (C++, Python, Ruby, Objective-C, PHP, C#)"
+    },
+    "releases": [
+      {
+        "tagName": "release-0_5_0",
+        "name": "Initial public release",
+        "createdAt": "2015-02-26T00:56:56Z",
+        "artifacts": [
+          {
+            "name": "grpc-plugins-0.5.0-win32.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/grpc/grpc/releases/download/release-0_5_0/grpc-plugins-0.5.0-win32.zip"
+          },
+          {
+            "name": "libgrpc_0.5.0_amd64.deb",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc_0.5.0_amd64.deb"
+          },
+          {
+            "name": "libgrpc-dev_0.5.0_amd64.deb",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/grpc/grpc/releases/download/release-0_5_0/libgrpc-dev_0.5.0_amd64.deb"
+          },
+          {
+            "name": "proto-bins_0.5.0_linux-x86_64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/grpc/grpc/releases/download/release-0_5_0/proto-bins_0.5.0_linux-x86_64.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "pr-auto-fix.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-auto-tag.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-check-bzlmod-deps.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "update-artifacts-branch.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "contour",
+      "url": "https://github.com/projectcontour/contour",
+      "description": "Contour is a Kubernetes ingress controller using Envoy proxy."
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "Contour v0.1.0",
+        "createdAt": "2017-10-31T07:31:37Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "build_daily.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build_main.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build_tag.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "label_check.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "openssf-scorecard.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "prbuild.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "request-reviews.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "trivy-scan.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "welcome-new-contributors.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "emissary",
+      "url": "https://github.com/emissary-ingress/emissary",
+      "description": "open source Kubernetes-native API gateway for microservices built on the Envoy Proxy"
+    },
+    "releases": [
+      {
+        "tagName": "0.35.3-rc1",
+        "name": "Second release candidate for 0.35.3",
+        "createdAt": "2018-07-18T16:46:18Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "check-branch-version.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "execute-tests-and-promote.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "generate-base-python.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "k8s-e2e.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "promote-ga.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "promote-rc.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "publish-chart.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "nats-server",
+      "url": "https://github.com/nats-io/nats-server",
+      "description": "High-Performance server for NATS.io, the cloud and edge native messaging system."
+    },
+    "releases": [
+      {
+        "tagName": "v0.5.1",
+        "name": "Release v0.5.1",
+        "createdAt": "2014-04-25T18:30:12Z",
+        "artifacts": [
+          {
+            "name": "gnatsd-v0.5.1-darwin-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/nats-io/nats-server/releases/download/v0.5.1/gnatsd-v0.5.1-darwin-amd64.tar.gz"
+          },
+          {
+            "name": "gnatsd-v0.5.1-linux-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/nats-io/nats-server/releases/download/v0.5.1/gnatsd-v0.5.1-linux-amd64.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "cov.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "long-tests.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "mqtt-test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "nightly.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yaml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "stale-issues.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "tests.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator",
+        "signer",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "strimzi-kafka-operator",
+      "url": "https://github.com/strimzi/strimzi-kafka-operator",
+      "description": "Apache Kafka® running on Kubernetes"
+    },
+    "releases": [
+      {
+        "tagName": "0.1.0-rc1",
+        "name": "0.1.0-rc1",
+        "createdAt": "2017-11-07T16:52:58Z",
+        "artifacts": [
+          {
+            "name": "barnabas-0.1.0-rc1.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.1.0-rc1/barnabas-0.1.0-rc1.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "actions-tests.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pre-commit.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "run-system-tests.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "system-tests.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "hub",
+      "url": "https://github.com/artifacthub/hub",
+      "description": "Find, install and publish Cloud Native packages"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "Artifact Hub v0.1.0",
+        "createdAt": "2020-06-03T14:19:07Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "build-images.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "chart-testing.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release.yml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "tern.conf",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "backstage",
+      "url": "https://github.com/backstage/backstage",
+      "description": "Backstage is an open framework for building developer portals"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.1-alpha.17",
+        "name": "v0.1.1-alpha.17",
+        "createdAt": "2020-08-05T18:26:16Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "api-breaking-changes-comment.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "api-breaking-changes.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "automate_area-labels.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "automate_changeset_feedback.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "automate_issue_labels.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "automate_merge_message.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "automate_stale.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "cron.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "deploy_docker-image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "deploy_microsite.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "deploy_packages.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "issue.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-review-comment-trigger.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-review-comment.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_canon.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_code-formatting.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_dependabot-changesets.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_release-manifest.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_renovate-changesets.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_snyk-github-issues.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_snyk-monitor.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync_version-packages.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_accessibility-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_accessibility.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_codeql.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_docs-quality.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_e2e-linux-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_e2e-linux.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_e2e-techdocs.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_e2e-windows-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_e2e-windows.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_microsite-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_microsite.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_microsite_accessibility-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_microsite_accessibility.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_storybook-noop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_storybook.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "verify_windows.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "pack",
+      "url": "https://github.com/buildpacks/pack",
+      "description": "CLI for building apps using Cloud Native Buildpacks"
+    },
+    "releases": [
+      {
+        "tagName": "v0.0.1",
+        "name": "pack v0.0.1",
+        "createdAt": "2018-08-20T22:04:56Z",
+        "artifacts": [
+          {
+            "name": "pack-macos",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/buildpacks/pack/releases/download/v0.0.1/pack-macos"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "actions",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "benchmark.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "check-latest-release.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "compatibility.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-archlinux-git.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-archlinux.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-chocolatey.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-docker.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-homebrew.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-release-dispatch.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery-ubuntu.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "delivery",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "privileged-pr-process.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release-merge.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scripts",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kubevela",
+      "url": "https://github.com/kubevela/kubevela",
+      "description": "The Modern Application Platform."
+    },
+    "releases": [
+      {
+        "tagName": "v0.0.1-alpha",
+        "name": "v0.0.1-alpha",
+        "createdAt": "2020-07-17T05:59:50Z",
+        "artifacts": [
+          {
+            "name": "rudr-v0.0.1-alpha-darwin-amd64.tar.gz",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/kubevela/kubevela/releases/download/v0.0.1-alpha/rudr-v0.0.1-alpha-darwin-amd64.tar.gz"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "back-port.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "commit-lint.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "core-api-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "definition-lint.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-multicluster-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "go.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "issue-commands.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "license.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "registry.yml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "release.yml",
+        "detectedSbomTools": [
+          "sbom-generator",
+          "signer",
+          "goreleaser"
+        ]
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sdk-test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync-api.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sync-sdk.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "trivy-scan.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "unit-test.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "signer",
+        "sbom-generator",
+        "goreleaser"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kubevirt",
+      "url": "https://github.com/kubevirt/kubevirt",
+      "description": "Kubernetes Virtualization API and runtime in order to define and manage virtual machines."
+    },
+    "releases": [
+      {
+        "tagName": "v0.0.1-alpha.4",
+        "name": "",
+        "createdAt": "2017-03-20T15:52:32Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "label_approved_veps.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "operator-sdk",
+      "url": "https://github.com/operator-framework/operator-sdk",
+      "description": "SDK for building Kubernetes applications. Provides high level APIs, useful abstractions, and project scaffolding."
+    },
+    "releases": [
+      {
+        "tagName": "v0.0.1",
+        "name": "v0.0.1",
+        "createdAt": "2018-03-12T21:47:07Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "check-docs-only.sh",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "clean-unused-disk-space.sh",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "deploy.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "freshen-images.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "freshen-images",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "get_image_tags.sh",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "integration.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "markdown-link-check-config.json",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "olm-check.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "rerun.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test-go.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test-helm.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test-sample-go.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test-sanity.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "kruise",
+      "url": "https://github.com/openkruise/kruise",
+      "description": "Automated management of large-scale applications on Kubernetes (incubating project under CNCF)"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0-beta.1",
+        "name": "v0.1.0-beta.1",
+        "createdAt": "2019-06-17T08:06:18Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "ci.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "codeql.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "docker-image.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-1.24.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-1.26.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-1.28.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-1.30.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e-1.32.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "license.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "markdown-link-check.config.json",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "Flatcar",
+      "url": "https://github.com/flatcar/Flatcar",
+      "description": "Flatcar project repository for issue tracking, project documentation, etc."
+    },
+    "releases": [],
+    "workflows": [
+      {
+        "name": "issue-pr-contrib-metrics.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "spec",
+      "url": "https://github.com/open-feature/spec",
+      "description": "OpenFeature specification"
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0",
+        "name": "Release v0.1.0",
+        "createdAt": "2022-07-13T18:46:26Z",
+        "artifacts": [
+          {
+            "name": "specification-v0.1.0.json",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/open-feature/spec/releases/download/v0.1.0/specification-v0.1.0.json"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "pr-checks.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "pr-python.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "repo-stats.yaml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "chaos-mesh",
+      "url": "https://github.com/chaos-mesh/chaos-mesh",
+      "description": "A Chaos Engineering Platform for Kubernetes."
+    },
+    "releases": [
+      {
+        "tagName": "v0.8.0",
+        "name": "v0.8.0",
+        "createdAt": "2020-04-26T12:09:14Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "checklink.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ci_skip.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codecov_unittest.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e_test_upload_cache.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "integration_test.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "labeler.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "license_checker.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "merge_conflict_finder.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "must_update_changelog.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "release_helm_chart.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "upload_env_image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "upload_image.yml",
+        "detectedSbomTools": [
+          "signer"
+        ]
+      },
+      {
+        "name": "upload_image_pr.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "upload_latest_files.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "upload_release_files.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "signer"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "litmus",
+      "url": "https://github.com/litmuschaos/litmus",
+      "description": "Litmus helps  SREs and developers practice chaos engineering in a Cloud-native way. Chaos experiments are published at the ChaosHub  (https://hub.litmuschaos.io). Community notes is at https://hackmd.io/a4Zu_sH4TZGeih-xCimi3Q"
+    },
+    "releases": [
+      {
+        "tagName": "0.6.0",
+        "name": "0.6.0",
+        "createdAt": "2019-09-27T10:24:45Z",
+        "artifacts": [
+          {
+            "name": "chaos-operator-0.6.x.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/litmuschaos/litmus/releases/download/0.6.0/chaos-operator-0.6.x.zip"
+          },
+          {
+            "name": "chaos-exporter-0.6.x.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/litmuschaos/litmus/releases/download/0.6.0/chaos-exporter-0.6.x.zip"
+          },
+          {
+            "name": "litmus-0.6.x.zip",
+            "isSbom": false,
+            "isSignature": false,
+            "isAttestation": false,
+            "downloadUrl": "https://github.com/litmuschaos/litmus/releases/download/0.6.0/litmus-0.6.x.zip"
+          }
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "name": "build.yml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      },
+      {
+        "name": "cifuzz.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "e2e.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "gh-pages.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "push.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "opencost",
+      "url": "https://github.com/opencost/opencost",
+      "description": "Cost monitoring for Kubernetes workloads and cloud costs"
+    },
+    "releases": [
+      {
+        "tagName": "v1.45.3",
+        "name": "",
+        "createdAt": "2019-10-10T21:12:32Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "auto_label_issues.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build-and-publish-develop.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build-and-publish-release.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build-test-image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "build-test.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "integration-testing.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "label-comments.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "promote-to-demo.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "sonar.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "stale.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "vulnerability-scan.yaml",
+        "detectedSbomTools": [
+          "sbom-generator"
+        ]
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": [
+        "sbom-generator"
+      ]
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "cortex",
+      "url": "https://github.com/cortexproject/cortex",
+      "description": "A horizontally scalable, highly available, multi-tenant, long term Prometheus."
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0-rc.0",
+        "name": "0.1.0-rc.0 / 2019-08-01",
+        "createdAt": "2019-08-01T17:03:00Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "build-image.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scorecards.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "scripts",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "test-build-deploy.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "community",
+      "url": "https://github.com/open-telemetry/community",
+      "description": "OpenTelemetry community content"
+    },
+    "releases": [],
+    "workflows": [
+      {
+        "name": "build.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "codeql.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "fossa.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "issue-management-feedback-label.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "issue-management-stale-action.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "ossf-scorecard.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "spell-check.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "table-check.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  },
+  {
+    "repository": {
+      "owner": "",
+      "name": "thanos",
+      "url": "https://github.com/thanos-io/thanos",
+      "description": "Highly available Prometheus setup with long term storage capabilities. A CNCF Incubating project."
+    },
+    "releases": [
+      {
+        "tagName": "v0.1.0-rc.0",
+        "name": "v0.1.0-rc.0",
+        "createdAt": "2018-05-18T14:12:05Z",
+        "artifacts": []
+      }
+    ],
+    "workflows": [
+      {
+        "name": "codeql-analysis.yml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "container-version.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "docs.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "go.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "mixin.yaml",
+        "detectedSbomTools": []
+      },
+      {
+        "name": "react.yml",
+        "detectedSbomTools": []
+      }
+    ],
+    "summary": {
+      "hasSbomArtifact": false,
+      "hasSignatureArtifact": false,
+      "hasAttestationArtifact": false,
+      "sbomCiTools": []
+    }
+  }
+]
