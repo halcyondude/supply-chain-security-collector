@@ -12,6 +12,14 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
 - **Smart Caching**: Caches API responses to speed up subsequent runs and reduce API usage.
 - **Dual-Format Reporting**: Generates a detailed `report.json` and an easy-to-use `report.csv`.
 
+### Example output
+
+```bash
+npx ts-node src/main.ts --parallel --input input/graduated.jsonl
+```
+
+<img width="1090" height="1346" alt="image" src="https://github.com/user-attachments/assets/a87ed6a7-0319-4e98-a8e5-8f5c8ae2518e" />
+
 ## Prerequisites
 
 - **Node.js**: Version 18.x or later.
@@ -22,39 +30,13 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
 
 ## Installation & Setup
 
-1. **Clone the repository:**
+  **Clone the repository:**
 
     ```bash
     git clone <repository_url>
     cd <project_root>
     ```
-
-2. **Install dependencies:**
-
-    ```s
-    <project_root>/
-    ├── .env                  # For storing your GitHub PAT (not committed)
-    ├── .gitignore
-    ├── codegen.ts            # Configuration for GraphQL Code Generator
-    ├── package.json
-    ├── tsconfig.json
-    ├── src/
-    │   ├── main.ts           # Main script entry point
-    │   ├── analysis.ts       # Logic for analyzing artifacts and workflows
-    │   ├── config.ts         # Repository list configuration
-    │   ├── report.ts         # Logic for generating JSON and CSV reports
-    │   ├── generated/        # Auto-generated GraphQL SDK
-    │   └── graphql/
-    │       └── GetRepoData.graphql  # The GraphQL query file
-    ├── output/               # Generated reports (gitignored)
-    │   ├── report.json
-    │   └── report.csv
-    └── .cache/               # Cached API responses
-    ```
-
-    ```
-
-5. **Generate the GraphQL SDK:**
+  **Generate the GraphQL SDK:**
     This step introspects the GitHub GraphQL schema and generates a typed SDK based on your queries.
 
     ```bash
@@ -62,6 +44,14 @@ A powerful command-line tool for analyzing release artifacts and CI/CD workflows
     ```
 
     You only need to re-run this if you change the GraphQL queries in `src/graphql/`.
+
+## Example output
+
+```bash
+npx ts-node src/main.ts --parallel --input input/graduated.jsonl
+```
+
+<img width="1090" height="1346" alt="image" src="https://github.com/user-attachments/assets/a87ed6a7-0319-4e98-a8e5-8f5c8ae2518e" />
 
 ## Running the Analysis
 
@@ -146,29 +136,6 @@ Ensure you have a `.env` file with your `GITHUB_PAT` set.
 
 ```bash
 npx ts-node src/main.ts --input input/graduated.jsonl --output output
-```
-
-### Example output
-
-```
-🚀 Starting GitHub Supply Chain Security Analysis...
-🧪 MOCK MODE ENABLED: Using mock GitHub data.
-
-Processing repository: sigstore/cosign
-✅ Comprehensive JSON report saved to: .../output/report.json
-✅ CSV report saved to: .../output/report.csv
-
-    GitHub Supply Chain Security Summary  
-┌────────────────────┬───────┬────────────┬───────────────┬────────────────────────────────────────┬────────────────┐
-│ Repo               │ SBOM  │ Signature  │ Attestation   │ CI Tools                               │ Latest Release │
-├────────────────────┼───────┼────────────┼───────────────┼────────────────────────────────────────┼────────────────┤
-│ cosign             │ ✔     │ ✔          │ ✔             │ sbom,signature,attestation,sbom-gen... │ v2.2.1         │
-└────────────────────┴───────┴────────────┴───────────────┴────────────────────────────────────────┴────────────────┘
-
-Legend: ✔ = present, ✗ = absent, - = none
-Totals: Repos: 1  SBOM: 1  Signature: 1  Attestation: 1  CI Tools: 1
-
-✨ Analysis complete.
 ```
 
 ### 6. View reports
