@@ -6,8 +6,7 @@ const config: CodegenConfig = {
   schema: 'schema/github-v15.26.0.graphql',
   // Point to where your GraphQL operations are defined.
   documents: ['src/graphql/**/*.graphql'],
-  // Prune old files to keep the generated directory clean.
-  prune: true,
+
   generates: {
     // A single output directory for all generated artifacts.
     'src/generated/': {
@@ -24,6 +23,7 @@ const config: CodegenConfig = {
       },
       // All plugin configurations go here, applied to the entire preset.
       config: {
+        prune: true,
         avoidOptionals: true,
         strictScalars: true,
         enumsAsTypes: true,
