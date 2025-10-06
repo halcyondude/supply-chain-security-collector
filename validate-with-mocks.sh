@@ -66,15 +66,20 @@ else
 fi
 
 print_section "8. Report File Checks"
-if [ -f output/report.json ]; then
-  echo "✅ output/report.json generated."
+if [ -f output/test-single-analyzed.json ]; then
+  echo "✅ output/test-single-analyzed.json generated."
 else
-  echo "❌ output/report.json missing!"; exit 1;
+  echo "❌ output/test-single-analyzed.json missing!"; exit 1;
 fi
-if [ -f output/report.csv ]; then
-  echo "✅ output/report.csv generated."
+if [ -f output/test-single.csv ]; then
+  echo "✅ output/test-single.csv generated."
 else
-  echo "❌ output/report.csv missing!"; exit 1;
+  echo "❌ output/test-single.csv missing!"; exit 1;
+fi
+if [ -f output/test-single-schema.json ]; then
+  echo "✅ output/test-single-schema.json generated."
+else
+  echo "❌ output/test-single-schema.json missing!"; exit 1;
 fi
 
 print_section "ALL VALIDATION STEPS PASSED"

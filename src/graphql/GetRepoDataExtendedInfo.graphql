@@ -1,4 +1,4 @@
-query GetRepoData($owner: String!, $name: String!) {
+query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
     id
     name

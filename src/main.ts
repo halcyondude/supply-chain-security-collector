@@ -5,12 +5,14 @@ import chalk from 'chalk';
 import Table from 'cli-table3';
 import { Command } from 'commander';
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { analyzeRepositoryData } from './analysis';
 import { generateReports } from './report';
 import { getMockApiResponse } from './mockData';
-import { createApiClient, fetchRepositoryData } from './api';
-import { GetRepoDataQuery } from './generated/graphql';
+import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo } from './api';
+import { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
+import { appendRawResponse } from './rawResponseWriter';
 
 // Define common types used throughout the script
 type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
@@ -23,6 +25,7 @@ program
   .version('1.0.0')
   .option('-i, --input <file>', 'Input JSONL file with repository list', 'input/sandbox.jsonl')
   .option('--mock', 'Run in mock mode (no GitHub API calls)', false)
+  .option('--extended', 'Use extended query (includes workflows, security policies)', false)
   .option('-o, --output <dir>', 'Output directory for reports', 'output')
   .option('-v, --verbose', 'Show detailed API logging and column explanations', false)
   .option(
@@ -45,24 +48,45 @@ async function fetchAndAnalyzeRepo(
   repo: RepositoryTarget,
   client: ReturnType<typeof createApiClient> | null,
   useMock: boolean,
-  verbose: boolean
+  useExtended: boolean,
+  verbose: boolean,
+  rawResponsesPath?: string
 ): Promise<AnalysisResult | null> {
   const repoKey = `${repo.owner}/${repo.name}`;
   console.log(`Processing repository: ${chalk.cyan(repoKey)}`);
 
-  let repoData: GetRepoDataQuery | null = null;
+  let repoData: GetRepoDataArtifactsQuery | GetRepoDataExtendedInfoQuery | null = null;
+  const queryType = useExtended ? 'GetRepoDataExtendedInfo' : 'GetRepoDataArtifacts';
 
   if (useMock) {
     try {
-      // Always use the real API response shape: { data: { repository: ... } }
-      const mockResponse = getMockApiResponse('GetRepoData', repo.owner, repo.name) as { data: GetRepoDataQuery };
+      // Mock data uses the old GetRepoData naming convention
+      // The mock files contain extended info, so they work for both query types
+      const mockResponse = getMockApiResponse('GetRepoData', repo.owner, repo.name) as {
+        data: GetRepoDataExtendedInfoQuery;
+      };
       repoData = mockResponse.data;
     } catch {
-      console.log(chalk.yellow('⚠️ No mock data found for this repository. Skipping.'));
+      console.log(chalk.yellow('⚠️  No mock data found for this repository. Skipping.'));
       return null;
     }
   } else {
-    repoData = await fetchRepositoryData(client!, { owner: repo.owner, name: repo.name }, verbose);
+    // Fetch from GitHub API using appropriate query
+    if (useExtended) {
+      repoData = await fetchRepositoryExtendedInfo(client!, { owner: repo.owner, name: repo.name }, verbose);
+    } else {
+      repoData = await fetchRepositoryArtifacts(client!, { owner: repo.owner, name: repo.name }, verbose);
+    }
+    
+    // Save raw API response to JSONL with metadata
+    if (repoData && rawResponsesPath) {
+      await appendRawResponse(rawResponsesPath, {
+        queryType,
+        owner: repo.owner,
+        repo: repo.name,
+        response: repoData,
+      });
+    }
   }
 
   if (repoData && repoData.repository) {
@@ -72,7 +96,7 @@ async function fetchAndAnalyzeRepo(
 }
 
 async function main() {
-  const { verbose, mock, input, output, parallel, help } = opts;
+  const { verbose, mock, extended, input, output, parallel, help } = opts;
   console.log(chalk.blue.bold('🚀 Starting GitHub Supply Chain Security Analysis...'));
 
   if (help) {
@@ -81,8 +105,14 @@ async function main() {
   }
 
   const useMock = mock || process.env.MOCK_GITHUB === '1';
+  const useExtended = extended;
+  
   if (useMock) {
     console.log(chalk.magenta.bold('🧪 MOCK MODE ENABLED: Using mock GitHub data.'));
+  }
+  
+  if (useExtended) {
+    console.log(chalk.cyan.bold('🔍 EXTENDED MODE: Fetching workflows and security policies.'));
   }
 
   const githubPat = process.env.GITHUB_PAT;
@@ -108,6 +138,10 @@ async function main() {
   });
 
   const allAnalysisResults: (AnalysisResult | null)[] = [];
+
+  // Determine raw responses JSONL path
+  const inputBase = path.basename(input, path.extname(input));
+  const rawResponsesPath = useMock ? undefined : path.join(output, `${inputBase}-raw-responses.jsonl`);
 
   // =============================================================================================
   // EXECUTION MODE: SEQUENTIAL VS. PARALLEL
@@ -146,7 +180,7 @@ async function main() {
         chalk.gray(`\n-- Processing batch ${i / batchSize + 1} (${batch.length} repos) --`)
       );
 
-      const promises = batch.map(repo => fetchAndAnalyzeRepo(repo, client, useMock, verbose));
+      const promises = batch.map(repo => fetchAndAnalyzeRepo(repo, client, useMock, useExtended, verbose, rawResponsesPath));
       const results = await Promise.allSettled(promises);
 
       results.forEach(result => {
@@ -163,7 +197,7 @@ async function main() {
     // --- SEQUENTIAL EXECUTION ---
     console.log(chalk.bold.blue('🐌 Running in SEQUENTIAL mode.'));
     for (const repo of repositories) {
-      const result = await fetchAndAnalyzeRepo(repo, client, useMock, verbose);
+      const result = await fetchAndAnalyzeRepo(repo, client, useMock, useExtended, verbose, rawResponsesPath);
       allAnalysisResults.push(result);
     }
   }
@@ -179,41 +213,108 @@ async function main() {
     }
   await generateReports(validAnalysisResults, output, input);
 
-    console.log(chalk.bold.bgBlueBright.white('\n  GitHub Supply Chain Security Summary  '));
     const ciToolTypes = [
-        { key: 'sbom', label: 'SBOM Art.' },
-        { key: 'signature', label: 'Sig Art.' },
-        { key: 'attestation', label: 'Att Art.' },
-        { key: 'sbom-generator', label: 'SBOM Gen CI' },
-        { key: 'signer', label: 'Signer CI' },
-        { key: 'goreleaser', label: 'Goreleaser CI' },
+        { key: 'sbom', label: 'SBOM' },
+        { key: 'signature', label: 'Sig' },
+        { key: 'attestation', label: 'Att' },
+        { key: 'sbom-generator', label: 'SBOM CI' },
+        { key: 'signer', label: 'Sign CI' },
+        { key: 'goreleaser', label: 'GoRel CI' },
     ];
 
-    const table = new Table({
-      head: [chalk.bold('Repo'), ...ciToolTypes.map(t => chalk.bold(t.label)), chalk.bold('Latest Release')],
-      colWidths: [20, ...Array(ciToolTypes.length).fill(14), 18],
+    // --- Summary Table: One row per repo ---
+    console.log(chalk.bold.bgBlueBright.white('\n  Repository Summary  '));
+    const summaryTable = new Table({
+      head: [chalk.bold('Repository'), chalk.bold('Releases'), ...ciToolTypes.map(t => chalk.bold(t.label)), chalk.bold('Total Artifacts')],
+      colWidths: [30, 10, ...Array(ciToolTypes.length).fill(10), 16],
       style: { head: [], border: [] },
     });
 
     const ciToolCounts: Record<string, number> = Object.fromEntries(ciToolTypes.map(t => [t.key, 0]));
+    let totalReleases = 0;
+    let totalArtifacts = 0;
 
     for (const result of validAnalysisResults) {
-        const ciTools = new Set(result.summary.sbomCiTools);
-    const row = [
-      chalk.cyan(result.repository.name),
-      ...ciToolTypes.map(t => {
-        const present = ciTools.has(t.key);
-        if (present) ciToolCounts[t.key]++;
-        return present ? chalk.greenBright('✔') : '';
-      }),
-      result.releases?.[0] ? chalk.white(result.releases[0].tagName) : '',
-    ];
-    table.push(row);
+      const releaseCount = result.releases?.length || 0;
+      totalReleases += releaseCount;
+      
+      // Count total artifacts across all releases for this repo
+      let repoArtifactCount = 0;
+      result.releases?.forEach(release => {
+        repoArtifactCount += release.artifacts.length;
+      });
+      totalArtifacts += repoArtifactCount;
+      
+      const ciTools = new Set(result.summary.sbomCiTools);
+      
+      const summaryRow = [
+        chalk.cyan(result.repository.owner + '/' + result.repository.name),
+        chalk.white(releaseCount.toString()),
+        ...ciToolTypes.map(t => {
+          const present = ciTools.has(t.key);
+          if (present) ciToolCounts[t.key]++;
+          return present ? chalk.greenBright('✔') : '';
+        }),
+        repoArtifactCount > 0 ? chalk.gray(repoArtifactCount.toString()) : '',
+      ];
+      summaryTable.push(summaryRow);
     }
-    console.log(table.toString());
+    console.log(summaryTable.toString());
+    
+    const summaryTotals = ciToolTypes.map(t => `${chalk.bold(t.label)}: ${ciToolCounts[t.key]}`).join(' | ');
+    console.log(chalk.blue.bold(`\nSummary: ${validAnalysisResults.length} repos, ${totalReleases} releases, ${totalArtifacts} artifacts | ${summaryTotals}`));
 
-    const totalsSummary = ciToolTypes.map(t => `${chalk.bold(t.label)}: ${ciToolCounts[t.key]}`).join(' | ');
-    console.log(chalk.blue.bold(`\nTotals: Repos: ${validAnalysisResults.length} | ${totalsSummary}`));
+    // --- Detailed Table: One row per release ---
+    console.log(chalk.bold.bgBlueBright.white('\n  Detailed Release View  '));
+    const detailTable = new Table({
+      head: [chalk.bold('Repo'), chalk.bold('Release'), ...ciToolTypes.map(t => chalk.bold(t.label)), chalk.bold('Artifacts')],
+      colWidths: [25, 20, ...Array(ciToolTypes.length).fill(10), 12],
+      style: { head: [], border: [] },
+    });
+
+    for (const result of validAnalysisResults) {
+      const repoName = result.repository.name;
+      
+      // Show each release as a separate row
+      if (result.releases && result.releases.length > 0) {
+        result.releases.forEach((release, idx) => {
+          // Build set of tools present in this specific release's artifacts
+          const releaseTools = new Set<string>();
+          let artifactCount = 0;
+          
+          release.artifacts.forEach(artifact => {
+            artifactCount++;
+            if (artifact.isSbom) releaseTools.add('sbom');
+            if (artifact.isSignature) releaseTools.add('signature');
+            if (artifact.isAttestation) releaseTools.add('attestation');
+          });
+          
+          // Also check summary for CI tools (these are repo-level, not release-level)
+          const ciTools = new Set(result.summary.sbomCiTools);
+          
+          const row = [
+            idx === 0 ? chalk.cyan(repoName) : '', // Only show repo name on first release
+            chalk.white(release.tagName),
+            ...ciToolTypes.map(t => {
+              const present = releaseTools.has(t.key) || ciTools.has(t.key);
+              return present ? chalk.greenBright('✔') : '';
+            }),
+            artifactCount > 0 ? chalk.gray(artifactCount.toString()) : '',
+          ];
+          detailTable.push(row);
+        });
+      } else {
+        // Repo with no releases
+        const row = [
+          chalk.cyan(repoName),
+          chalk.gray('(no releases)'),
+          ...Array(ciToolTypes.length).fill(''),
+          '',
+        ];
+        detailTable.push(row);
+      }
+    }
+    console.log(detailTable.toString());
   } else {
     console.log(chalk.yellow('No data was analyzed. Reports will not be generated.'));
   }

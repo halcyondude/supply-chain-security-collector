@@ -85,7 +85,8 @@ npm run docs:verify
 - `src/main.ts` - CLI entry point and orchestration
 - `src/api.ts` - GitHub GraphQL API client
 - `src/analysis.ts` - Artifact detection and classification
-- `src/report.ts` - data output generation (JSON, CSV, parquet)
+- `src/report.ts` - Report generation (analyzed JSON, CSV, Parquet schema)
+- `src/rawResponseWriter.ts` - Raw API response logging to JSONL with metadata
 
 ### Data Schema
 

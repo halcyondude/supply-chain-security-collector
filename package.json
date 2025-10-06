@@ -10,11 +10,16 @@
     "lint": "npx eslint src/",
     "typecheck": "npx tsc --noEmit",
     "validate": "./validate-with-mocks.sh",
-  "clean": "rm -rf dist output .cache src/generated",
-  "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts",
-  "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
-  "validate:three-repos": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose",
-  "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output"
+    "clean": "rm -rf dist output .cache src/generated",
+    "fetch:cncf": "npx ts-node scripts/fetch-cncf-landscape.ts",
+    "docs:schema": "./scripts/generate-schema-docs.sh",
+    "docs:verify": "echo 'TODO: Add README verification script'",
+    "test:single": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
+    "test:three": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose",
+    "test:all": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output",
+    "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
+    "validate:three-repos": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose",
+    "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output"
   },
   "keywords": [
     "github",

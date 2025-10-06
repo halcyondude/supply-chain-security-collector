@@ -1,15 +1,16 @@
 # GitHub Supply Chain Security Analyzer
 
-A powerful command-line tool for analyzing release artifacts and CI/CD workflows in GitHub repositories to identify software supply chain security metadata like SBOMs.
+A command-line tool that searches GitHub repositories for the presence of supply chain security artifacts and tools. It reports on what security metadata exists in release artifacts (SBOMs, signatures, attestations) and which security tools are invoked in CI/CD workflows.
 
 ## Features
 
-- **Comprehensive Data Collection**: Fetches repository details, descriptions, and links.
-- **Release Analysis**: Gathers the last 3 releases and inspects all associated artifacts.
-- **Artifact Identification**: Automatically flags potential SBOMs (SPDX, CycloneDX), signatures (`.sig`, `.asc`), and other attestations.
-- **CI/CD Workflow Inspection**: Enumerates all GitHub Actions workflows and analyzes their content for common SBOM generation tools (e.g., `syft`, `trivy`, `cdxgen`).
+- **Artifact Presence Detection**: Searches release artifacts to identify the presence of security metadata (SBOMs, signatures, attestations).
+- **Release Analysis**: Inspects the last 5 releases and their associated artifacts.
+- **Artifact Classification**: Detects and reports on SBOMs (SPDX, CycloneDX), cryptographic signatures (`.sig`, `.asc`, `.pem`), and attestations.
+- **CI/CD Tool Detection**: Searches GitHub Actions workflows for security tool invocations (e.g., `syft`, `trivy`, `cdxgen`, `cosign`).
+- **Existence Reporting**: Reports **what security artifacts and tools are present**, without analyzing their content.
 - **Type-Safe API Calls**: Uses GraphQL Code Generator to create a fully-typed TypeScript SDK for the GitHub API.
-- **Dual-Format Reporting**: Generates a detailed `report.json` and an easy-to-use `report.csv`.
+- **Multi-Format Reporting**: Generates detailed JSON, normalized CSV, and Parquet schema files for downstream data processing.
 
 ### Example output
 
@@ -139,8 +140,14 @@ npx ts-node src/main.ts --input input/graduated.jsonl --output output
 
 ### 6. View reports
 
-- JSON: `output/report.json`
-- CSV: `output/report.csv`
+The tool generates four types of output files:
+
+- **Raw Responses JSONL** (`output/<basename>-raw-responses.jsonl`): Raw GraphQL API responses with metadata (timestamp, query type, inputs). One line per repository. Not generated in mock mode.
+- **Analyzed JSON** (`output/<basename>-analyzed.json`): Domain model with computed fields (artifact classification, security tool detection)
+- **CSV** (`output/<basename>.csv`): Normalized, flat data structure for spreadsheet analysis
+- **Parquet Schema** (`output/<basename>-schema.json`): Schema definition for converting JSON to Parquet format using external tools
+
+> **Note:** The tool does not generate binary `.parquet` files directly. Instead, it outputs JSON data and a Parquet schema file. Use external tools like `pyarrow` (Python) or `duckdb` (SQL) to convert the JSON to Parquet format using the provided schema.
 
 ## Validation, Cleaning, and Common Scripts
 

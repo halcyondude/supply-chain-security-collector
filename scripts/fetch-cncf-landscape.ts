@@ -23,17 +23,14 @@ function findRepos(obj: any, maturity: string, results: RepoTarget[] = []): Repo
   if (obj && typeof obj === 'object') {
     // If this object has a repo_url and project field, check maturity
     if (obj.repo_url && obj.project && typeof obj.repo_url === 'string' && typeof obj.project === 'string') {
-      // Normalize maturity field (incubating vs incubation)
       const normalized = obj.project.toLowerCase().replace('incubating', 'incubation');
       if (normalized === maturity) {
-        // Extract owner and name from the repo_url
         const match = obj.repo_url.match(/github.com\/([^/]+)\/([^/]+)$/);
         if (match) {
           results.push({ owner: match[1], name: match[2] });
         }
       }
     }
-    // Recurse into all properties
     for (const key of Object.keys(obj)) {
       findRepos(obj[key], maturity, results);
     }
@@ -66,8 +63,8 @@ async function main() {
   // For each maturity, extract repos and write to JSONL
   for (const maturity of ['sandbox', 'incubation', 'graduated']) {
     console.log(`Extracting ${maturity} projects...`);
-    const repos = findRepos(doc, maturity);
     const outPath = path.join(OUTPUT_DIR, `${maturity}.jsonl`);
+    const repos = findRepos(doc, maturity);
     const lines = repos.map(r => JSON.stringify(r)).join('\n');
     fs.writeFileSync(outPath, lines + (lines ? '\n' : ''));
     console.log(`  Wrote ${repos.length} repos to ${outPath}`);

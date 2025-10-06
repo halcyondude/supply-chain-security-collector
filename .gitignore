@@ -14,7 +14,7 @@ build/
 src/generated/
 
 # Output and cache
-# output/
+output/
 
 
 # Environment and secrets
@@ -31,3 +31,4 @@ src/generated/
 # Misc
 coverage/
 *.log
+.private-docs/
