@@ -1,17 +1,65 @@
 query GetRepoData($owner: String!, $name: String!) {
   repository(owner: $owner, name: $name) {
+    id
     name
     nameWithOwner
     url
     description
-    releases(last: 1, orderBy: { field: CREATED_AT, direction: DESC }) {
+    licenseInfo {
+      key
+      name
+      spdxId
+    }
+    hasVulnerabilityAlertsEnabled
+    defaultBranchRef {
+      name
+      branchProtectionRule {
+        allowsDeletions
+        allowsForcePushes
+        dismissesStaleReviews
+        isAdminEnforced
+        requiresStatusChecks
+        requiresStrictStatusChecks
+        requiresCodeOwnerReviews
+        requiredApprovingReviewCount
+        pattern
+      }
+    }
+    branchProtectionRules(first: 10) {
       nodes {
+        allowsDeletions
+        allowsForcePushes
+        dismissesStaleReviews
+        isAdminEnforced
+        requiresStatusChecks
+        requiresStrictStatusChecks
+        requiresCodeOwnerReviews
+        requiredApprovingReviewCount
+        pattern
+      }
+    }
+    securityPolicy: object(expression: "HEAD:SECURITY.md") {
+      ... on Blob {
+        id
+        text
+      }
+    }
+    dependabot: object(expression: "HEAD:.github/dependabot.yml") {
+      ... on Blob {
+        id
+        text
+      }
+    }
+    releases(last: 5, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
         name
         tagName
         url
         createdAt
         releaseAssets(first: 50) {
           nodes {
+            id
             name
             downloadUrl
           }
@@ -24,6 +72,7 @@ query GetRepoData($owner: String!, $name: String!) {
           name
           object {
             ... on Blob {
+              id
               text
             }
           }
