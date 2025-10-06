@@ -1,0 +1,23 @@
+query GetRepoData($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    id
+    name
+    nameWithOwner
+    releases(last: 5, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        name
+        tagName
+        url
+        createdAt
+        releaseAssets(first: 50) {
+          nodes {
+            id
+            name
+            downloadUrl
+          }
+        }
+      }
+    }
+  }
+}
