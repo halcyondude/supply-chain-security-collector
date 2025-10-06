@@ -81,104 +81,93 @@ npm run docs:verify
 ## Key Files and Their Roles
 
 ### Core Application
+
 - `src/main.ts` - CLI entry point and orchestration
 - `src/api.ts` - GitHub GraphQL API client
 - `src/analysis.ts` - Artifact detection and classification
-- `src/report.ts` - Normalized data output generation
+- `src/report.ts` - data output generation (JSON, CSV, parquet)
 
 ### Data Schema
+
 - `src/graphql/GetRepoData.graphql` - GraphQL query definition
 - `src/generated/` - Auto-generated TypeScript types
 - `schema/` - GraphQL schema files
 
 ### Configuration
+
 - `src/config.ts` - Application configuration
 - `.env` - Environment variables (create from .env.example)
 
 ## Supply Chain Security Features
 
 ### Enhanced Artifact Detection
+
 The tool detects modern supply chain security artifacts:
-- **SPDX/CycloneDX SBOMs** - Software Bill of Materials
-- **SLSA Provenance** - Build attestations
-- **in-toto Attestations** - Supply chain integrity
-- **VEX Documents** - Vulnerability exchange
-- **Security Policies** - GitHub security configurations
+
+```typescript
+// Regex patterns to identify potential SBOM/security artifacts in release asset names
+const ARTIFACT_KEYWORDS = {
+  // Legacy patterns for backward compatibility
+  SBOM: /\b(sbom|spdx|cyclonedx)\b/i,
+  SIGNATURE: /\.(sig|asc|pem|pub)$/i,
+  ATTESTATION: /attestation/i,
+  
+  // Enhanced supply chain security patterns
+  SPDX_SBOM: /\b(spdx|\.spdx)\b/i,
+  CYCLONEDX_SBOM: /\b(cyclonedx|cdx|\.cdx)\b/i,
+  VEX_DOCUMENT: /\b(vex|\.vex)\b/i,
+  SLSA_PROVENANCE: /\b(provenance|slsa|\.intoto\.jsonl)\b/i,
+  IN_TOTO_LINK: /\b(link|\.link)\b/i,
+  IN_TOTO_LAYOUT: /\b(layout|\.layout)\b/i,
+  CONTAINER_ATTESTATION: /\b(cosign|rekor|fulcio)\b/i,
+  LICENSE_FILE: /\b(license|copying|notice)\b/i,
+};
+```
 
 ### CI/CD Security Tool Detection
+
 Identifies security tools in CI pipelines:
-- Vulnerability scanners (Snyk, CodeQL, Semgrep)
-- Dependency scanners (Dependabot, Renovate)
-- Container scanners (Trivy, Clair)
-- SAST/DAST tools
 
-### Data Output Formats
-- **JSON** - Raw structured data
-- **CSV** - Normalized tabular format
-- **Parquet** - Optimized for data analysis
 
-## Architecture Decisions
-
-### Normalized Data Structure
-We use a flat, normalized structure to enable data analysis:
-- One row per repository (not per release/artifact)
-- Consistent field naming and typing
-- Array fields serialized as JSON strings
-- Boolean flags for feature presence
-
-### Type Safety
-- GraphQL Code Generator ensures API type safety
-- Strict TypeScript configuration
-- Runtime validation for critical paths
-
-### Extensibility
-- Modular artifact detection patterns
-- Configurable CI tool recognition
-- Pluggable output formats
+```typescript
+// Regex patterns to identify security tools in GitHub Actions workflow YAML content
+const CI_TOOL_KEYWORDS = {
+  SBOM_GENERATORS: /\b(syft|trivy|cdxgen|spdx-sbom-generator)\b/i,
+  SIGNERS: /\b(cosign|sigstore|slsa-github-generator)\b/i,
+  GORELEASER: /\b(goreleaser\/goreleaser-action)\b/i, // Goreleaser can generate SBOMs
+  
+  // Enhanced security tool detection
+  VULNERABILITY_SCANNERS: /\b(snyk|anchore|twistlock|aqua|clair)\b/i,
+  DEPENDENCY_SCANNERS: /\b(dependabot|renovate|whitesource|fossa)\b/i,
+  CODE_SCANNERS: /\b(codeql|semgrep|bandit|eslint-security)\b/i,
+  CONTAINER_SCANNERS: /\b(docker-scout|grype|trivy)\b/i,
+};
+```
 
 ## Contributing Guidelines
 
-1. **Schema Changes**: Always run `npm run docs:schema` after modifications
-2. **Type Safety**: Maintain strict TypeScript compliance
-3. **Testing**: Add test cases for new detection patterns
-4. **Documentation**: Keep HACKING.md current with architectural changes
+1. Always run `npm run docs:schema` after modifications to queries
+2. Maintain strict TypeScript compliance - no warnings!
+3. Add test cases for new detection patterns
+4. Keep HACKING.md current
 
 ## Troubleshooting
 
-### GraphQL Type Errors
 ```bash
-# Regenerate types after schema changes
+npm install 
+```
+
+```bash
+# Regenerate types after .graphql schema changes
 npm run codegen
 ```
 
-### Missing Dependencies
-```bash
-# Install dependencies including data analysis packages
-npm install
-```
-
-### Schema Documentation Stale
 ```bash
 # Force regeneration
 npm run docs:schema --force
 ```
 
-## Performance Considerations
-
-- GraphQL queries are batched for efficiency
-- Artifact detection uses efficient pattern matching
-- Parquet output optimized for large datasets
-- Memory usage scales with repository count
-
 ## Security Notes
 
 - API tokens should be scoped to minimum required permissions
-- Rate limiting respects GitHub API guidelines
-- No sensitive data is logged or cached
-
-## Future Enhancements
-
-- Full Parquet implementation with compression
-- Streaming processing for large datasets
-- Real-time monitoring capabilities
-- Integration with security scanning platforms
+- .env file should not be committed to version control
