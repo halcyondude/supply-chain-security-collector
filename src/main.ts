@@ -9,6 +9,7 @@ import * as path from 'path';
 
 import { analyzeRepositoryData } from './analysis';
 import { generateReports } from './report';
+import { generateSizeReport } from './sizeReport';
 import { getMockApiResponse } from './mockData';
 import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo } from './api';
 import { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
@@ -248,13 +249,19 @@ async function main() {
       for (const row of legendRows.slice(1)) legendTable.push(row);
       console.log(legendTable.toString());
     }
-    await generateReports(validAnalysisResults, runDir, inputBase, {
+    
+    const runMetadata = {
       queryType: useExtended ? 'GetRepoDataExtendedInfo' : 'GetRepoDataArtifacts',
       timestamp,
       totalRepos: repositories.length,
       successfulRepos: validAnalysisResults.length,
       failedRepos: repositories.length - validAnalysisResults.length,
-    });
+    };
+    
+    await generateReports(validAnalysisResults, runDir, inputBase, runMetadata);
+    
+    // Generate file size report
+    await generateSizeReport(runDir, runMetadata);
 
     const ciToolTypes = [
         { key: 'sbom', label: 'SBOM' },
