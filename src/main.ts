@@ -139,9 +139,20 @@ async function main() {
 
   const allAnalysisResults: (AnalysisResult | null)[] = [];
 
-  // Determine raw responses JSONL path
+  // Create timestamped run directory
   const inputBase = path.basename(input, path.extname(input));
-  const rawResponsesPath = useMock ? undefined : path.join(output, `${inputBase}-raw-responses.jsonl`);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19); // Format: 2025-10-06T22-30-15
+  const runDir = path.join(output, `${inputBase}-${timestamp}`);
+  
+  // Create run directory
+  if (!fs.existsSync(runDir)) {
+    fs.mkdirSync(runDir, { recursive: true });
+  }
+  
+  console.log(chalk.gray(`📁 Output directory: ${runDir}`));
+  
+  // Determine file paths within run directory
+  const rawResponsesPath = useMock ? undefined : path.join(runDir, 'raw-responses.jsonl');
 
   // =============================================================================================
   // EXECUTION MODE: SEQUENTIAL VS. PARALLEL
@@ -162,8 +173,9 @@ async function main() {
   //    - CONS: Console output will be interleaved and harder to follow for a single repo.
   //    - ROBUSTNESS: To handle potential issues with a large burst of requests:
   //      - BATCHING: We don't fire all 200+ requests at once. We process them in manageable
-  //        chunks (defaulting to 10) to avoid overwhelming the API and triggering
+  //        chunks (defaulting to 5) to avoid overwhelming the API and triggering
   //        secondary (abuse) rate limits.
+  //      - DELAY: We wait 1 second between batches to prevent burst detection.
   //      - RESILIENT ERROR HANDLING: We use `Promise.allSettled()`, which waits for all
   //        promises in a batch to finish, regardless of whether they succeed or fail. This
   //        ensures that one failed repository request doesn't crash the entire run.
@@ -171,7 +183,7 @@ async function main() {
 
   if (parallel) {
     // --- PARALLEL EXECUTION ---
-    const batchSize = typeof parallel === 'string' ? parseInt(parallel, 10) || 10 : 10;
+    const batchSize = typeof parallel === 'string' ? parseInt(parallel, 10) || 5 : 5;
     console.log(chalk.bold.yellow(`⚡ Running in PARALLEL mode with a batch size of ${batchSize}.`));
 
     for (let i = 0; i < repositories.length; i += batchSize) {
@@ -192,6 +204,14 @@ async function main() {
           allAnalysisResults.push(null); // Add null to signify failure.
         }
       });
+
+      // Add a 1-second delay between batches to avoid secondary rate limits
+      if (i + batchSize < repositories.length) {
+        if (verbose) {
+          console.log(chalk.gray('  Waiting 1 second before next batch...'));
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   } else {
     // --- SEQUENTIAL EXECUTION ---
@@ -209,9 +229,32 @@ async function main() {
 
   if (validAnalysisResults.length > 0) {
     if (verbose) {
-      // ... (verbose legend output remains the same)
+      console.log(chalk.bold.bgWhite.black('\n  Column Legend & Detection Logic  '));
+      const legendRows = [
+        [chalk.bold('Column'), chalk.bold('Description'), chalk.bold('Detection Logic')],
+        ['SBOM', 'SBOM artifact in release', 'Filename: sbom|spdx|cyclonedx'],
+        ['Sig', 'Signature artifact in release', 'Extension: .sig, .asc, .pem, .pub'],
+        ['Att', 'Attestation artifact in release', 'Filename: attestation'],
+        ['SBOM CI', 'SBOM generator tool in CI', 'Regex: syft|trivy|cdxgen|spdx-sbom-generator in workflow YAML'],
+        ['Sign CI', 'Signature/attestation tool in CI', 'Regex: cosign|sigstore|slsa-github-generator in workflow YAML'],
+        ['GoRel CI', 'Goreleaser used in CI', 'Regex: goreleaser/goreleaser-action in workflow YAML'],
+      ];
+      const legendTable = new Table({
+        head: legendRows[0],
+        colWidths: [16, 32, 48],
+        wordWrap: true,
+        style: { head: [], border: [] },
+      });
+      for (const row of legendRows.slice(1)) legendTable.push(row);
+      console.log(legendTable.toString());
     }
-  await generateReports(validAnalysisResults, output, input);
+    await generateReports(validAnalysisResults, runDir, inputBase, {
+      queryType: useExtended ? 'GetRepoDataExtendedInfo' : 'GetRepoDataArtifacts',
+      timestamp,
+      totalRepos: repositories.length,
+      successfulRepos: validAnalysisResults.length,
+      failedRepos: repositories.length - validAnalysisResults.length,
+    });
 
     const ciToolTypes = [
         { key: 'sbom', label: 'SBOM' },
