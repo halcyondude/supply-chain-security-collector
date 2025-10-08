@@ -8,6 +8,7 @@ import * as path from 'path';
 import { json2csv } from 'json-2-csv';
 import chalk from 'chalk';
 import { analyzeRepositoryData } from './analysis';
+import { generateParquetFiles } from './parquetWriter';
 
 // AnalysisResult can be null, so we need to handle that.
 type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
@@ -284,23 +285,22 @@ function classifyArtifactType(artifact: {
 /**
  * Generate comprehensive reports from the analysis results.
  * @param analysisResults - Array of per-repository analysis objects
- * @param outputDir - Output directory for reports (optional, defaults to 'output')
- * @param inputFileName - Input filename for determining output names
+ * @param outputDir - Output directory for reports (run-specific directory)
+ * @param baseName - Base name for output files (dataset name without extension)
+ * @param runMetadata - Metadata about this run for Parquet KV metadata
  */
 export async function generateReports(
   analysisResults: AnalysisResult[], 
-  outputDir?: string, 
-  inputFileName?: string
-) {
-  // Output directory for reports (created if missing)
-  outputDir = outputDir ? path.resolve(outputDir) : path.join(process.cwd(), 'output');
-
-  // Determine base name for report files from input file
-  let baseName = 'report';
-  if (inputFileName) {
-    const inputBase = path.basename(inputFileName, path.extname(inputFileName));
-    baseName = inputBase;
+  outputDir: string,
+  baseName: string,
+  runMetadata?: {
+    queryType: string;
+    timestamp: string;
+    totalRepos: number;
+    successfulRepos: number;
+    failedRepos: number;
   }
+) {
 
   try {
     // Ensure output directory exists
@@ -335,6 +335,17 @@ export async function generateReports(
     const schema = generateSchemaDocumentation(normalizedData[0] || {});
     await fs.writeFile(schemaPath, JSON.stringify(schema, null, 2));
     console.log(chalk.green(`✅ Schema documentation saved to: ${schemaPath}`));
+
+    // --- Parquet Files (DuckDB-based with metadata) ---
+    if (runMetadata) {
+      const basePathForParquet = path.join(outputDir, baseName);
+      await generateParquetFiles(
+        basePathForParquet,
+        jsonPath,
+        schemaPath,
+        runMetadata
+      );
+    }
 
   } catch (error) {
     console.error(chalk.red('Failed to generate reports:'), error);

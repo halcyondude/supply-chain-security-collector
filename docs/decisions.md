@@ -117,17 +117,16 @@ type RepoData = ArtifactsQuery | ExtendedQuery  // Requires runtime type guards
 
 ### Output Formats
 
-**Decision**: Generate JSON, CSV, and Parquet schema. No binary Parquet files.
+**Decision**: Generate JSON, CSV, and Parquet files with embedded schema metadata.
 
 **Rationale**:
 
 - JSON is the source of truth and easiest to work with.
 - CSV for spreadsheet analysis without code.
-- Parquet schema for documentation and future conversion via external tools.
-- Writing Parquet in TypeScript was experimental. Removed it. Good call.
+- Parquet files with embedded schema metadata for efficient querying and long-term archival.
+- Schema metadata embedded as key-value pairs enables self-documenting datasets.
 
-**Why not write Parquet directly**:
-ES module/CommonJS hell with parquet-wasm. Not worth fighting it. Python/DuckDB handle JSON→Parquet conversion fine.
+**Parquet Generation**: Implemented using DuckDB for JSON-to-Parquet conversion with schema metadata embedding. See [Viewing Parquet Data](./viewing-parquet-data.md) for exploration tools and techniques.
 
 ### Normalized CSV Structure
 
