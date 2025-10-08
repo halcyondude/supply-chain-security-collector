@@ -91,7 +91,7 @@ Object.entries(categories).forEach(([category, fieldNames]) => {
     console.log('');
   }
 });
-" >> docs/SCHEMA.md
+" >> docs/schema.md
 
 # Generate JSON schema
 echo "📄 Creating JSON schema..."
@@ -149,7 +149,7 @@ console.log('✅ JSON schema generated: docs/schema.json');
 " 2>/dev/null || echo "⚠️  Could not generate JSON schema"
 
 # Add usage examples to schema documentation
-cat >> docs/SCHEMA.md << 'EOF'
+cat >> docs/schema.md << 'EOF'
 
 ## Usage Examples
 
@@ -213,11 +213,11 @@ EOF
 
 echo "✅ Schema documentation generated successfully!"
 echo "📁 Files created:"
-echo "   - docs/SCHEMA.md"
+echo "   - docs/schema.md"
 echo "   - docs/schema.json"
 
 # Validate the generated files
-if [ -f "docs/SCHEMA.md" ] && [ -f "docs/schema.json" ]; then
+if [ -f "docs/schema.md" ] && [ -f "docs/schema.json" ]; then
     echo "🎉 All schema documentation files generated successfully!"
 else
     echo "❌ Some files failed to generate"

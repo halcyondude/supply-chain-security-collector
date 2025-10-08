@@ -19,7 +19,7 @@ npm run docs:schema
 ```
 
 This will:
-1. Generate `SCHEMA.md` with field definitions and types
+1. Generate `schema.md` with field definitions and types
 2. Create `schema.json` for programmatic access
 3. Update data dictionary for analysts
 

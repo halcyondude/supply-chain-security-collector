@@ -110,13 +110,57 @@ npx ts-node src/main.ts --help
 
 The CLI supports the following options:
 
-| Option                | Description                                              |
-|-----------------------|----------------------------------------------------------|
-| `-h, --help`          | Show help and usage information                          |
-| `-i, --input <file>`  | Input JSONL file with repository list (default: sandbox) |
-| `--mock`              | Run in mock mode (no GitHub API calls)                  |
-| `-o, --output <dir>`  | Output directory for reports (default: output)           |
-| `-V, --version`       | Show CLI version                                         |
+| Option                     | Description                                              |
+|----------------------------|----------------------------------------------------------|
+| `-h, --help`               | Show help and usage information                          |
+| `-i, --input <file>`       | Input JSONL file with repository list (default: sandbox) |
+| `-o, --output <dir>`       | Output directory for reports (default: output)           |
+| `--mock`                   | Run in mock mode (no GitHub API calls)                   |
+| `--extended`               | Use extended query (includes workflows, security policies)|
+| `-p, --parallel [N]`       | Run in parallel mode with batch size N (default: 5)      |
+| `--no-parallel`            | Run in sequential mode (default)                         |
+| `-v, --verbose`            | Show detailed console output                             |
+| `-V, --version`            | Show CLI version                                         |
+
+### Execution Modes
+
+**Sequential Mode (Default):**
+
+- Processes one repository at a time
+- Ordered, easy-to-follow console output
+- Best for: debugging, small datasets (< 20 repos), shared environments
+- Example: `npx ts-node src/main.ts --input input/test-single.jsonl`
+
+**Parallel Mode:**
+
+- Processes repositories in batches for faster execution
+- Default batch size: 5 repositories (safe for GitHub API limits)
+- Adds 1-second delay between batches to avoid rate limit issues
+- Best for: medium to large datasets (20-500 repos)
+- Example: `npx ts-node src/main.ts --input input/graduated.jsonl --parallel`
+- Custom batch size: `npx ts-node src/main.ts --input input/incubation.jsonl --parallel=3`
+
+**⚠️ Important:** See [`docs/GITHUB-API-LIMITS.md`](docs/GITHUB-API-LIMITS.md) for detailed information about GitHub API rate limits and best practices to avoid being flagged as abusive.
+
+### Query Modes
+
+**Artifacts Query (Default):**
+
+- Fetches releases and their associated artifacts
+- Detects SBOMs, signatures, and attestations in release assets
+- Fastest, uses ~1-2 API points per repository
+- Example: `npx ts-node src/main.ts --input input/graduated.jsonl`
+
+**Extended Query (`--extended`):**
+
+- Includes everything from artifacts query, plus:
+  - GitHub Actions workflows (YAML content)
+  - Security policies (SECURITY.md)
+  - Branch protection settings
+  - Dependabot configuration
+- Detects CI/CD security tools (syft, trivy, cosign, goreleaser, etc.)
+- Uses ~2-3 API points per repository
+- Example: `npx ts-node src/main.ts --input input/graduated.jsonl --extended --parallel`
 
 ### Show help
 

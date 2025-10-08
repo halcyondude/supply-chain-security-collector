@@ -4,7 +4,7 @@
  * Schema Documentation Generator
  * 
  * Reads JSON output files to extract schema and generates comprehensive documentation.
- * This script generates SCHEMA.md with field descriptions, types, and examples.
+ * This script generates schema.md with field descriptions, types, and examples.
  */
 
 import { promises as fs } from 'fs';
@@ -354,8 +354,8 @@ This schema follows semantic versioning principles:
 Current version: ${schema.version}
 `;
 
-  await fs.writeFile(path.join(docsDir, 'SCHEMA.md'), markdown);
-  console.log('✅ Markdown documentation saved to: docs/SCHEMA.md');
+  await fs.writeFile(path.join(docsDir, 'schema.md'), markdown);
+  console.log('✅ Markdown documentation saved to: docs/schema.md');
 }
 
 /**
@@ -392,7 +392,7 @@ async function main(): Promise<void> {
     
     console.log('🎉 Schema documentation generated successfully!');
     console.log(`📁 Files created:`);
-    console.log(`   - docs/SCHEMA.md`);
+    console.log(`   - docs/schema.md`);
     console.log(`   - docs/schema.json`);
     
   } catch (error) {

@@ -606,4 +606,4 @@ Shows:
 - ✅ DESIGN.md - Updated to reflect current state
 - README.md - Update output artifacts section
 - HACKING.md - Update with type system approach
-- SCHEMA.md - Regenerate after field changes
+- schema.md - Regenerate after field changes

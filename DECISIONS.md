@@ -151,7 +151,7 @@ ES module/CommonJS hell with parquet-wasm. Not worth fighting it. Python/DuckDB 
 - Validates that output matches expectations.
 - Self-documenting based on real data.
 
-**Tools**: `scripts/generate-schema-docs.ts` reads JSON output and generates `docs/SCHEMA.md`.
+**Tools**: `scripts/generate-schema-docs.ts` reads JSON output and generates `docs/schema.md`.
 
 ### Mock Data Strategy
 
