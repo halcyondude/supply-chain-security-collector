@@ -17,7 +17,7 @@ import { appendRawResponse } from './rawResponseWriter';
 
 // Define common types used throughout the script
 type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
-type RepositoryTarget = { owner: string; name: string };
+type RepositoryTarget = { owner: string; name: string; maturity?: string };
 
 const program = new Command();
 program
@@ -91,7 +91,13 @@ async function fetchAndAnalyzeRepo(
   }
 
   if (repoData && repoData.repository) {
-    return analyzeRepositoryData(repoData.repository);
+    const analysis = analyzeRepositoryData(repoData.repository);
+    // Attach maturity if available (runtime-only augmentation)
+    if (analysis && typeof analysis === 'object') {
+  const a = analysis as unknown as Record<string, unknown>;
+  a._maturity = repo.maturity || undefined;
+    }
+    return analysis;
   }
   return null;
 }
@@ -123,25 +129,39 @@ async function main() {
   }
   const client = useMock ? null : createApiClient(githubPat!);
 
-  if (!fs.existsSync(input)) {
-    console.error(chalk.red.bold(`Input file not found: ${input}`));
-    program.help();
-    process.exit(1);
+  // Support multiple input files by allowing comma-separated values in --input
+  const inputOption = String(input || '');
+  const inputFiles = inputOption.split(',').map(s => s.trim()).filter(Boolean);
+  if (inputFiles.length === 0) {
+    console.error(chalk.red.bold('No input files provided.')); program.help(); process.exit(1);
   }
-  const repoLines = fs.readFileSync(input, 'utf-8').split('\n').filter(Boolean);
-  const repositories: RepositoryTarget[] = repoLines.map(line => {
-    try {
-      return JSON.parse(line);
-    } catch {
-      console.error(chalk.red(`Invalid JSON in input file: ${line}`));
+
+  const repositories: RepositoryTarget[] = [];
+  for (const infile of inputFiles) {
+    if (!fs.existsSync(infile)) {
+      console.error(chalk.red.bold(`Input file not found: ${infile}`));
+      program.help();
       process.exit(1);
     }
-  });
+
+    const repoLines = fs.readFileSync(infile, 'utf-8').split('\n').filter(Boolean);
+    const inferredMaturity = path.basename(infile, path.extname(infile));
+    for (const line of repoLines) {
+      try {
+        const parsed = JSON.parse(line);
+        if (!parsed.maturity) parsed.maturity = inferredMaturity;
+        repositories.push(parsed as RepositoryTarget);
+      } catch {
+        console.error(chalk.red(`Invalid JSON in input file ${infile}: ${line}`));
+        process.exit(1);
+      }
+    }
+  }
 
   const allAnalysisResults: (AnalysisResult | null)[] = [];
 
   // Create timestamped run directory
-  const inputBase = path.basename(input, path.extname(input));
+  const inputBase = inputFiles.length === 1 ? path.basename(inputFiles[0], path.extname(inputFiles[0])) : 'combined';
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19); // Format: 2025-10-06T22-30-15
   const runDir = path.join(output, `${inputBase}-${timestamp}`);
   

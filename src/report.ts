@@ -15,6 +15,7 @@ type AnalysisResult = ReturnType<typeof analyzeRepositoryData>;
 
 // Type definitions for normalized data structure
 type NormalizedRow = {
+  maturity: string;
   repository_id: string;
   repository_owner: string;
   repository_name: string;
@@ -74,11 +75,15 @@ type SchemaDocumentation = {
  * Normalizes the analysis results into a flat structure suitable for data analysis.
  * This function recursively flattens the JSON structure into individual rows.
  */
-function normalizeAnalysisResults(analysisResults: Exclude<AnalysisResult, null>[]): NormalizedRow[] {
+function normalizeAnalysisResults(analysisResults: Exclude<AnalysisResult, null>[], maturity = 'unknown'): NormalizedRow[] {
   const flattenedData: NormalizedRow[] = [];
   
   analysisResults.forEach(res => {
+  // Prefer per-result runtime maturity if the analysis object carried one
+  const perResultMaturity = ((res as unknown) as Record<string, unknown>)['_maturity'] as string | undefined;
     const baseRepoData = {
+      // Maturity indicates the source dataset (sandbox, incubation, graduated)
+      maturity: perResultMaturity || maturity,
       // Repository metadata
       repository_id: res.repository.id,
       repository_owner: res.repository.owner,
@@ -321,8 +326,9 @@ export async function generateReports(
     await fs.writeFile(jsonPath, JSON.stringify(validAnalysisResults, null, 2));
     console.log(chalk.green(`✅ Analyzed JSON report saved to: ${jsonPath}`));
 
-    // --- Normalized Data ---
-    const normalizedData = normalizeAnalysisResults(validAnalysisResults);
+  // --- Normalized Data ---
+  // Pass the dataset baseName (inputBase) as the maturity indicator for each row
+  const normalizedData = normalizeAnalysisResults(validAnalysisResults, baseName);
 
     // --- CSV Report (Normalized) ---
     const csvPath = path.join(outputDir, `${baseName}.csv`);
@@ -385,6 +391,7 @@ function generateSchemaDocumentation(sampleRow: Record<string, unknown>): Schema
 function generateFieldDescription(fieldName: string): string {
   const descriptions: Record<string, string> = {
     repository_id: "Unique identifier for the repository (GraphQL node ID)",
+  maturity: "Maturity classification of the repository dataset (e.g., sandbox, incubation, graduated)",
     repository_owner: "GitHub username/organization that owns the repository", 
     repository_name: "Name of the repository",
     repository_name_with_owner: "Full repository name in owner/repo format",

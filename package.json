@@ -19,7 +19,11 @@
     "test:all": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output",
     "validate:verbose": "npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output --verbose",
     "validate:three-repos": "npx ts-node src/main.ts --mock --input input/test-three-repos.jsonl --output output --verbose",
-    "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output"
+    "validate:all-mocked": "npx ts-node src/main.ts --mock --input input/test-allmocked.jsonl --output output",
+    "run:sandbox": "./scripts/run-target.sh sandbox",
+    "run:incubation": "./scripts/run-target.sh incubation",
+    "run:graduated": "./scripts/run-target.sh graduated",
+    "run:cncf-all": "./scripts/run-cncf-all.sh"
   },
   "keywords": [
     "github",
