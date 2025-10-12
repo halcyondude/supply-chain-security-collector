@@ -25,7 +25,7 @@ echo "Running pipeline for dataset: $DATASET"
 # Generate codegen types (idempotent)
 npm run codegen
 
-# Run the main CLI against the dataset
-npx ts-node src/main.ts --input "$INPUT_FILE" --output output --parallel
+# Run the CLI against the dataset
+npx ts-node src/neo.ts --input "$INPUT_FILE" --queries GetRepoDataExtendedInfo --parallel
 
 echo "Done: output for $DATASET should be in output/"

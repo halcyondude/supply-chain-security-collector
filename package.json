@@ -2,7 +2,7 @@
   "name": "graphql-data-collector",
   "version": "1.0.0",
   "description": "Generic GraphQL data collection tool with DuckDB storage and Parquet export",
-  "main": "dist/main.js",
+  "main": "dist/neo.js",
   "scripts": {
     "start": "ts-node src/neo.ts",
     "analyze": "ts-node src/analyze.ts",
