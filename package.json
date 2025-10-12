@@ -6,6 +6,7 @@
   "scripts": {
     "start": "ts-node src/neo.ts",
     "analyze": "ts-node src/analyze.ts",
+    "report": "ts-node src/report.ts",
     "build": "tsc",
     "codegen": "graphql-codegen --config codegen.ts",
     "prebuild": "npm run codegen",
