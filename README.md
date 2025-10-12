@@ -17,8 +17,11 @@ currently configured for github supply chain security analysis, but the collecti
 # install
 npm install
 
+# set your github token
+export GITHUB_PAT=ghp_your_token_here
+
 # run against 3 test repos
-npm start -- --input input/test-three-repos.jsonl --queries GetRepoDataExtendedInfo --analyze --parallel
+npm start -- --input input/test-three-repos.jsonl --analyze --parallel
 
 # check the output
 ls output/test-three-repos-*/GetRepoDataExtendedInfo/
@@ -39,6 +42,13 @@ output/test-three-repos-2025-10-12T05-38-10/
         ├── agg_workflow_tools.parquet
         └── agg_repo_summary.parquet
 ```
+
+## documentation
+
+- 📚 **[Query Reference](docs/QUERY-REFERENCE.md)** - Available queries and usage
+- 🔧 **[Adding New Queries](docs/adding-new-queries.md)** - Step-by-step guide for experimentation
+- 🔍 **[Detection Reference](docs/detection-reference.md)** - Supply chain security detection catalog
+- 📝 **[Cleanup Summary](docs/CLEANUP-QUERIES.md)** - Recent architecture changes
 
 ## table layers
 

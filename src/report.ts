@@ -37,7 +37,7 @@ class ReportGenerator {
         sections.push(`Generated: ${new Date().toISOString()}\n`);
         sections.push(`Database: ${this.dbPath}\n`);
         sections.push(await this.generateExecutiveSummary());
-        sections.push(await this.generateScorecard());
+        sections.push(await this.generateRepositorySummary());
         sections.push(await this.generateToolAdoption());
         sections.push(await this.generateSbomAnalysis());
         sections.push(await this.generateAdvancedArtifactsAnalysis());
@@ -83,7 +83,7 @@ class ReportGenerator {
 `;
     }
 
-    private async generateScorecard(): Promise<string> {
+    private async generateRepositorySummary(): Promise<string> {
         const result = await this.con!.run(`
             SELECT repository_name, security_maturity_score, total_releases,
                    has_sbom_artifact, has_signature_artifact,
@@ -93,10 +93,10 @@ class ReportGenerator {
         `);
         const rows = await result.getRows();
         let table = `
-## Repository Security Scorecard
+## Repository Summary
 
-| Repository | Score | Releases | SBOM | Signatures | Cosign | Syft | CodeQL |
-|------------|------:|----------|------|------------|--------|------|--------|
+| Repository | Maturity Score | Releases | SBOM | Signatures | Cosign | Syft | CodeQL |
+|------------|---------------:|----------|------|------------|--------|------|--------|
 `;
         for (const row of rows) {
             const [name, score, releases, sbom, sig, cosign, syft, codeql] = row;
@@ -276,7 +276,7 @@ class ReportGenerator {
             section += `
 ### ${name}
 
-**Security Score:** ${score}/10
+**Security Maturity Score:** ${score}/10
 
 **Assets:**
 - ${releases} releases
