@@ -88,17 +88,14 @@ field_artifact_is_sbom      | Boolean indicating if artifact is a Software Bill 
 ...
 ```
 
-### Implementation: `src/parquetWriter.ts`
+### Implementation: `src/ArtifactWriter.ts`
 
-Key functions:
+The Parquet writing logic is integrated into the main `ArtifactWriter.ts` module, which handles:
 
-1. `generateParquetFiles()` - Main entry point, reads schema.json and analyzed JSON, orchestrates DuckDB conversion
-
-2. `buildKvMetadataFromSchema()` - Extracts field descriptions from schema, adds runtime metadata (query type, timestamp, repo counts)
-
-3. `convertJsonToParquet()` - Executes DuckDB SQL with KV_METADATA clause, applies ZSTD compression, sets ROW_GROUP_SIZE for optimization
-
-4. `readParquetMetadata()` - Queries Parquet KV metadata for validation and debugging
+1. Writing raw GraphQL responses to DuckDB `raw_*` tables
+2. Calling query-specific normalizers to produce flat, relational arrays
+3. Writing normalized data to DuckDB `base_*` tables
+4. Exporting all tables to Parquet files with metadata
 
 ### DuckDB SQL Query
 
