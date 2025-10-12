@@ -1,144 +1,180 @@
-# GitHub Supply Chain Data Collector
+# GraphQL Data Engineering Toolkit
 
-Welcome — this repository is a practical, opinionated tool for measuring what projects ship in their releases and CI workflows. It focuses on **presence detection**: does a repository ship SBOMs, signatures, or attestations? Does its CI invoke key security tooling?
+collect data from any graphql api → normalize to relational tables → analyze with sql → export to duckdb + parquet
 
-If your team is building observability or supply-chain tooling, this repository gives you a reproducible pipeline that collects, normalizes, documents, and prepares that data for analysis. It’s designed for maintainers, researchers, and platform teams who want reliable signals about supply chain security practices across many repositories.
+currently configured for github supply chain security analysis, but the collection/normalization layers are fully generic.
 
-### Why This Matters
+## what it does
 
--   **Discover** where SBOMs and signatures are being produced and where they’re missing across your ecosystem.
--   **Understand** CI adoption of key security tools (`syft`, `cosign`, `goreleaser`, etc.).
--   **Produce** compact, queryable artifacts (Parquet + CSV) for downstream analysis and powerful dashboards.
+1. **collects**: fetches data from graphql apis with parallel execution
+2. **normalizes**: extracts typed entities into relational tables (base_*)
+3. **stores**: writes to duckdb database + parquet files
+4. **analyzes**: runs sql models to detect patterns (agg_*)
 
-### 🚀 Highlights
-
-*   **Robust Data Collection**: A type-safe GraphQL client using codegen ensures API calls are maintainable and catch schema changes at compile time.
-*   **Flexible & Fast**: Run in a lightweight "artifacts-only" mode or a deep "--extended" mode to inspect CI workflows. Process large datasets quickly with parallel execution.
-*   **Powerful Outputs**: Generates multiple analysis-ready formats from a single run:
-    *   `raw-responses.jsonl`: Preserves the full, raw API response for ultimate reproducibility.
-    *   `*-analyzed.json`: A clean, enriched domain model with computed security flags.
-    *   `*.csv`: A flattened, normalized table perfect for spreadsheets or quick database imports.
-    *   `*-analyzed.parquet`: A highly compressed, columnar dataset with embedded schema descriptions, ideal for fast analytics with tools like DuckDB.
-*   **Built-in Cost Tracking**: Each run produces a `SIZE-REPORT.md` so you can track storage growth and commit only the most efficient artifacts to your repository.
-*   **Awesome Developer Experience**: Comes with a mock mode for instant local development, validation scripts, and a clear, extensible architecture.
-
-## Get Started in 3 Steps
-
-1.  **Clone the repo and install dependencies:**
-
-    ```bash
-    git clone https://github.com/your-org/your-repo-name.git
-    cd your-repo-name
-    npm install
-    ```
-
-2.  **Run a quick mock analysis (no GitHub API calls needed!):**
-
-    This command runs against a pre-configured test file (`input/test-single.jsonl`) and generates a full set of reports in the `output/` directory.
-
-    ```bash
-    npm start -- --mock --input input/test-single.jsonl
-    ```
-
-3.  **Run against real repositories:**
-
-    Create a `.env` file from the template and add your GitHub Personal Access Token. Then, run the analyzer against the CNCF graduated projects list.
-
-    ```bash
-    # 1. Create your .env file
-    cp .env.template .env
-
-    # 2. Edit .env and set your GITHUB_PAT
-
-    # 3. Run the analysis!
-    npm start -- --input input/graduated.jsonl --parallel
-    ```
-
-    All output will be saved to a clean, timestamped directory like `output/graduated-2025-10-10T03-33-00/`.
-
-## Viewing and Analyzing Your Data
-
-The real power of this tool is unlocked when you start exploring the data. We highly recommend using **DuckDB** for a fantastic analysis experience.
-
-The project includes a helper script and guide for getting started. For a great visual experience, you can launch the DuckDB Local UI directly against your results:
+## quick start
 
 ```bash
-# Launch the Local UI with your Parquet file loaded as a 'data' view
-duckdb -cmd "CREATE VIEW data AS FROM 'output/graduated-2025-10-10T03-33-00/graduated-analyzed.parquet';" -ui
+# install
+npm install
+
+# run against 3 test repos
+npm start -- --input input/test-three-repos.jsonl --queries GetRepoDataExtendedInfo --analyze --parallel
+
+# check the output
+ls output/test-three-repos-*/GetRepoDataExtendedInfo/
 ```
 
-This opens a powerful, local-only web interface in your browser where you can write SQL, explore the schema, and visualize results.
+output structure:
+```
+output/test-three-repos-2025-10-12T05-38-10/
+├── raw-responses.jsonl              # audit trail of all api calls
+└── GetRepoDataExtendedInfo/
+    ├── database.db                  # duckdb with all tables
+    └── parquet/                     # individual parquet files
+        ├── base_repositories.parquet
+        ├── base_releases.parquet
+        ├── base_release_assets.parquet
+        ├── base_workflows.parquet
+        ├── agg_artifact_patterns.parquet
+        ├── agg_workflow_tools.parquet
+        └── agg_repo_summary.parquet
+```
 
-Here are a few queries to get you started:
+## table layers
+
+tables are prefixed by layer:
+
+- **raw_*** - original graphql responses (json blob)
+- **base_*** - normalized entities from graphql types (repositories, releases, etc)
+- **agg_*** - analysis/aggregation tables (security patterns, metrics)
 
 ```sql
--- Which CNCF graduated projects ship SBOMs in their releases?
-SELECT repository_name_with_owner, release_tag_name, artifact_name
-FROM data
-WHERE artifact_is_sbom = true;
+-- query the normalized data
+SELECT repository_name, total_releases FROM base_repositories;
 
--- Get a summary of security artifact adoption
-SELECT
-  repo_has_sbom_artifact,
-  repo_has_signature_artifact,
-  COUNT(DISTINCT repository_name_with_owner) as project_count
-FROM data
-GROUP BY ALL
-ORDER BY project_count DESC;
+-- query the analysis
+SELECT repository_name, security_maturity_score, uses_cosign, uses_syft 
+FROM agg_repo_summary 
+ORDER BY security_maturity_score DESC;
 ```
 
-## What the Tool Produces
+## analyzing data
 
-Each run creates a timestamped directory with a consistent set of artifacts, giving you a complete, historical record.
-
--   `raw-responses.jsonl` — The raw, unmodified GraphQL responses. The ultimate source of truth for reproducibility.
--   `*-analyzed.json` — An enriched domain model with computed detection flags (e.g., `isSbom`, `isSignature`).
--   `*.csv` — Flattened rows ready for SQL, spreadsheets, or any tool that loves tables.
--   `*-schema.json` — A machine-readable schema used to embed rich metadata into the Parquet file.
--   `*-analyzed.parquet` — A compressed, columnar dataset with all field descriptions and run metadata embedded. This is the **recommended format for analytics**.
--   `SIZE-REPORT.md` — A human-readable summary of file sizes from the run. We recommend committing this to Git to track artifact growth over time!
-
-## Diving Deeper: CLI Usage
-
-The CLI is designed for flexibility. Here are some common patterns:
+use duckdb cli or any tool that reads parquet:
 
 ```bash
-# Run against all CNCF projects sequentially
-./scripts/run-cncf-all.sh
+# interactive sql
+duckdb output/.../GetRepoDataExtendedInfo/database.db
 
-# Analyze a specific CNCF maturity level
-./scripts/run-target.sh incubation
+# quick queries
+duckdb database.db -c "SELECT * FROM agg_repo_summary"
 
-# Run the extended query to analyze GitHub Actions workflows for security tools
-npm start -- --input input/sandbox.jsonl --extended --parallel
+# export to csv
+npm run analyze -- --database database.db --export-csv summary.csv
 
-# Run against a custom list of repositories
-npm start -- --input path/to/my-repos.jsonl
+# run custom queries
+npm run analyze -- --database database.db --query sql/queries/top_tools.sql
 ```
 
-## For Developers & Contributors
+## adding new queries
 
-This project is built to be extensible. We welcome you to join the conversation, open issues, and contribute!
+1. create a new `.graphql` file in `src/graphql/`
+2. run `npm run codegen` to generate types
+3. add to `--queries` parameter: `--queries Query1,Query2`
+4. normalizers auto-create base_* tables from typed responses
 
--   `npm run lint` — Lint hand-written code (generated code is ignored).
--   `npm run typecheck` — Run `tsc` to validate types before you commit.
--   `npm run codegen` — Regenerate the GraphQL client and types after changing queries in `src/graphql/`.
--   `npm run validate` — A helpful script that runs a full pipeline (lint, typecheck, mock run) to ensure your environment is healthy.
+## adding new analysis
 
-### How to Contribute
+analysis happens in sql models (`sql/models/`):
 
-1.  **Add a new detection**: Extend the regex patterns in `src/analysis.ts` to find new artifacts or CI tools.
-2.  **Add new data**: Add a new GraphQL query in `src/graphql/`, run `npm run codegen`, and integrate the new data into the analysis and reporting pipeline.
-3.  **Improve tooling**: Enhance the reporting, add new output formats, or create new analysis notebooks.
+```sql
+-- sql/models/04_my_analysis.sql
+CREATE OR REPLACE TABLE agg_my_analysis AS
+SELECT 
+    repository_id,
+    -- your analysis logic here
+FROM base_repositories r
+JOIN base_releases rel ON r.id = rel.repository_id;
+```
 
-Open a PR or join the issue tracker to get started. We'd love to hear about your use case!
+then update `SecurityAnalyzer.ts` to run it.
 
-### Resources
+## cli options
 
--   [DuckDB Documentation](https://duckdb.org/docs/)
--   [GraphQL Code Generator](https://www.graphql-code-generator.com/)
--   [Apache Parquet Format](https://parquet.apache.org/docs/)
+```bash
+npm start -- \
+  --input repos.jsonl \              # required: list of {owner, name}
+  --queries GetRepoData \            # required: which graphql queries to run
+  --parallel \                       # optional: fetch repos in parallel
+  --analyze                          # optional: run sql analysis after collection
+```
 
-## License
+## environment setup
 
-This project is released under the MIT License. See the `LICENSE` file for details.
+```bash
+cp .env.template .env
+# edit .env and add your GITHUB_PAT
+```
+
+## current analysis (supply chain security)
+
+the included sql models detect:
+
+- sbom formats (spdx, cyclonedx)
+- signature artifacts (.sig, .asc)
+- attestations, vex, slsa provenance
+- ci/cd security tools (cosign, syft, trivy, codeql, etc)
+- security maturity scoring
+
+see `sql/models/` for details.
+
+## extending to other apis
+
+the collection and normalization layers are generic. to use with a different graphql api:
+
+1. update `src/api.ts` with your endpoint/auth
+2. create `.graphql` queries for your api
+3. run `npm run codegen`
+4. the normalizers will auto-generate base_* tables
+5. write domain-specific sql models in `sql/models/`
+
+## project structure
+
+```
+src/
+├── neo.ts                      # main cli entry point
+├── analyze.ts                  # analysis cli
+├── api.ts                      # graphql client
+├── ArtifactWriter.ts           # writes duckdb + parquet
+├── SecurityAnalyzer.ts         # runs sql analysis models
+├── normalizers/                # extract typed entities from responses
+└── graphql/                    # query definitions
+
+sql/
+├── models/                     # sql analysis models (run in order)
+└── queries/                    # example queries
+
+input/                          # sample input files
+output/                         # timestamped output directories
+```
+
+## scripts
+
+```bash
+npm start                       # run data collection
+npm run analyze                 # run analysis on existing database
+npm run codegen                 # regenerate graphql types
+npm run build                   # compile typescript
+npm run lint                    # check code
+npm run typecheck               # check types
+```
+
+## requirements
+
+- node 18+
+- typescript
+- github personal access token (for github api)
+
+## license
+
+MIT
