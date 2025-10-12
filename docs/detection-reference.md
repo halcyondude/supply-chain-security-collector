@@ -12,49 +12,49 @@ This document provides a comprehensive catalog of all supply chain security tool
 | SWID Tags | ✅ | ❌ | Detection only | High | High |
 | **Signatures & Attestations** | | | | | |
 | Standard Signatures (.sig, .asc, .pem) | ✅ | ✅ | Complete | - | - |
-| Generic Attestations | ✅ | ❌ | Detection only | Medium | Medium |
-| VEX Documents | ✅ | ❌ | Detection only | High | High |
-| SLSA Provenance | ✅ | ❌ | Detection only | High | High |
-| In-toto Links | ✅ | ❌ | Detection only | High | High |
-| In-toto Layouts | ✅ | ❌ | Detection only | High | High |
-| Sigstore Bundles | ✅ | ❌ | Detection only | High | High |
-| Container Attestations | ✅ | ❌ | Detection only | Medium | Medium |
-| License Files | ✅ | ❌ | Detection only | Low | Low |
+| Generic Attestations | ✅ | ✅ | Complete | - | - |
+| VEX Documents | ✅ | ✅ | Complete | - | - |
+| SLSA Provenance | ✅ | ✅ | Complete | - | - |
+| In-toto Links | ✅ | ✅ | Complete | - | - |
+| In-toto Layouts | ✅ | ✅ | Complete | - | - |
+| Sigstore Bundles | ✅ | ✅ | Complete | - | - |
+| Container Attestations | ✅ | ✅ | Complete | - | - |
+| License Files | ✅ | ✅ | Complete | - | - |
 | **SBOM Generation Tools** | | | | | |
 | Syft | ✅ | ✅ | Complete | - | - |
 | Trivy | ✅ | ✅ | Complete | - | - |
 | CycloneDX Generator | ✅ | ✅ | Complete | - | - |
 | SPDX SBOM Generator | ✅ | ✅ | Complete | - | - |
-| Tern | ✅ | ❌ | Detection only | High | High |
+| Tern | ✅ | ✅ | Complete | - | - |
 | Bomber | ❌ | ❌ | Missing | Medium | Medium |
 | OSS Review Toolkit (ORT) | ❌ | ❌ | Missing | Medium | Medium |
 | **Signing & Attestation Tools** | | | | | |
 | Cosign | ✅ | ✅ | Complete | - | - |
 | Sigstore | ✅ | ✅ | Complete | - | - |
 | SLSA GitHub Generator | ✅ | ✅ | Complete | - | - |
-| Notation | ✅ | ❌ | Detection only | High | High |
+| Notation | ✅ | ✅ | Complete | - | - |
 | Witness | ❌ | ❌ | Missing | Medium | Medium |
 | Kyverno | ❌ | ❌ | Missing | Medium | Medium |
 | **Vulnerability Scanners** | | | | | |
 | Snyk | ✅ | ✅ | Complete | - | - |
 | Anchore/Grype | ✅ | ✅ | Complete | - | - |
 | Trivy | ✅ | ✅ | Complete | - | - |
-| Clair | ✅ | ❌ | Detection only | Medium | Medium |
-| Docker Scout | ✅ | ❌ | Detection only | High | High |
+| Clair | ✅ | ✅ | Complete | - | - |
+| Docker Scout | ✅ | ✅ | Complete | - | - |
 | Twistlock | ✅ | ❌ | Detection only | Low | Low |
 | Aqua | ✅ | ❌ | Detection only | Low | Low |
 | **Dependency Scanners** | | | | | |
 | Dependabot | ✅ | ✅ | Complete | - | - |
 | Renovate | ✅ | ✅ | Complete | - | - |
-| WhiteSource | ✅ | ❌ | Detection only | Low | Low |
-| FOSSA | ✅ | ❌ | Detection only | Medium | Medium |
+| WhiteSource | ✅ | ✅ | Complete | - | - |
+| FOSSA | ✅ | ✅ | Complete | - | - |
 | **Code Scanners** | | | | | |
 | CodeQL | ✅ | ✅ | Complete | - | - |
 | Semgrep | ✅ | ✅ | Complete | - | - |
 | Bandit | ✅ | ✅ | Complete | - | - |
 | ESLint Security | ✅ | ❌ | Detection only | Low | Low |
 | **Build & Release Tools** | | | | | |
-| GoReleaser | ✅ | ❌ | Detection only | Medium | Medium |
+| GoReleaser | ✅ | ✅ | Complete | - | - |
 | **License & Compliance** | | | | | |
 | Scancode | ❌ | ❌ | Missing | Medium | Medium |
 | Licensee | ❌ | ❌ | Missing | Low | Low |
@@ -248,7 +248,7 @@ REGEXP_MATCHES(ra.name, '(?i)\.(sig|asc|pem|pub)$')
 
 ### Generic Attestations
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Generic attestation files that provide cryptographic evidence about software artifacts, build processes, or security properties.
 
@@ -271,7 +271,7 @@ REGEXP_MATCHES(ra.name, '(?i)attestation')
 
 ### VEX Documents
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Vulnerability Exploitability eXchange (VEX) documents provide information about the exploitability status of vulnerabilities in software components. Part of the emerging supply chain transparency ecosystem.
 
@@ -544,7 +544,7 @@ REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b')
 
 ### Tern
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Tern is a software composition analysis tool and SBOM generator specifically designed for container images. Created by VMware and now a Linux Foundation project.
 

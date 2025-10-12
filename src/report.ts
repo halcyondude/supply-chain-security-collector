@@ -40,6 +40,7 @@ class ReportGenerator {
         sections.push(await this.generateScorecard());
         sections.push(await this.generateToolAdoption());
         sections.push(await this.generateSbomAnalysis());
+        sections.push(await this.generateAdvancedArtifactsAnalysis());
         sections.push(await this.generateDetailedFindings());
         return sections.join('\n');
     }
@@ -170,6 +171,92 @@ class ReportGenerator {
 - Full adoption (all releases): ${full} repositories
 - Partial adoption (some releases): ${partial} repositories
 `;
+    }
+
+    private async generateAdvancedArtifactsAnalysis(): Promise<string> {
+        // Query for advanced artifact detection
+        const artifactResult = await this.con!.run(`
+            SELECT 
+                COUNT(DISTINCT ap.repository_id) as repos_with_advanced_artifacts,
+                SUM(CASE WHEN ap.is_vex THEN 1 ELSE 0 END) as vex_count,
+                SUM(CASE WHEN ap.is_slsa_provenance THEN 1 ELSE 0 END) as slsa_count,
+                SUM(CASE WHEN ap.is_in_toto_link THEN 1 ELSE 0 END) as intoto_link_count,
+                SUM(CASE WHEN ap.is_in_toto_layout THEN 1 ELSE 0 END) as intoto_layout_count,
+                SUM(CASE WHEN ap.is_sigstore_bundle THEN 1 ELSE 0 END) as sigstore_bundle_count,
+                SUM(CASE WHEN ap.is_swid_tag THEN 1 ELSE 0 END) as swid_tag_count,
+                SUM(CASE WHEN ap.is_container_attestation THEN 1 ELSE 0 END) as container_attestation_count,
+                SUM(CASE WHEN ap.is_license_file THEN 1 ELSE 0 END) as license_file_count,
+                SUM(CASE WHEN ap.is_attestation THEN 1 ELSE 0 END) as generic_attestation_count
+            FROM agg_artifact_patterns ap
+            WHERE ap.is_vex OR ap.is_slsa_provenance OR ap.is_in_toto_link OR ap.is_in_toto_layout 
+               OR ap.is_sigstore_bundle OR ap.is_swid_tag OR ap.is_container_attestation 
+               OR ap.is_license_file OR ap.is_attestation
+        `);
+
+        // Query for additional tools detected but not reported
+        const toolResult = await this.con!.run(`
+            SELECT 
+                COUNT(DISTINCT wt.repository_id) as repos_with_additional_tools,
+                SUM(CASE WHEN wt.tool_name = 'tern' THEN 1 ELSE 0 END) as tern_count,
+                SUM(CASE WHEN wt.tool_name = 'notation' THEN 1 ELSE 0 END) as notation_count,
+                SUM(CASE WHEN wt.tool_name = 'docker-scout' THEN 1 ELSE 0 END) as docker_scout_count,
+                SUM(CASE WHEN wt.tool_name = 'clair' THEN 1 ELSE 0 END) as clair_count,
+                SUM(CASE WHEN wt.tool_name = 'whitesource' THEN 1 ELSE 0 END) as whitesource_count,
+                SUM(CASE WHEN wt.tool_name = 'fossa' THEN 1 ELSE 0 END) as fossa_count,
+                SUM(CASE WHEN wt.tool_name = 'goreleaser' THEN 1 ELSE 0 END) as goreleaser_count
+            FROM agg_workflow_tools wt
+            WHERE wt.tool_name IN ('tern', 'notation', 'docker-scout', 'clair', 'whitesource', 'fossa', 'goreleaser')
+        `);
+
+        const artifactRows = await artifactResult.getRows();
+        const toolRows = await toolResult.getRows();
+
+        if (artifactRows.length === 0 && toolRows.length === 0) {
+            return `
+## Advanced Supply Chain Artifacts
+
+*No advanced supply chain artifacts detected in analyzed repositories.*
+`;
+        }
+
+        let section = `
+## Advanced Supply Chain Artifacts
+
+`;
+
+        if (artifactRows.length > 0 && artifactRows[0] && Number(artifactRows[0][0]) > 0) {
+            const [repos, vex, slsa, intotoLink, intotoLayout, sigstore, swid, container, license, attestation] = artifactRows[0];
+            section += `**Repositories with Advanced Artifacts:** ${repos}
+
+**Detected Artifact Types:**
+- VEX Documents: ${vex} artifacts
+- SLSA Provenance: ${slsa} artifacts  
+- In-toto Links: ${intotoLink} artifacts
+- In-toto Layouts: ${intotoLayout} artifacts
+- Sigstore Bundles: ${sigstore} artifacts
+- SWID Tags: ${swid} artifacts
+- Container Attestations: ${container} artifacts
+- License Files: ${license} artifacts
+- Generic Attestations: ${attestation} artifacts
+
+`;
+        }
+
+        if (toolRows.length > 0 && toolRows[0] && Number(toolRows[0][0]) > 0) {
+            const [repos, tern, notation, dockerScout, clair, whitesource, fossa, goreleaser] = toolRows[0];
+            section += `**Additional Security Tools Detected:** (${repos} repositories)
+- Tern (Container SBOM): ${tern} workflows
+- Notation (Signing): ${notation} workflows
+- Docker Scout: ${dockerScout} workflows
+- Clair (Vulnerability): ${clair} workflows
+- WhiteSource (Dependency): ${whitesource} workflows
+- FOSSA (Compliance): ${fossa} workflows
+- GoReleaser (Build): ${goreleaser} workflows
+
+`;
+        }
+
+        return section;
     }
 
     private async generateDetailedFindings(): Promise<string> {
