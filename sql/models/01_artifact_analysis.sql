@@ -43,6 +43,9 @@ SELECT
     REGEXP_MATCHES(ra.name, '(?i)\b(vex|\.vex)\b') as is_vex,
     REGEXP_MATCHES(ra.name, '(?i)\b(provenance|slsa|\.intoto\.jsonl)\b') as is_slsa_provenance,
     REGEXP_MATCHES(ra.name, '(?i)\b(link|\.link)\b') as is_in_toto_link,
+    REGEXP_MATCHES(ra.name, '(?i)\b(layout|\.layout)\b') as is_in_toto_layout,
+    REGEXP_MATCHES(ra.name, '(?i)\.bundle$') as is_sigstore_bundle,
+    REGEXP_MATCHES(ra.name, '(?i)\b(swid|\.swidtag)\b') as is_swid_tag,
     REGEXP_MATCHES(ra.name, '(?i)\b(cosign|rekor|fulcio)\b') as is_container_attestation,
     REGEXP_MATCHES(ra.name, '(?i)\b(license|copying|notice)\b') as is_license_file
 
@@ -60,5 +63,13 @@ SELECT
     COUNT(*) as total_assets,
     SUM(CASE WHEN is_sbom THEN 1 ELSE 0 END) as sbom_count,
     SUM(CASE WHEN is_signature THEN 1 ELSE 0 END) as signature_count,
-    SUM(CASE WHEN is_attestation THEN 1 ELSE 0 END) as attestation_count
+    SUM(CASE WHEN is_attestation THEN 1 ELSE 0 END) as attestation_count,
+    SUM(CASE WHEN is_vex THEN 1 ELSE 0 END) as vex_count,
+    SUM(CASE WHEN is_slsa_provenance THEN 1 ELSE 0 END) as slsa_count,
+    SUM(CASE WHEN is_in_toto_link THEN 1 ELSE 0 END) as intoto_link_count,
+    SUM(CASE WHEN is_in_toto_layout THEN 1 ELSE 0 END) as intoto_layout_count,
+    SUM(CASE WHEN is_sigstore_bundle THEN 1 ELSE 0 END) as sigstore_bundle_count,
+    SUM(CASE WHEN is_swid_tag THEN 1 ELSE 0 END) as swid_tag_count,
+    SUM(CASE WHEN is_container_attestation THEN 1 ELSE 0 END) as container_attestation_count,
+    SUM(CASE WHEN is_license_file THEN 1 ELSE 0 END) as license_file_count
 FROM agg_artifact_patterns;

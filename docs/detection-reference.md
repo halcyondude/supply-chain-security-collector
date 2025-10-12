@@ -9,15 +9,15 @@ This document provides a comprehensive catalog of all supply chain security tool
 | **SBOM Formats** | | | | | |
 | SPDX | ✅ | ✅ | Complete | - | - |
 | CycloneDX | ✅ | ✅ | Complete | - | - |
-| SWID Tags | ❌ | ❌ | Missing | High | High |
+| SWID Tags | ✅ | ❌ | Detection only | High | High |
 | **Signatures & Attestations** | | | | | |
 | Standard Signatures (.sig, .asc, .pem) | ✅ | ✅ | Complete | - | - |
 | Generic Attestations | ✅ | ❌ | Detection only | Medium | Medium |
 | VEX Documents | ✅ | ❌ | Detection only | High | High |
 | SLSA Provenance | ✅ | ❌ | Detection only | High | High |
 | In-toto Links | ✅ | ❌ | Detection only | High | High |
-| In-toto Layouts | ❌ | ❌ | Missing | High | High |
-| Sigstore Bundles | ❌ | ❌ | Missing | High | High |
+| In-toto Layouts | ✅ | ❌ | Detection only | High | High |
+| Sigstore Bundles | ✅ | ❌ | Detection only | High | High |
 | Container Attestations | ✅ | ❌ | Detection only | Medium | Medium |
 | License Files | ✅ | ❌ | Detection only | Low | Low |
 | **SBOM Generation Tools** | | | | | |
@@ -75,7 +75,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 ### SBOM Formats
 - [SPDX](#spdx)
 - [CycloneDX](#cyclonedx) 
-- [SWID Tags](#swid-tags) ❌
+- [SWID Tags](#swid-tags)
 
 ### Signatures & Attestations
 - [Standard Signatures](#standard-signatures)
@@ -83,8 +83,8 @@ This document provides a comprehensive catalog of all supply chain security tool
 - [VEX Documents](#vex-documents)
 - [SLSA Provenance](#slsa-provenance)
 - [In-toto Links](#in-toto-links)
-- [In-toto Layouts](#in-toto-layouts) ❌
-- [Sigstore Bundles](#sigstore-bundles) ❌
+- [In-toto Layouts](#in-toto-layouts)
+- [Sigstore Bundles](#sigstore-bundles)
 - [Container Attestations](#container-attestations)
 - [License Files](#license-files)
 
@@ -197,13 +197,13 @@ CASE WHEN REGEXP_MATCHES(ra.name, '(?i)\b(cyclonedx|cdx|\.cdx)\b') THEN 'cyclone
 
 ### SWID Tags
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** Software Identification (SWID) tags are an ISO/IEC 19770-2 standard for software identification. Used primarily in enterprise and government environments for software inventory and compliance.
 
 **Documentation:** https://csrc.nist.gov/projects/software-identification-swid
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- File name contains SWID indicators
 REGEXP_MATCHES(ra.name, '(?i)\b(swid|\.swidtag)\b') as is_swid_tag
@@ -340,13 +340,13 @@ REGEXP_MATCHES(ra.name, '(?i)\b(link|\.link)\b')
 
 ### In-toto Layouts
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** In-toto layout files define the expected supply chain steps, their sequence, and the authorized functionaries. They serve as policies for supply chain verification.
 
 **Documentation:** https://github.com/in-toto/docs/blob/master/in-toto-spec.md
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- File name contains layout indicators
 REGEXP_MATCHES(ra.name, '(?i)\b(layout|\.layout)\b') as is_in_toto_layout
@@ -363,13 +363,13 @@ REGEXP_MATCHES(ra.name, '(?i)\b(layout|\.layout)\b') as is_in_toto_layout
 
 ### Sigstore Bundles
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** Sigstore bundles contain signatures, certificates, and transparency log entries in a single file. Part of the Sigstore ecosystem for keyless signing.
 
 **Documentation:** https://docs.sigstore.dev/
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- File extension indicating Sigstore bundle
 REGEXP_MATCHES(ra.name, '(?i)\.bundle$') as is_sigstore_bundle
