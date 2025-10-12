@@ -4,69 +4,81 @@ This document provides a comprehensive catalog of all supply chain security tool
 
 ## Summary Table
 
-| Category | Tool/Format | Implemented | Reported | Status | Priority |
-|----------|-------------|-------------|----------|---------|----------|
-| **SBOM Formats** | | | | | |
-| SPDX | ✅ | ✅ | Complete | - | - |
-| CycloneDX | ✅ | ✅ | Complete | - | - |
-| SWID Tags | ✅ | ❌ | Detection only | High | High |
-| **Signatures & Attestations** | | | | | |
-| Standard Signatures (.sig, .asc, .pem) | ✅ | ✅ | Complete | - | - |
-| Generic Attestations | ✅ | ✅ | Complete | - | - |
-| VEX Documents | ✅ | ✅ | Complete | - | - |
-| SLSA Provenance | ✅ | ✅ | Complete | - | - |
-| In-toto Links | ✅ | ✅ | Complete | - | - |
-| In-toto Layouts | ✅ | ✅ | Complete | - | - |
-| Sigstore Bundles | ✅ | ✅ | Complete | - | - |
-| Container Attestations | ✅ | ✅ | Complete | - | - |
-| License Files | ✅ | ✅ | Complete | - | - |
-| **SBOM Generation Tools** | | | | | |
-| Syft | ✅ | ✅ | Complete | - | - |
-| Trivy | ✅ | ✅ | Complete | - | - |
-| CycloneDX Generator | ✅ | ✅ | Complete | - | - |
-| SPDX SBOM Generator | ✅ | ✅ | Complete | - | - |
-| Tern | ✅ | ✅ | Complete | - | - |
-| Bomber | ❌ | ❌ | Missing | Medium | Medium |
-| OSS Review Toolkit (ORT) | ❌ | ❌ | Missing | Medium | Medium |
-| **Signing & Attestation Tools** | | | | | |
-| Cosign | ✅ | ✅ | Complete | - | - |
-| Sigstore | ✅ | ✅ | Complete | - | - |
-| SLSA GitHub Generator | ✅ | ✅ | Complete | - | - |
-| Notation | ✅ | ✅ | Complete | - | - |
-| Witness | ❌ | ❌ | Missing | Medium | Medium |
-| Kyverno | ❌ | ❌ | Missing | Medium | Medium |
-| **Vulnerability Scanners** | | | | | |
-| Snyk | ✅ | ✅ | Complete | - | - |
-| Anchore/Grype | ✅ | ✅ | Complete | - | - |
-| Trivy | ✅ | ✅ | Complete | - | - |
-| Clair | ✅ | ✅ | Complete | - | - |
-| Docker Scout | ✅ | ✅ | Complete | - | - |
-| Twistlock | ✅ | ❌ | Detection only | Low | Low |
-| Aqua | ✅ | ❌ | Detection only | Low | Low |
-| **Dependency Scanners** | | | | | |
-| Dependabot | ✅ | ✅ | Complete | - | - |
-| Renovate | ✅ | ✅ | Complete | - | - |
-| WhiteSource | ✅ | ✅ | Complete | - | - |
-| FOSSA | ✅ | ✅ | Complete | - | - |
-| **Code Scanners** | | | | | |
-| CodeQL | ✅ | ✅ | Complete | - | - |
-| Semgrep | ✅ | ✅ | Complete | - | - |
-| Bandit | ✅ | ✅ | Complete | - | - |
-| ESLint Security | ✅ | ❌ | Detection only | Low | Low |
-| **Build & Release Tools** | | | | | |
-| GoReleaser | ✅ | ✅ | Complete | - | - |
-| **License & Compliance** | | | | | |
-| Scancode | ❌ | ❌ | Missing | Medium | Medium |
-| Licensee | ❌ | ❌ | Missing | Low | Low |
-| **Policy & Governance** | | | | | |
-| Open Policy Agent (OPA) | ❌ | ❌ | Missing | Low | Low |
-| Rego Policies | ❌ | ❌ | Missing | Low | Low |
+| Category                                 | Query | Report | Source   | Pattern                                           |
+|------------------------------------------|-------|--------|----------|---------------------------------------------------|
+| **SBOM Formats**                         |       |        |          |                                                   |
+| SPDX                                     | ✅    | ✅      | Artifact | `(?i)\\b(spdx\|\.spdx)\\b`                        |
+| CycloneDX                                | ✅    | ✅      | Artifact | `(?i)\\b(cyclonedx\|cdx\|\.cdx)\\b`               |
+| SWID Tags                                | ✅     | ❌     | Artifact | `(?i)\\b(swid\|\.swidtag)\\b`                     |
+| **Signatures & Attestations**            |        |        |          |                                                   |
+| Standard Signatures (.sig, .asc, .pem)   | ✅     | ✅      | Artifact | `(?i)\\.(sig\|asc\|pem\|pub)$`                    |
+| Generic Attestations                     | ✅     | ✅      | Artifact | `(?i)attestation`                                 |
+| VEX Documents                            | ✅     | ✅      | Artifact | `(?i)\\b(vex\|\.vex)\\b`                          |
+| SLSA Provenance                          | ✅     | ✅      | Artifact | `(?i)\\b(provenance\|slsa\|\.intoto\.jsonl)\\b`   |
+| In-toto Links                            | ✅     | ✅      | Artifact | `(?i)\\b(link\|\.link)\\b`                        |
+| In-toto Layouts                          | ✅     | ✅      | Artifact | `(?i)\\b(layout\|\.layout)\\b`                    |
+| Sigstore Bundles                         | ✅     | ✅      | Artifact | `(?i)\.bundle$`                                   |
+| Container Attestations                   | ✅     | ✅      | Artifact | `(?i)\\b(cosign\|rekor\|fulcio)\\b`               |
+| License Files                            | ✅     | ✅      | Artifact | `(?i)\\b(license\|copying\|notice)\\b`            |
+| **SBOM Generation Tools**                |        |        |          |                                                   |
+| Syft                                     | ✅     | ✅      | CI       | `(?i)\\bsyft\\b`                                  |
+| Trivy                                    | ✅     | ✅      | CI       | `(?i)\\btrivy\\b`                                 |
+| CycloneDX Generator                      | ✅     | ✅      | CI       | `(?i)\\bcdxgen\\b`                                |
+| SPDX SBOM Generator                      | ✅     | ✅      | CI       | `(?i)\\bspdx-sbom-generator\\b`                   |
+| Tern                                     | ✅     | ✅      | CI       | `(?i)\\b(tern-tools/tern\|tern.*sbom)\\b`         |
+| Bomber                                   | ❌     | ❌      | CI       | `(?i)\\bdevops-kung-fu/bomber\\b`                 |
+| OSS Review Toolkit (ORT)                 | ❌     | ❌      | CI       | `(?i)\\boss-review-toolkit\|ort-project\\b`       |
+| **Signing & Attestation Tools**          |        |        |          |                                                   |
+| Cosign                                   | ✅     | ✅      | CI       | `(?i)\\bcosign\\b`                                |
+| Sigstore                                 | ✅     | ✅      | CI       | `(?i)\\bsigstore\\b`                              |
+| SLSA GitHub Generator                    | ✅     | ✅      | CI       | `(?i)\\bslsa-github-generator\\b`                 |
+| Notation                                 | ✅     | ✅      | CI       | `(?i)\\b(notation\|notaryproject)\\b`             |
+| Witness                                  | ❌     | ❌      | CI       | `(?i)\\btestifysec/witness\\b`                    |
+| Kyverno                                  | ❌     | ❌      | CI       | `(?i)\\bkyverno\\b`                               |
+| **Vulnerability Scanners**               |        |        |          |                                                   |
+| Snyk                                     | ✅     | ✅      | CI       | `(?i)\\bsnyk\\b`                                  |
+| Anchore/Grype                            | ✅     | ✅      | CI       | `(?i)\\b(anchore\|grype)\\b`                      |
+| Trivy                                    | ✅     | ✅      | CI       | `(?i)\\btrivy\\b`                                 |
+| Clair                                    | ✅     | ✅      | CI       | `(?i)\\bclair\\b`                                 |
+| Docker Scout                             | ✅     | ✅      | CI       | `(?i)\\bdocker.*scout\\b`                         |
+| Twistlock                                | ✅     | ❌      | CI       | `(?i)\\btwistlock\\b`                             |
+| Aqua                                     | ✅     | ❌      | CI       | `(?i)\\baqua\\b`                                  |
+| **Dependency Scanners**                  |        |        |          |                                                   |
+| Dependabot                               | ✅     | ✅      | CI       | `(?i)\\bdependabot\\b`                            |
+| Renovate                                 | ✅     | ✅      | CI       | `(?i)\\brenovate\\b`                              |
+| WhiteSource                              | ✅     | ✅      | CI       | `(?i)\\bwhitesource\\b`                           |
+| FOSSA                                    | ✅     | ✅      | CI       | `(?i)\\bfossa\\b`                                 |
+| **Code Scanners**                        |        |        |          |                                                   |
+| CodeQL                                   | ✅     | ✅      | CI       | `(?i)\\bcodeql\\b`                                |
+| Semgrep                                  | ✅     | ✅      | CI       | `(?i)\\bsemgrep\\b`                               |
+| Bandit                                   | ✅     | ✅      | CI       | `(?i)\\bbandit\\b`                                |
+| ESLint Security                          | ✅     | ❌      | CI       | `(?i)\\beslint-security\\b`                       |
+| **Build & Release Tools**                |        |        |          |                                                   |
+| GoReleaser                               | ✅     | ✅      | CI       | `(?i)\\bgoreleaser/goreleaser-action\\b`          |
+| **License & Compliance**                 |        |        |          |                                                   |
+| Scancode                                 | ❌     | ❌      | CI       | `(?i)\\bscancode\\b`                              |
+| Licensee                                 | ❌     | ❌      | CI       | `(?i)\\blicensee\\b`                              |
+| **Policy & Governance**                  |        |        |          |                                                   |
+| Open Policy Agent (OPA)                  | ❌     | ❌      | CI       | `(?i)\\bopen-policy-agent\|opa\\b`                |
+| Rego Policies                            | ❌     | ❌      | Artifact | `(?i)\.rego$`                                     |
 
 **Legend:**
-- ✅ **Implemented**: Detected in SQL models
-- ❌ **Missing**: Not yet implemented
-- **Reported**: Shown in generated reports
-- **Detection only**: Detected but not surfaced in reports
+- ✅ = Fully functional
+- ❌ = Not yet implemented
+- **Query** = Can detect in SQL queries
+- **Report** = Included in generated reports
+- **Source** = Where the pattern is matched (Artifact = release assets, CI = workflow files)
+- **Pattern** = Regular expression used for detection
+
+**Regex Syntax Notes:**
+- `(?i)` = Case-insensitive matching
+- `\\b` = Word boundary (double backslash is needed for SQL string escaping)
+- `\\d` = Digit character
+- `\\.` = Literal dot/period (escaped)
+- `|` = OR operator (e.g., `spdx|cdx` matches either "spdx" or "cdx")
+- `.*` = Match any character, zero or more times
+- `$` = End of string anchor
+- The double backslashes (`\\`) you see are due to SQL string literal escaping - in the actual regex engine, they become single backslashes
 
 ---
 
