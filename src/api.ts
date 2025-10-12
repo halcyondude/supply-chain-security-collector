@@ -1,5 +1,18 @@
 // src/api.ts
 // This module encapsulates all interactions with the GitHub GraphQL API.
+//
+// To add a new query:
+// 1. Create your .graphql file in src/graphql/ (e.g., GetRepoDataMetrics.graphql)
+// 2. Run `npm run codegen` to generate TypeScript types
+// 3. Import the generated Document and Query types below
+// 4. Create a fetch function following the pattern of fetchRepositoryExtendedInfo
+// 5. Export your fetch function for use in neo.ts
+//
+// Each fetch function should:
+// - Accept: (client, variables, verbose) parameters
+// - Return: Promise<YourQueryType | null>
+// - Handle errors and rate limits gracefully
+// - Log appropriately based on verbose flag
 
 import { GraphQLClient, ClientError } from 'graphql-request';
 import chalk from 'chalk';

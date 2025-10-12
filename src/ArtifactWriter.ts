@@ -96,6 +96,14 @@ export async function writeArtifacts(
  * 
  * Dispatches to the appropriate normalizer based on query name.
  * Each normalizer extracts entities with proper FKs.
+ * 
+ * To add support for a new query:
+ * 1. Create a normalizer function in src/normalizers/GetRepoDataMetricsNormalizer.ts
+ *    - Export a normalize function that returns typed entities
+ *    - Export a getNormalizationStats function for logging
+ * 2. Import the types and functions at the top of this file
+ * 3. Add a new else-if branch below for your query name
+ * 4. Call your createTablesForMetricsQuery function (or similar)
  */
 async function createNormalizedTables(
     con: DuckDBConnection, 
@@ -106,12 +114,14 @@ async function createNormalizedTables(
     console.log(`  Query type: ${queryName}`);
     
     // Dispatch to the appropriate normalizer based on query name
-    if (queryName === 'GetRepoDataArtifacts') {
-        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
-    } else if (queryName === 'GetRepoDataExtendedInfo') {
+    if (queryName === 'GetRepoDataExtendedInfo') {
         await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir);
+    } else if (queryName === 'GetRepoDataArtifacts') {
+        // Legacy query - kept for compatibility
+        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
     } else {
         console.warn(`  ⚠️  Unknown query type: ${queryName}. Skipping normalization.`);
+        console.warn(`  💡 To add support, create a normalizer and add handling here.`);
     }
 }
 

@@ -23,7 +23,7 @@ async function main() {
     .description('Fetch GraphQL data and store in DuckDB with normalized tables')
     .requiredOption('-i, --input <file>', 'Input JSONL file with repository targets')
     .option('-o, --output <dir>', 'Output directory', './output')
-    .option('-q, --queries <names...>', 'Query names to run (e.g., GetRepoDataArtifacts GetRepoDataExtendedInfo)', ['GetRepoDataArtifacts'])
+    .option('-q, --queries <names...>', 'Query names to run (e.g., GetRepoDataExtendedInfo)', ['GetRepoDataExtendedInfo'])
     .option('--parallel', 'Fetch repositories in parallel', false)
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('-v, --verbose', 'Verbose output', false)
@@ -68,9 +68,19 @@ async function main() {
   const client = createApiClient(githubToken);
 
   // Map of query names to fetch functions
+  // 
+  // To add a new query:
+  // 1. Create a new .graphql file in src/graphql/ (e.g., GetRepoDataMetrics.graphql)
+  // 2. Run `npm run codegen` to generate TypeScript types
+  // 3. Add a fetch function in src/api.ts (e.g., fetchRepositoryMetrics)
+  // 4. Add the mapping here: 'GetRepoDataMetrics': fetchRepositoryMetrics
+  // 5. Create a normalizer in src/normalizers/ (e.g., GetRepoDataMetricsNormalizer.ts)
+  // 6. Add handling in src/ArtifactWriter.ts createNormalizedTables()
+  //
   const queryFunctions: Record<string, QueryFunction> = {
-    'GetRepoDataArtifacts': fetchRepositoryArtifacts,
     'GetRepoDataExtendedInfo': fetchRepositoryExtendedInfo,
+    // Legacy query - kept for compatibility, but GetRepoDataExtendedInfo is recommended
+    'GetRepoDataArtifacts': fetchRepositoryArtifacts,
   };
 
   // Validate query names
