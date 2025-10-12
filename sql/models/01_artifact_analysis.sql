@@ -16,6 +16,10 @@ SELECT
     ra.id as asset_id,
     ra.release_id,
     rel.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     ra.name as asset_name,
     ra.downloadUrl as download_url,
     
@@ -50,7 +54,8 @@ SELECT
     REGEXP_MATCHES(ra.name, '(?i)\b(license|copying|notice)\b') as is_license_file
 
 FROM base_release_assets ra
-JOIN base_releases rel ON ra.release_id = rel.id;
+JOIN base_releases rel ON ra.release_id = rel.id
+JOIN base_repositories repo ON rel.repository_id = repo.id;
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_artifact_repository ON agg_artifact_patterns(repository_id);

@@ -16,6 +16,10 @@ CREATE OR REPLACE TABLE agg_workflow_tools AS
 SELECT 
     w.id as workflow_id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename as workflow_name,
     'sbom-generator' as tool_category,
     CASE 
@@ -26,6 +30,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') THEN 'tern'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(syft|trivy|cdxgen|spdx-sbom-generator|tern-tools/tern|tern.*sbom)\b')
 
 UNION ALL
@@ -34,6 +39,10 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'signer' as tool_category,
     CASE 
@@ -43,6 +52,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') THEN 'notation'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(cosign|sigstore|slsa-github-generator|notation|notaryproject)\b')
 
 UNION ALL
@@ -51,10 +61,15 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'goreleaser' as tool_category,
     'goreleaser' as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\bgoreleaser/goreleaser-action\b')
 
 UNION ALL
@@ -63,6 +78,10 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'vulnerability-scanner' as tool_category,
     CASE 
@@ -73,6 +92,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\bclair\b') THEN 'clair'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(snyk|anchore|twistlock|aqua|clair)\b')
 
 UNION ALL
@@ -81,6 +101,10 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'dependency-scanner' as tool_category,
     CASE 
@@ -90,6 +114,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\bfossa\b') THEN 'fossa'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(dependabot|renovate|whitesource|fossa)\b')
 
 UNION ALL
@@ -98,6 +123,10 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'code-scanner' as tool_category,
     CASE 
@@ -107,6 +136,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\beslint-security\b') THEN 'eslint-security'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(codeql|semgrep|bandit|eslint-security)\b')
 
 UNION ALL
@@ -115,6 +145,10 @@ UNION ALL
 SELECT 
     w.id,
     w.repository_id,
+    -- Repository identification
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
     w.filename,
     'container-scanner' as tool_category,
     CASE 
@@ -123,6 +157,7 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\btrivy\b') THEN 'trivy'
     END as tool_name
 FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
 WHERE REGEXP_MATCHES(w.content, '(?i)\b(docker.*scout|grype|trivy)\b');
 
 -- Create indexes for common queries

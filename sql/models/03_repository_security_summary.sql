@@ -86,8 +86,10 @@ release_stats AS (
 )
 SELECT 
     r.id as repository_id,
-    r.nameWithOwner as repository_name,
-    r.name as repo_name,
+    -- Repository identification
+    SPLIT_PART(r.nameWithOwner, '/', 1) as owner,
+    r.name as repo,
+    r.nameWithOwner as nameWithOwner,
     r.description,
     r.url,
     
@@ -184,6 +186,7 @@ LEFT JOIN release_stats rs ON r.id = rs.repository_id;
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_summary_repository ON agg_repo_summary(repository_id);
+CREATE INDEX IF NOT EXISTS idx_summary_owner ON agg_repo_summary(owner);
 CREATE INDEX IF NOT EXISTS idx_summary_has_sbom ON agg_repo_summary(has_sbom_artifact);
 CREATE INDEX IF NOT EXISTS idx_summary_uses_cosign ON agg_repo_summary(uses_cosign);
 CREATE INDEX IF NOT EXISTS idx_summary_maturity_score ON agg_repo_summary(security_maturity_score);
