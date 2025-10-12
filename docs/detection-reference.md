@@ -25,14 +25,14 @@ This document provides a comprehensive catalog of all supply chain security tool
 | Trivy | ✅ | ✅ | Complete | - | - |
 | CycloneDX Generator | ✅ | ✅ | Complete | - | - |
 | SPDX SBOM Generator | ✅ | ✅ | Complete | - | - |
-| Tern | ❌ | ❌ | Missing | High | High |
+| Tern | ✅ | ❌ | Detection only | High | High |
 | Bomber | ❌ | ❌ | Missing | Medium | Medium |
 | OSS Review Toolkit (ORT) | ❌ | ❌ | Missing | Medium | Medium |
 | **Signing & Attestation Tools** | | | | | |
 | Cosign | ✅ | ✅ | Complete | - | - |
 | Sigstore | ✅ | ✅ | Complete | - | - |
 | SLSA GitHub Generator | ✅ | ✅ | Complete | - | - |
-| Notation | ❌ | ❌ | Missing | High | High |
+| Notation | ✅ | ❌ | Detection only | High | High |
 | Witness | ❌ | ❌ | Missing | Medium | Medium |
 | Kyverno | ❌ | ❌ | Missing | Medium | Medium |
 | **Vulnerability Scanners** | | | | | |
@@ -40,7 +40,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 | Anchore/Grype | ✅ | ✅ | Complete | - | - |
 | Trivy | ✅ | ✅ | Complete | - | - |
 | Clair | ✅ | ❌ | Detection only | Medium | Medium |
-| Docker Scout | ❌ | ❌ | Missing | High | High |
+| Docker Scout | ✅ | ❌ | Detection only | High | High |
 | Twistlock | ✅ | ❌ | Detection only | Low | Low |
 | Aqua | ✅ | ❌ | Detection only | Low | Low |
 | **Dependency Scanners** | | | | | |
@@ -93,7 +93,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 - [Trivy](#trivy)
 - [CycloneDX Generator](#cyclonedx-generator)
 - [SPDX SBOM Generator](#spdx-sbom-generator)
-- [Tern](#tern) ❌
+- [Tern](#tern)
 - [Bomber](#bomber) ❌
 - [OSS Review Toolkit (ORT)](#oss-review-toolkit-ort) ❌
 
@@ -101,7 +101,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 - [Cosign](#cosign)
 - [Sigstore](#sigstore)
 - [SLSA GitHub Generator](#slsa-github-generator)
-- [Notation](#notation) ❌
+- [Notation](#notation)
 - [Witness](#witness) ❌
 - [Kyverno](#kyverno) ❌
 
@@ -110,7 +110,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 - [Anchore/Grype](#anchoregrype)
 - [Trivy](#trivy-scanner)
 - [Clair](#clair)
-- [Docker Scout](#docker-scout) ❌
+- [Docker Scout](#docker-scout)
 - [Twistlock](#twistlock)
 - [Aqua](#aqua)
 
@@ -544,13 +544,13 @@ REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b')
 
 ### Tern
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** Tern is a software composition analysis tool and SBOM generator specifically designed for container images. Created by VMware and now a Linux Foundation project.
 
 **Documentation:** https://github.com/tern-tools/tern
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- Workflow content contains Tern references
 REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') as uses_tern
@@ -710,16 +710,16 @@ REGEXP_MATCHES(w.content, '(?i)\bslsa-github-generator\b')
 
 ### Notation
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** Notation is a CNCF project for signing and verifying artifacts stored in OCI registries. Focuses on container image and artifact signing.
 
 **Documentation:** https://notaryproject.dev/
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- Workflow content contains Notation references
-REGEXP_MATCHES(w.content, '(?i)\bnotation|notaryproject\b') as uses_notation
+REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') as uses_notation
 ```
 
 **Generated Artifacts:**
@@ -903,13 +903,13 @@ REGEXP_MATCHES(w.content, '(?i)\bclair\b')
 
 ### Docker Scout
 
-**Status:** ❌ Missing, Priority: High
+**Status:** ✅ Implemented, ❌ Not Reported
 
 **Description:** Docker Scout is Docker's official security scanning service for container images. Provides vulnerability analysis and recommendations.
 
 **Documentation:** https://docs.docker.com/scout/
 
-**Proposed Detection Pattern:**
+**Detection Pattern:**
 ```sql
 -- Workflow content contains Docker Scout references
 REGEXP_MATCHES(w.content, '(?i)\bdocker.*scout\b') as uses_docker_scout

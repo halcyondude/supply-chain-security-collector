@@ -23,9 +23,10 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\btrivy\b') THEN 'trivy'
         WHEN REGEXP_MATCHES(w.content, '(?i)\bcdxgen\b') THEN 'cdxgen'
         WHEN REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b') THEN 'spdx-sbom-generator'
+        WHEN REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') THEN 'tern'
     END as tool_name
 FROM base_workflows w
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(syft|trivy|cdxgen|spdx-sbom-generator)\b')
+WHERE REGEXP_MATCHES(w.content, '(?i)\b(syft|trivy|cdxgen|spdx-sbom-generator|tern-tools/tern|tern.*sbom)\b')
 
 UNION ALL
 
@@ -39,9 +40,10 @@ SELECT
         WHEN REGEXP_MATCHES(w.content, '(?i)\bcosign\b') THEN 'cosign'
         WHEN REGEXP_MATCHES(w.content, '(?i)\bsigstore\b') THEN 'sigstore'
         WHEN REGEXP_MATCHES(w.content, '(?i)\bslsa-github-generator\b') THEN 'slsa-github-generator'
+        WHEN REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') THEN 'notation'
     END as tool_name
 FROM base_workflows w
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(cosign|sigstore|slsa-github-generator)\b')
+WHERE REGEXP_MATCHES(w.content, '(?i)\b(cosign|sigstore|slsa-github-generator|notation|notaryproject)\b')
 
 UNION ALL
 
@@ -116,12 +118,12 @@ SELECT
     w.filename,
     'container-scanner' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bdocker-scout\b') THEN 'docker-scout'
+        WHEN REGEXP_MATCHES(w.content, '(?i)\bdocker.*scout\b') THEN 'docker-scout'
         WHEN REGEXP_MATCHES(w.content, '(?i)\bgrype\b') THEN 'grype'
         WHEN REGEXP_MATCHES(w.content, '(?i)\btrivy\b') THEN 'trivy'
     END as tool_name
 FROM base_workflows w
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(docker-scout|grype|trivy)\b');
+WHERE REGEXP_MATCHES(w.content, '(?i)\b(docker.*scout|grype|trivy)\b');
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_workflow_repository ON agg_workflow_tools(repository_id);
