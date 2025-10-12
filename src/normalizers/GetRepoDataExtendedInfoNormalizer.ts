@@ -2,13 +2,14 @@ import type { GetRepoDataExtendedInfoQuery } from '../generated/graphql';
 
 /**
  * Normalized tables extracted from GetRepoDataExtendedInfo query
+ * Tables use 'base_' prefix to indicate normalized entity layer
  */
 export interface GetRepoDataExtendedInfoNormalized {
-    repositories: Repository[];
-    branch_protection_rules: BranchProtectionRule[];
-    releases: Release[];
-    release_assets: ReleaseAsset[];
-    workflows: Workflow[];
+    base_repositories: Repository[];
+    base_branch_protection_rules: BranchProtectionRule[];
+    base_releases: Release[];
+    base_release_assets: ReleaseAsset[];
+    base_workflows: Workflow[];
 }
 
 interface Repository {
@@ -217,11 +218,11 @@ export function normalizeGetRepoDataExtendedInfo(
     }
 
     return {
-        repositories,
-        branch_protection_rules,
-        releases,
-        release_assets,
-        workflows,
+        base_repositories: repositories,
+        base_branch_protection_rules: branch_protection_rules,
+        base_releases: releases,
+        base_release_assets: release_assets,
+        base_workflows: workflows,
     };
 }
 
@@ -230,10 +231,10 @@ export function normalizeGetRepoDataExtendedInfo(
  */
 export function getNormalizationStats(normalized: GetRepoDataExtendedInfoNormalized): string {
     return `
-  Normalized ${normalized.repositories.length} repositories
-  Extracted ${normalized.branch_protection_rules.length} branch protection rules
-  Extracted ${normalized.releases.length} releases
-  Extracted ${normalized.release_assets.length} release assets
-  Extracted ${normalized.workflows.length} workflow files
+  Normalized ${normalized.base_repositories.length} repositories
+  Extracted ${normalized.base_branch_protection_rules.length} branch protection rules
+  Extracted ${normalized.base_releases.length} releases
+  Extracted ${normalized.base_release_assets.length} release assets
+  Extracted ${normalized.base_workflows.length} workflow files
     `.trim();
 }

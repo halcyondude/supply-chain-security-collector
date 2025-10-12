@@ -1,0 +1,10 @@
+spectaql:
+  introspection:
+    schemaFile: ./schema/introspection.json
+  
+  targetDir: ./docs/api
+  
+  info:
+    title: GraphQL Data Engineering Toolkit
+    description: A generic, high-performance, type-driven data engineering toolkit for GraphQL APIs
+    version: 1.0.0

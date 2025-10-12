@@ -2,11 +2,12 @@ import type { GetRepoDataArtifactsQuery } from '../generated/graphql';
 
 /**
  * Normalized tables extracted from GetRepoDataArtifacts query
+ * Tables use 'base_' prefix to indicate normalized entity layer
  */
 export interface GetRepoDataArtifactsNormalized {
-    repositories: Repository[];
-    releases: Release[];
-    release_assets: ReleaseAsset[];
+    base_repositories: Repository[];
+    base_releases: Release[];
+    base_release_assets: ReleaseAsset[];
 }
 
 interface Repository {
@@ -99,9 +100,9 @@ export function normalizeGetRepoDataArtifacts(
         );
 
     return {
-        repositories,
-        releases,
-        release_assets
+        base_repositories: repositories,
+        base_releases: releases,
+        base_release_assets: release_assets
     };
 }
 
@@ -110,8 +111,8 @@ export function normalizeGetRepoDataArtifacts(
  */
 export function getNormalizationStats(normalized: GetRepoDataArtifactsNormalized): string {
     return `
-  Normalized ${normalized.repositories.length} repositories
-  Extracted ${normalized.releases.length} releases
-  Extracted ${normalized.release_assets.length} release assets
+  Normalized ${normalized.base_repositories.length} repositories
+  Extracted ${normalized.base_releases.length} releases
+  Extracted ${normalized.base_release_assets.length} release assets
     `.trim();
 }

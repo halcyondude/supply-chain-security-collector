@@ -11,6 +11,7 @@ import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo 
 import { appendRawResponse } from './rawResponseWriter';
 import { writeArtifacts } from './ArtifactWriter';
 import type { RepositoryTarget } from './config';
+import { SecurityAnalyzer } from './SecurityAnalyzer';
 
 type QueryFunction = (client: ReturnType<typeof createApiClient>, variables: { owner: string; name: string }, verbose: boolean) => Promise<unknown>;
 
@@ -24,11 +25,12 @@ async function main() {
     .option('-o, --output <dir>', 'Output directory', './output')
     .option('-q, --queries <names...>', 'Query names to run (e.g., GetRepoDataArtifacts GetRepoDataExtendedInfo)', ['GetRepoDataArtifacts'])
     .option('--parallel', 'Fetch repositories in parallel', false)
+    .option('--analyze', 'Run security analysis after data collection', false)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
   const options = program.opts();
-  const { input, output, queries: queryNames, parallel: useParallel, verbose } = options;
+  const { input, output, queries: queryNames, parallel: useParallel, analyze: runAnalysis, verbose } = options;
 
   console.log(chalk.blue.bold('🚀 GraphQL Data Collection'));
   console.log(chalk.gray('─'.repeat(50)));
@@ -197,6 +199,27 @@ async function main() {
     }
   }
   console.log();
+
+  // Run analysis if requested
+  if (runAnalysis) {
+    console.log(chalk.gray('\n' + '─'.repeat(50)));
+    
+    // Run analysis on each database
+    for (const queryName of queryNames) {
+      const dbPath = path.join(runDir, queryName, 'database.db');
+      
+      console.log(chalk.bold.cyan(`\n🔍 Analyzing ${queryName}...\n`));
+      
+      try {
+        const analyzer = new SecurityAnalyzer(dbPath);
+        await analyzer.analyze();
+        await analyzer.close();
+      } catch (error) {
+        console.error(chalk.yellow(`  ⚠ Analysis failed for ${queryName}: ${error instanceof Error ? error.message : error}`));
+        console.log(chalk.gray('  (This is expected if workflow data is not available)'));
+      }
+    }
+  }
 }
 
 main().catch((error) => {

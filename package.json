@@ -5,6 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "start": "ts-node src/neo.ts",
+    "analyze": "ts-node src/analyze.ts",
     "build": "tsc",
     "codegen": "graphql-codegen --config codegen.ts",
     "prebuild": "npm run codegen",

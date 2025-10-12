@@ -78,9 +78,16 @@ export async function writeArtifacts(
         console.log(`✅ DuckDB database written to ${dbPath}`);
         console.log(`✅ All artifacts written to ${outputDir}`);
     } finally {
-        // Ensure connection is closed
-        // Note: @duckdb/node-api v1.4.1 doesn't have close() method
-        // The connection will be garbage collected
+        // Ensure connection is properly closed and all changes are flushed
+        try {
+            // Force checkpoint to write WAL to database file
+            await con.run('CHECKPOINT');
+            // Explicitly close the connection
+            con.closeSync();
+            console.log('✅ Database connection closed');
+        } catch (error) {
+            console.warn('Warning: Could not properly close database connection:', error);
+        }
     }
 }
 
@@ -120,37 +127,38 @@ async function createTablesForArtifactsQuery(
     console.log(getArtifactsStats(normalized));
 
     // Write each table to a temp JSON file and load into DuckDB
-    if (normalized.repositories.length > 0) {
+    // Create base entity tables from normalized data
+    if (normalized.base_repositories.length > 0) {
         const tempPath = path.join(outputDir, 'temp_repositories.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.repositories));
+        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
         await con.run(`
-            CREATE TABLE repositories AS 
+            CREATE TABLE base_repositories AS 
             SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
         `);
         fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: repositories (${normalized.repositories.length} rows)`);
+        console.log(`  ✅ Created table: base_repositories (${normalized.base_repositories.length} rows)`);
     }
 
-    if (normalized.releases.length > 0) {
+    if (normalized.base_releases.length > 0) {
         const tempPath = path.join(outputDir, 'temp_releases.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.releases));
+        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_releases));
         await con.run(`
-            CREATE TABLE releases AS 
+            CREATE TABLE base_releases AS 
             SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
         `);
         fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: releases (${normalized.releases.length} rows)`);
+        console.log(`  ✅ Created table: base_releases (${normalized.base_releases.length} rows)`);
     }
 
-    if (normalized.release_assets.length > 0) {
+    if (normalized.base_release_assets.length > 0) {
         const tempPath = path.join(outputDir, 'temp_release_assets.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.release_assets));
+        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_release_assets));
         await con.run(`
-            CREATE TABLE release_assets AS 
+            CREATE TABLE base_release_assets AS 
             SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
         `);
         fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: release_assets (${normalized.release_assets.length} rows)`);
+        console.log(`  ✅ Created table: base_release_assets (${normalized.base_release_assets.length} rows)`);
     }
 }
 
@@ -165,26 +173,26 @@ async function createTablesForExtendedInfoQuery(
     const normalized = normalizeGetRepoDataExtendedInfo(responses);
     console.log(getExtendedStats(normalized));
 
-    // Helper to write table from array
+    // Helper to write table from array with base_ prefix
     const writeTable = async (tableName: string, data: unknown[]) => {
         if (data.length === 0) return;
         
         const tempPath = path.join(outputDir, `temp_${tableName}.json`);
         fs.writeFileSync(tempPath, JSON.stringify(data));
         await con.run(`
-            CREATE TABLE ${tableName} AS 
+            CREATE TABLE base_${tableName} AS 
             SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
         `);
         fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: ${tableName} (${data.length} rows)`);
+        console.log(`  ✅ Created table: base_${tableName} (${data.length} rows)`);
     };
 
-    // Create all tables
-    await writeTable('repositories', normalized.repositories);
-    await writeTable('branch_protection_rules', normalized.branch_protection_rules);
-    await writeTable('releases', normalized.releases);
-    await writeTable('release_assets', normalized.release_assets);
-    await writeTable('workflows', normalized.workflows);
+    // Create all base entity tables
+    await writeTable('repositories', normalized.base_repositories);
+    await writeTable('branch_protection_rules', normalized.base_branch_protection_rules);
+    await writeTable('releases', normalized.base_releases);
+    await writeTable('release_assets', normalized.base_release_assets);
+    await writeTable('workflows', normalized.base_workflows);
 }
 
 async function exportTablesToParquet(con: DuckDBConnection, parquetDir: string) {
