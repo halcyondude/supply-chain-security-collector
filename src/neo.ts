@@ -10,10 +10,76 @@ import * as fs from 'fs/promises';
 import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo } from './api';
 import { appendRawResponse } from './rawResponseWriter';
 import { writeArtifacts } from './ArtifactWriter';
-import type { RepositoryTarget } from './config';
+import type { RepositoryTarget, ProjectMetadata } from './config';
 import { SecurityAnalyzer } from './SecurityAnalyzer';
 
 type QueryFunction = (client: ReturnType<typeof createApiClient>, variables: { owner: string; name: string }, verbose: boolean) => Promise<unknown>;
+
+// ============================================================================
+// INPUT NORMALIZATION
+// ============================================================================
+
+/**
+ * Normalize input format - convert both simple and rich formats to internal representation
+ * 
+ * Simple format: [{ owner: "kubernetes", name: "kubernetes" }]
+ * Rich format:   [{ project_name: "Kubernetes", repos: [{owner: "kubernetes", name: "kubernetes", primary: true}], ...metadata }]
+ * 
+ * Output: Array of { repo: RepositoryTarget, metadata?: ProjectMetadata }
+ */
+function normalizeInput(
+  inputData: (RepositoryTarget | ProjectMetadata)[],
+  repoScope: 'primary' | 'all'
+): Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> {
+  const results: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
+
+  for (const item of inputData) {
+    // Check if it's rich format (has 'repos' field) or simple format (has only owner/name)
+    if ('repos' in item && Array.isArray(item.repos)) {
+      // Rich format: ProjectMetadata
+      const metadata = item as ProjectMetadata;
+      
+      // Filter repositories based on scope
+      const reposToProcess = repoScope === 'primary' 
+        ? metadata.repos.filter(r => r.primary)
+        : metadata.repos;
+
+      for (const repo of reposToProcess) {
+        results.push({
+          repo: { owner: repo.owner, name: repo.name },
+          metadata
+        });
+      }
+    } else {
+      // Simple format: RepositoryTarget
+      const repo = item as RepositoryTarget;
+      results.push({ repo, metadata: undefined });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Filter normalized input by maturity level(s)
+ */
+function filterByMaturity(
+  normalizedInput: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>,
+  maturityLevels?: string[]
+): Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> {
+  if (!maturityLevels || maturityLevels.length === 0) {
+    return normalizedInput;
+  }
+
+  return normalizedInput.filter(item => {
+    // If no metadata, keep it (simple format repos)
+    if (!item.metadata || !item.metadata.maturity) {
+      return true;
+    }
+    
+    return maturityLevels.includes(item.metadata.maturity);
+  });
+}
 
 async function main() {
   // Parse CLI arguments
@@ -21,19 +87,35 @@ async function main() {
   program
     .name('graphql-data-collector')
     .description('Fetch GraphQL data and store in DuckDB with normalized tables')
-    .requiredOption('-i, --input <file>', 'Input JSONL file with repository targets')
+    .requiredOption('-i, --input <file>', 'Input JSON file with repository targets')
     .option('-o, --output <dir>', 'Output directory', './output')
     .option('-q, --queries <names...>', 'Query names to run (e.g., GetRepoDataExtendedInfo)', ['GetRepoDataExtendedInfo'])
+    .option('--maturity <levels...>', 'Filter by CNCF maturity level (graduated, incubating, sandbox, archived)')
+    .option('--repo-scope <scope>', 'Repository scope: primary (default) or all', 'primary')
     .option('--parallel', 'Fetch repositories in parallel', false)
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
   const options = program.opts();
-  const { input, output, queries: queryNames, parallel: useParallel, analyze: runAnalysis, verbose } = options;
+  const { 
+    input, 
+    output, 
+    queries: queryNames, 
+    maturity: maturityLevels,
+    repoScope,
+    parallel: useParallel, 
+    analyze: runAnalysis, 
+    verbose 
+  } = options;
 
   console.log(chalk.blue.bold('🚀 GraphQL Data Collection'));
   console.log(chalk.gray('─'.repeat(50)));
+
+  // Validate CLI options
+  if (repoScope !== 'primary' && repoScope !== 'all') {
+    throw new Error('--repo-scope must be either "primary" or "all"');
+  }
 
   // Validate GitHub token
   const githubToken = process.env.GITHUB_PAT;
@@ -43,24 +125,33 @@ async function main() {
 
   // Setup output directory with timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const inputBase = path.basename(input, '.jsonl');
-  const runDir = path.join(output, `${inputBase}-${timestamp}`);
+  const inputBaseName = path.basename(input, path.extname(input));
+  const runDir = path.join(output, `${inputBaseName}-${timestamp}`);
   await fs.mkdir(runDir, { recursive: true });
 
   const rawResponsesPath = path.join(runDir, 'raw-responses.jsonl');
 
-  // Read input file
+  // Read and normalize input file
   const inputContent = await fs.readFile(input, 'utf-8');
-  const repositories: RepositoryTarget[] = inputContent
-    .trim()
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => JSON.parse(line));
+  const rawInput: (RepositoryTarget | ProjectMetadata)[] = JSON.parse(inputContent);
+  
+  // Normalize input format (simple or rich) and apply filters
+  let normalizedInput = normalizeInput(rawInput, repoScope as 'primary' | 'all');
+  
+  if (maturityLevels && maturityLevels.length > 0) {
+    normalizedInput = filterByMaturity(normalizedInput, maturityLevels);
+  }
+
+  const repositories = normalizedInput.map(item => item.repo);
 
   console.log(chalk.cyan(`📂 Input:  ${input}`));
   console.log(chalk.cyan(`📁 Output: ${runDir}`));
   console.log(chalk.cyan(`📊 Repos:  ${repositories.length}`));
   console.log(chalk.cyan(`🔍 Queries: ${queryNames.join(', ')}`));
+  if (maturityLevels && maturityLevels.length > 0) {
+    console.log(chalk.cyan(`🎯 Maturity: ${maturityLevels.join(', ')}`));
+  }
+  console.log(chalk.cyan(`🔗 Repo Scope: ${repoScope}`));
   console.log(chalk.cyan(`⚡ Mode:   ${useParallel ? 'Parallel' : 'Sequential'}`));
   console.log(chalk.gray('─'.repeat(50)));
 
@@ -94,52 +185,69 @@ async function main() {
   for (const queryName of queryNames) {
     console.log(chalk.bold.green(`\n🔄 Fetching ${queryName}...\n`));
     const allResponses: unknown[] = [];
+    const responseMetadata: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
     let successCount = 0;
     let failureCount = 0;
 
     const fetchFn = queryFunctions[queryName];
 
     if (useParallel) {
-      // Parallel fetching
-      const fetchPromises = repositories.map(async (repo) => {
-        if (verbose) {
-          console.log(chalk.gray(`  → ${repo.owner}/${repo.name}`));
+      // Parallel fetching with batching to avoid rate limits
+      const BATCH_SIZE = 5; // Safe default: well under GitHub's 100 concurrent limit
+      const BATCH_DELAY_MS = 1000; // 1 second between batches
+      
+      for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
+        const batch = repositories.slice(i, i + BATCH_SIZE);
+        const batchStart = i;
+        
+        const fetchPromises = batch.map(async (repo, batchIdx) => {
+          const idx = batchStart + batchIdx;
+          if (verbose) {
+            console.log(chalk.gray(`  → ${repo.owner}/${repo.name}`));
+          }
+          
+          const data = await fetchFn(client, { owner: repo.owner, name: repo.name }, verbose);
+
+          if (data) {
+            await appendRawResponse(rawResponsesPath, {
+              queryType: queryName,
+              owner: repo.owner,
+              repo: repo.name,
+              response: data,
+            });
+            return { repo, data, metadata: normalizedInput[idx].metadata };
+          }
+          return { repo, data: null, metadata: normalizedInput[idx].metadata };
+        });
+
+        const results = await Promise.allSettled(fetchPromises);
+        
+        for (const result of results) {
+          if (result.status === 'fulfilled' && result.value.data) {
+            allResponses.push(result.value.data);
+            responseMetadata.push({ repo: result.value.repo, metadata: result.value.metadata });
+            successCount++;
+            if (!verbose) {
+              console.log(chalk.green(`  ✓ ${result.value.repo.owner}/${result.value.repo.name}`));
+            }
+          } else if (result.status === 'fulfilled') {
+            failureCount++;
+            console.log(chalk.red(`  ✗ ${result.value.repo.owner}/${result.value.repo.name}`));
+          } else {
+            failureCount++;
+            console.log(chalk.red(`  ✗ Error: ${result.reason?.message || 'Unknown error'}`));
+          }
         }
         
-        const data = await fetchFn(client, { owner: repo.owner, name: repo.name }, verbose);
-
-        if (data) {
-          await appendRawResponse(rawResponsesPath, {
-            queryType: queryName,
-            owner: repo.owner,
-            repo: repo.name,
-            response: data,
-          });
-          return { repo, data };
-        }
-        return { repo, data: null };
-      });
-
-      const results = await Promise.allSettled(fetchPromises);
-      
-      for (const result of results) {
-        if (result.status === 'fulfilled' && result.value.data) {
-          allResponses.push(result.value.data);
-          successCount++;
-          if (!verbose) {
-            console.log(chalk.green(`  ✓ ${result.value.repo.owner}/${result.value.repo.name}`));
-          }
-        } else if (result.status === 'fulfilled') {
-          failureCount++;
-          console.log(chalk.red(`  ✗ ${result.value.repo.owner}/${result.value.repo.name}`));
-        } else {
-          failureCount++;
-          console.log(chalk.red(`  ✗ Error: ${result.reason?.message || 'Unknown error'}`));
+        // Delay between batches (except after the last batch)
+        if (i + BATCH_SIZE < repositories.length) {
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
         }
       }
     } else {
       // Sequential fetching
-      for (const repo of repositories) {
+      for (let idx = 0; idx < repositories.length; idx++) {
+        const repo = repositories[idx];
         if (verbose) {
           console.log(chalk.gray(`  → ${repo.owner}/${repo.name}`));
         }
@@ -155,6 +263,7 @@ async function main() {
               response: data,
             });
             allResponses.push(data);
+            responseMetadata.push({ repo, metadata: normalizedInput[idx].metadata });
             successCount++;
             if (!verbose) {
               console.log(chalk.green(`  ✓ ${repo.owner}/${repo.name}`));
@@ -182,7 +291,7 @@ async function main() {
         const queryDir = path.join(runDir, queryName);
         await fs.mkdir(queryDir, { recursive: true });
         
-        await writeArtifacts(allResponses, queryDir, queryName);
+        await writeArtifacts(allResponses, queryDir, queryName, responseMetadata);
         
         console.log(chalk.green('  ✓ Database created'));
         console.log(chalk.green('  ✓ Parquet files exported'));

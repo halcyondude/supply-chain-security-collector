@@ -1,0 +1,26 @@
+[
+  {
+    "_comment": "Minimal input format - only required fields",
+    "_note": "This is a documentation example. Remove _comment and _note fields for actual use."
+  },
+  {
+    "project_name": "Example Project 1",
+    "repos": [
+      {
+        "owner": "example-org",
+        "name": "example-repo",
+        "primary": true
+      }
+    ]
+  },
+  {
+    "project_name": "Example Project 2",
+    "repos": [
+      {
+        "owner": "another-org",
+        "name": "another-repo",
+        "primary": true
+      }
+    ]
+  }
+]

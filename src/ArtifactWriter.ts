@@ -3,6 +3,7 @@ import * as path from 'path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
+import type { ProjectMetadata, RepositoryTarget } from './config';
 import { 
     normalizeGetRepoDataArtifacts, 
     getNormalizationStats as getArtifactsStats 
@@ -13,17 +14,17 @@ import {
 } from './normalizers/GetRepoDataExtendedInfoNormalizer';
 
 /**
- * Write GraphQL response data to DuckDB and Parquet artifacts
- * 
- * Creates:
- * - Raw table with complete nested JSON structure
+ * Write artifacts to database and Parquet files
+ * - Raw JSON responses in a normalized table
  * - Normalized relational tables (repositories, releases, release_assets)
  * - Parquet files for all tables
+ * - Optional CNCF metadata tables (base_cncf_projects, base_cncf_project_repos)
  */
 export async function writeArtifacts(
     responses: unknown[],
     outputDir: string,
-    queryName: string // Base name of the query file (e.g., "GetRepoDataArtifacts")
+    queryName: string, // Base name of the query file (e.g., "GetRepoDataArtifacts")
+    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> // Optional CNCF metadata
 ) {
     // Create database file
     const dbPath = path.join(outputDir, 'database.db');
@@ -63,7 +64,7 @@ export async function writeArtifacts(
         // Create normalized relational tables from typed GraphQL responses
         // This leverages TypeScript's type system and language features
         console.log('⏳ Creating normalized tables from typed GraphQL responses...');
-        await createNormalizedTables(con, responses as GetRepoDataArtifactsQuery[], queryName, outputDir);
+        await createNormalizedTables(con, responses as GetRepoDataArtifactsQuery[], queryName, outputDir, responseMetadata);
 
         // Export all tables to Parquet using DuckDB's native Parquet writer
         const parquetDir = path.join(outputDir, 'parquet');
@@ -109,19 +110,25 @@ async function createNormalizedTables(
     con: DuckDBConnection, 
     responses: unknown[], 
     queryName: string,
-    outputDir: string
+    outputDir: string,
+    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
 ) {
     console.log(`  Query type: ${queryName}`);
     
     // Dispatch to the appropriate normalizer based on query name
     if (queryName === 'GetRepoDataExtendedInfo') {
-        await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir);
+        await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir, responseMetadata);
     } else if (queryName === 'GetRepoDataArtifacts') {
         // Legacy query - kept for compatibility
-        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
+        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir, responseMetadata);
     } else {
         console.warn(`  ⚠️  Unknown query type: ${queryName}. Skipping normalization.`);
         console.warn(`  💡 To add support, create a normalizer and add handling here.`);
+    }
+    
+    // Generate CNCF tables if we have metadata
+    if (responseMetadata && responseMetadata.some(r => r.metadata)) {
+        await createCNCFTables(con, responseMetadata, outputDir);
     }
 }
 
@@ -131,7 +138,8 @@ async function createNormalizedTables(
 async function createTablesForArtifactsQuery(
     con: DuckDBConnection,
     responses: GetRepoDataArtifactsQuery[],
-    outputDir: string
+    outputDir: string,
+    _responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
 ) {
     const normalized = normalizeGetRepoDataArtifacts(responses);
     console.log(getArtifactsStats(normalized));
@@ -178,7 +186,8 @@ async function createTablesForArtifactsQuery(
 async function createTablesForExtendedInfoQuery(
     con: DuckDBConnection,
     responses: GetRepoDataExtendedInfoQuery[],
-    outputDir: string
+    outputDir: string,
+    _responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
 ) {
     const normalized = normalizeGetRepoDataExtendedInfo(responses);
     console.log(getExtendedStats(normalized));
@@ -203,6 +212,153 @@ async function createTablesForExtendedInfoQuery(
     await writeTable('releases', normalized.base_releases);
     await writeTable('release_assets', normalized.base_release_assets);
     await writeTable('workflows', normalized.base_workflows);
+}
+
+/**
+ * Create CNCF-specific tables from project metadata
+ * Generates base_cncf_projects and base_cncf_project_repos tables
+ */
+async function createCNCFTables(
+    con: DuckDBConnection,
+    responseMetadata: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>,
+    outputDir: string
+) {
+    // Extract unique projects (de-duplicate by project_name)
+    const projectsMap = new Map<string, ProjectMetadata>();
+    
+    for (const item of responseMetadata) {
+        if (item.metadata) {
+            projectsMap.set(item.metadata.project_name, item.metadata);
+        }
+    }
+    
+    const projects = Array.from(projectsMap.values());
+    
+    if (projects.length === 0) {
+        return; // No CNCF metadata
+    }
+    
+    // Create base_cncf_projects table
+    interface CNCFProject {
+        project_name: string;
+        display_name?: string;
+        description?: string;
+        maturity?: string;
+        category?: string;
+        subcategory?: string;
+        date_accepted?: string;
+        date_incubating?: string;
+        date_graduated?: string;
+        date_archived?: string;
+        homepage_url?: string;
+        repo_url?: string;
+        package_manager_url?: string;
+        docker_url?: string;
+        documentation_url?: string;
+        blog_url?: string;
+        url_for_bestpractices?: string;
+        clomonitor_name?: string;
+        summary_business_use_case?: string;
+        summary_integrations?: string;
+        summary_personas?: string;
+        summary_tags?: string;
+        summary_use_case?: string;
+        summary_release_rate?: string;
+        dev_stats_url?: string;
+        has_security_audits?: boolean;
+        security_audit_count?: number;
+        latest_audit_date?: string;
+        latest_audit_vendor?: string;
+        crunchbase?: string;
+        twitter?: string;
+        parent_project?: string;
+        tag_associations?: string;
+        annual_review_date?: string;
+        annual_review_url?: string;
+        license?: string;
+        default_branch?: string;
+    }
+    
+    const projectRecords: CNCFProject[] = projects.map(p => ({
+        project_name: p.project_name,
+        display_name: p.display_name,
+        description: p.description,
+        maturity: p.maturity,
+        category: p.category,
+        subcategory: p.subcategory,
+        date_accepted: p.date_accepted,
+        date_incubating: p.date_incubating,
+        date_graduated: p.date_graduated,
+        date_archived: p.date_archived,
+        homepage_url: p.homepage_url,
+        repo_url: p.repo_url,
+        package_manager_url: p.package_manager_url,
+        docker_url: p.docker_url,
+        documentation_url: p.documentation_url,
+        blog_url: p.blog_url,
+        url_for_bestpractices: p.url_for_bestpractices,
+        clomonitor_name: p.clomonitor_name,
+        summary_business_use_case: p.summary_business_use_case,
+        summary_integrations: p.summary_integrations,
+        summary_personas: p.summary_personas,
+        summary_tags: p.summary_tags,
+        summary_use_case: p.summary_use_case,
+        summary_release_rate: p.summary_release_rate,
+        dev_stats_url: p.dev_stats_url,
+        has_security_audits: p.has_security_audits,
+        security_audit_count: p.security_audit_count,
+        latest_audit_date: p.latest_audit_date,
+        latest_audit_vendor: p.latest_audit_vendor,
+        crunchbase: p.crunchbase,
+        twitter: p.twitter,
+        parent_project: p.parent_project,
+        tag_associations: p.tag_associations,
+        annual_review_date: p.annual_review_date,
+        annual_review_url: p.annual_review_url,
+        license: p.license,
+        default_branch: p.default_branch,
+    }));
+    
+    const tempProjectsPath = path.join(outputDir, 'temp_cncf_projects.json');
+    fs.writeFileSync(tempProjectsPath, JSON.stringify(projectRecords));
+    await con.run(`
+        CREATE TABLE base_cncf_projects AS 
+        SELECT * FROM read_json('${tempProjectsPath}', format='array', auto_detect=true)
+    `);
+    fs.unlinkSync(tempProjectsPath);
+    console.log(`  ✅ Created table: base_cncf_projects (${projectRecords.length} rows)`);
+    
+    // Create base_cncf_project_repos junction table
+    interface CNCFProjectRepo {
+        project_name: string;
+        owner: string;
+        name: string;
+        primary: boolean;
+        branch?: string;
+    }
+    
+    const projectRepoRecords: CNCFProjectRepo[] = [];
+    
+    for (const project of projects) {
+        for (const repo of project.repos) {
+            projectRepoRecords.push({
+                project_name: project.project_name,
+                owner: repo.owner,
+                name: repo.name,
+                primary: repo.primary,
+                branch: repo.branch,
+            });
+        }
+    }
+    
+    const tempReposPath = path.join(outputDir, 'temp_cncf_project_repos.json');
+    fs.writeFileSync(tempReposPath, JSON.stringify(projectRepoRecords));
+    await con.run(`
+        CREATE TABLE base_cncf_project_repos AS 
+        SELECT * FROM read_json('${tempReposPath}', format='array', auto_detect=true)
+    `);
+    fs.unlinkSync(tempReposPath);
+    console.log(`  ✅ Created table: base_cncf_project_repos (${projectRepoRecords.length} rows)`);
 }
 
 async function exportTablesToParquet(con: DuckDBConnection, parquetDir: string) {

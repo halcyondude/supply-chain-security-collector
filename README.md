@@ -2,14 +2,14 @@
 
 collect data from any graphql api → normalize to relational tables → analyze with sql → export to duckdb + parquet
 
-currently configured for github supply chain security analysis, but the collection/normalization layers are fully generic.
+currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
 
 ## what it does
 
 1. **collects**: fetches data from graphql apis with parallel execution
 2. **normalizes**: extracts typed entities into relational tables (base_*)
 3. **stores**: writes to duckdb database + parquet files
-4. **analyzes**: runs sql models to detect patterns (agg_*)
+4. **analyzes**: runs sql models to detect patterns (agg_*), including cncf project-level analysis
 
 ## quick start
 
@@ -20,16 +20,36 @@ npm install
 # set your github token
 export GITHUB_PAT=ghp_your_token_here
 
-# run against 3 test repos
-npm start -- --input input/test-three-repos.jsonl --analyze --parallel
+# run a quick test (3 projects)
+npm test
+```
+
+**that's it!** test files are included in the repo.
+
+### running the full cncf landscape
+
+```bash
+# first time only: fetch the landscape data
+npm run fetch:landscape
+
+# then run the full collection (~230 projects)
+npm start
 
 # check the output
-ls output/test-three-repos-*/GetRepoDataExtendedInfo/
+ls output/cncf-full-landscape-*/GetRepoDataExtendedInfo/
+```
+
+### other test options
+
+```bash
+npm run test:single      # 1 project (kubernetes)
+npm run test:three       # 3 projects (kubernetes, harbor, atlantis) - same as npm test
+npm run test:simple      # simple format (2 repos, no metadata)
 ```
 
 output structure:
 ```
-output/test-three-repos-2025-10-12T05-38-10/
+output/test-single-project-2025-10-13T06-15-42/
 ├── raw-responses.jsonl              # audit trail of all api calls
 └── GetRepoDataExtendedInfo/
     ├── database.db                  # duckdb with all tables
@@ -38,10 +58,50 @@ output/test-three-repos-2025-10-12T05-38-10/
         ├── base_releases.parquet
         ├── base_release_assets.parquet
         ├── base_workflows.parquet
+        ├── base_cncf_projects.parquet        # cncf project metadata
+        ├── base_cncf_project_repos.parquet   # project→repo junction
         ├── agg_artifact_patterns.parquet
         ├── agg_workflow_tools.parquet
-        └── agg_repo_summary.parquet
+        ├── agg_repo_summary.parquet
+        └── agg_cncf_project_summary.parquet  # project-level analysis
 ```
+
+## input formats
+
+the toolkit supports two input formats (json arrays, not jsonl):
+
+1. **simple format** (backward compatible):
+
+   ```json
+   [
+     {"owner": "kubernetes", "name": "kubernetes"},
+     {"owner": "prometheus", "name": "prometheus"}
+   ]
+   ```
+
+1. **rich format** (with cncf project metadata):
+
+   ```json
+   [
+     {
+       "project_name": "Kubernetes",
+       "display_name": "Kubernetes",
+       "description": "...",
+       "repos": [
+         {"owner": "kubernetes", "name": "kubernetes", "primary": true}
+       ],
+       "maturity": "graduated",
+       "category": "Orchestration & Management",
+       "has_security_audits": true
+     }
+   ]
+   ```
+
+**test files**:
+
+- `input/test-single-project.json` - kubernetes (1 repo)
+- `input/test-three-projects.json` - kubernetes, harbor, atlantis (3 maturities)
+- `input/test-simple-format.json` - simple format (2 repos, no metadata)
 
 ## documentation
 
@@ -63,9 +123,9 @@ tables are prefixed by layer:
 SELECT repository_name, total_releases FROM base_repositories;
 
 -- query the analysis
-SELECT repository_name, security_maturity_score, uses_cosign, uses_syft 
+SELECT repository_name, uses_cosign, uses_syft, has_sbom_artifact
 FROM agg_repo_summary 
-ORDER BY security_maturity_score DESC;
+ORDER BY repository_name;
 ```
 
 ## analyzing data
@@ -109,15 +169,64 @@ JOIN base_releases rel ON r.id = rel.repository_id;
 
 then update `SecurityAnalyzer.ts` to run it.
 
-## cli options
+## advanced usage
+
+for custom input files or options, use the `collect` command:
 
 ```bash
-npm start -- \
-  --input repos.jsonl \              # required: list of {owner, name}
-  --queries GetRepoData \            # required: which graphql queries to run
-  --parallel \                       # optional: fetch repos in parallel
-  --analyze                          # optional: run sql analysis after collection
+npm run collect -- \
+  --input your-repos.json \              # required: json file with repos or projects
+  --queries GetRepoDataExtendedInfo \    # required: which graphql queries to run
+  --parallel \                           # optional: fetch repos in parallel
+  --analyze \                            # optional: run sql analysis after collection
+  --maturity graduated \                 # optional: filter by cncf maturity level
+  --repo-scope primary                   # optional: process only primary repos (default: all)
 ```
+
+**examples**:
+
+```bash
+# simple format (backward compatible)
+npm run collect -- --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze
+
+# filter by maturity level
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --maturity graduated --analyze
+
+# process only primary repos from multi-repo projects
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --repo-scope primary --analyze
+```
+
+## npm scripts reference
+
+**standard commands**:
+
+- `npm test` - quick test (3 projects)
+- `npm start` - process full cncf landscape (~230 projects)
+
+**testing** (for development):
+
+- `npm run test:single` - test with kubernetes (1 project)
+- `npm run test:three` - test with kubernetes, harbor, atlantis (3 projects, same as npm test)
+- `npm run test:simple` - test with simple format (2 repos, no metadata)
+
+**data operations**:
+
+- `npm run landscape` - alias for npm start (full landscape)
+- `npm run collect` - run data collection with custom options (see advanced usage)
+- `npm run analyze` - run sql analysis on existing database
+- `npm run fetch:landscape` - download cncf landscape and generate input files
+
+**code quality**:
+
+- `npm run lint` - check code style
+- `npm run lint:fix` - auto-fix code style issues
+- `npm run format` - alias for lint:fix
+- `npm run typecheck` - check typescript types
+
+**maintenance**:
+
+- `npm run codegen` - generate typescript types from graphql schema
+- `npm run clean` - remove generated artifacts (output, cache, generated files)
 
 ## environment setup
 
@@ -171,12 +280,12 @@ output/                         # timestamped output directories
 ## scripts
 
 ```bash
-npm start                       # run data collection
+npm start                       # run full landscape collection
+npm test                        # quick test with 3 projects
 npm run analyze                 # run analysis on existing database
 npm run codegen                 # regenerate graphql types
-npm run build                   # compile typescript
-npm run lint                    # check code
-npm run typecheck               # check types
+npm run lint                    # check code style
+npm run typecheck               # check typescript types
 ```
 
 ## requirements

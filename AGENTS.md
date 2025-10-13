@@ -10,11 +10,66 @@
 
 **Current Architecture:**
 
-The project implements a sophisticated two-stage data pipeline:
+The project implements a sophisticated two-stage data pipeline with optional CNCF project metadata enrichment:
 
-1. **Collection & Normalization (`neo.ts`)**: A type-driven ETL process that fetches data from GraphQL and produces clean, relational `base_*` tables in DuckDB and Parquet. Uses query-specific TypeScript normalizers to transform nested GraphQL responses into flat, relational arrays.
+1. **Collection & Normalization (`neo.ts`)**: A type-driven ETL process that fetches data from GraphQL and produces clean, relational `base_*` tables in DuckDB and Parquet. Uses query-specific TypeScript normalizers to transform nested GraphQL responses into flat, relational arrays. Supports both simple repository lists and rich project metadata with multi-repo projects.
 
-2. **Domain-Specific Analysis (`analyze.ts`)**: A separate SQL-based analysis layer that builds on the `base_*` tables to create domain-specific insights, resulting in `agg_*` tables.
+2. **Domain-Specific Analysis (`analyze.ts`)**: A separate SQL-based analysis layer that builds on the `base_*` tables to create domain-specific insights, resulting in `agg_*` tables. Includes CNCF-specific project-level analysis when project metadata is present.
+
+**Input Formats:**
+
+The toolkit supports two input formats (both JSON arrays, not JSONL):
+
+1. **Simple Format** (backward compatible):
+
+   ```json
+   [
+     {"owner": "kubernetes", "name": "kubernetes"},
+     {"owner": "prometheus", "name": "prometheus"}
+   ]
+   ```
+
+1. **Rich Format** (with project metadata):
+
+   ```json
+   [
+     {
+       "project_name": "Kubernetes",
+       "display_name": "Kubernetes",
+       "description": "...",
+       "repos": [
+         {"owner": "kubernetes", "name": "kubernetes", "primary": true}
+       ],
+       "maturity": "graduated",
+       "category": "Orchestration & Management",
+       "subcategory": "Scheduling & Orchestration",
+       "date_accepted": "2016-03-10",
+       "date_graduated": "2018-03-06",
+       "homepage_url": "https://kubernetes.io/",
+       "has_security_audits": true,
+       "security_audit_count": 2
+     }
+   ]
+   ```
+
+**CLI Flags:**
+
+- `--maturity <level>`: Filter projects by CNCF maturity level (graduated|incubating|sandbox)
+- `--repo-scope <scope>`: Process only primary repos (primary) or all repos (all, default)
+- `--queries <name>`: GraphQL query to execute (GetRepoDataExtendedInfo, GetRepoDataArtifacts)
+- `--input <file>`: Input JSON file with repositories or projects
+
+**Test Files:**
+
+- `input/test-single-project.json`: Single Kubernetes project (1 repo)
+- `input/test-three-projects.json`: Kubernetes, Harbor, Atlantis (3 repos, 3 maturities)
+- `input/test-simple-format.json`: Simple format (2 repos, no metadata)
+
+**Database Technology:**
+
+- **DuckDB Only**: The toolkit uses DuckDB exclusively for all database operations. There is no SQLite or other database system.
+- **Graceful Degradation**: The analysis layer gracefully handles missing tables (e.g., `base_workflows` when repos have no GitHub Actions workflows). This is expected behavior and not an error.
+- **Optional Tables**: Not all repositories will have workflows, so `base_workflows` may be empty or missing. SQL models that depend on this table will skip gracefully with a warning.
 
 **Core Responsibilities:**
 

@@ -34,3 +34,12 @@ output/
 coverage/
 *.log
 .private-docs/
+
+# Downloaded landscape.yml (1MB+, changes frequently)
+scripts/landscape.yml
+
+# Keep these committed:
+# scripts/landscape-schema.json     (schema change detection)
+# input/cncf-full-landscape.json    (track dataset changes)  
+# input/test-*.json                 (testing convenience)
+# input/minimal-*.json              (documentation)

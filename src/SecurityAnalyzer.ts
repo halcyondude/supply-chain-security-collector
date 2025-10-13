@@ -74,6 +74,9 @@ export class SecurityAnalyzer {
         await this.runModel('02_workflow_tool_detection.sql');
         await this.runModel('03_repository_security_summary.sql');
         await this.runModel('04_summary_views.sql');
+        
+        // CNCF-specific analysis (gracefully skips if base_cncf_projects doesn't exist)
+        await this.runModel('05_cncf_project_analysis.sql');
 
         console.log(chalk.green.bold('\n✅ Analysis complete!\n'));
         

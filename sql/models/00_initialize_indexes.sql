@@ -37,3 +37,32 @@ ON base_releases(repository_id);
 
 CREATE INDEX IF NOT EXISTS idx_release_assets_release_id 
 ON base_release_assets(release_id);
+
+-- ============================================================================
+-- CNCF-Specific Indexes (only if tables exist)
+-- ============================================================================
+
+-- Project name index for joining
+CREATE INDEX IF NOT EXISTS idx_cncf_projects_name 
+ON base_cncf_projects(project_name);
+
+-- Maturity level for filtering
+CREATE INDEX IF NOT EXISTS idx_cncf_projects_maturity 
+ON base_cncf_projects(maturity);
+
+-- Category for analysis
+CREATE INDEX IF NOT EXISTS idx_cncf_projects_category 
+ON base_cncf_projects(category);
+
+-- Project name for joining
+CREATE INDEX IF NOT EXISTS idx_cncf_repos_project 
+ON base_cncf_project_repos(project_name);
+
+-- Owner/name for joining with repositories
+CREATE INDEX IF NOT EXISTS idx_cncf_repos_owner_name 
+ON base_cncf_project_repos(owner, name);
+
+-- Primary flag for filtering (primary is a reserved keyword, needs quoting)
+CREATE INDEX IF NOT EXISTS idx_cncf_repos_primary 
+ON base_cncf_project_repos("primary");
+

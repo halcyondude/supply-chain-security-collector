@@ -1,0 +1,10 @@
+[
+  {
+    "owner": "sigstore",
+    "name": "cosign"
+  },
+  {
+    "owner": "anchore",
+    "name": "syft"
+  }
+]

@@ -25,6 +25,14 @@ Domain-Specific Layer (analyze.ts):
 
 ## SQL Models
 
+### 00_initialize_indexes.sql
+Creates indexes for optimal query performance:
+- **Full-text search indexes**: Enable fast keyword search in workflows, release assets, repository descriptions
+- **B-tree indexes**: Foreign key relationships (repository_id, release_id)
+- **CNCF indexes**: Conditional indexes for project metadata (only if CNCF tables exist)
+
+**Output**: Index structures for faster queries
+
 ### 01_artifact_analysis.sql
 Analyzes release assets to detect security artifact patterns:
 - **SBOM formats**: SPDX, CycloneDX
@@ -32,7 +40,7 @@ Analyzes release assets to detect security artifact patterns:
 - **Attestations**: SLSA provenance, VEX documents, in-toto links
 - **Container attestations**: Cosign, Rekor, Fulcio
 
-**Output**: `artifact_analysis` table with one row per asset
+**Output**: `agg_artifact_patterns` table with one row per asset
 
 ### 02_workflow_tool_detection.sql
 Scans GitHub Actions workflow files for security tools:
@@ -41,16 +49,30 @@ Scans GitHub Actions workflow files for security tools:
 - **Scanners**: Snyk, CodeQL, Grype, Anchore
 - **Dependency tools**: Dependabot, Renovate
 
-**Output**: `workflow_tool_detection` table with one row per tool detection
+**Output**: `agg_workflow_tools` table with one row per tool detection
 
 ### 03_repository_security_summary.sql
 Aggregates security signals at repository level:
 - Discrete boolean columns for each signal (no arrays!)
 - Tool usage flags (uses_cosign, uses_syft, etc.)
 - Adoption metrics (% of releases with SBOMs)
-- Security maturity score (0-10)
 
-**Output**: `repository_security_summary` table with one row per repository
+**Output**: `agg_repo_summary` table with one row per repository
+
+### 04_summary_views.sql
+Creates convenience views for common queries and reporting.
+
+**Output**: View definitions for simplified querying
+
+### 05_cncf_project_analysis.sql (optional)
+Aggregates security metrics at the CNCF project level:
+- **Project-level rollups**: Security tool adoption across all project repos
+- **Maturity correlation**: How security practices vary by CNCF maturity level
+- **Category analysis**: Security posture by Cloud Native landscape category
+
+**Note**: Only runs when `base_cncf_projects` table exists (rich format input)
+
+**Output**: `agg_cncf_project_summary` table with one row per CNCF project
 
 ## Usage
 
@@ -61,7 +83,7 @@ npm run analyze -- --database output/test-single-TIMESTAMP/GetRepoDataExtendedIn
 
 ### Collect data AND analyze:
 ```bash
-npm start -- --input repos.jsonl --queries GetRepoDataExtendedInfo --analyze
+npm start -- --input repos.json --queries GetRepoDataExtendedInfo --analyze
 ```
 
 ### Run custom queries:
@@ -76,36 +98,67 @@ npm run analyze -- --database database.db --export-csv security-summary.csv
 
 ## Query Examples
 
+### Repository-Level Queries
+
 ```sql
 -- Repos using Cosign but not generating SBOMs
-SELECT repository_name 
-FROM repository_security_summary
+SELECT nameWithOwner
+FROM agg_repo_summary
 WHERE uses_cosign = true AND has_sbom_artifact = false;
 
 -- SBOM format distribution
 SELECT 
     SUM(CASE WHEN has_spdx_sbom THEN 1 ELSE 0 END) as spdx_count,
     SUM(CASE WHEN has_cyclonedx_sbom THEN 1 ELSE 0 END) as cyclonedx_count
-FROM repository_security_summary;
+FROM agg_repo_summary;
 
--- Security maturity distribution
-SELECT 
-    security_maturity_score,
-    COUNT(*) as repo_count
-FROM repository_security_summary
-GROUP BY security_maturity_score
-ORDER BY security_maturity_score DESC;
-
--- Most popular tool combinations
+-- Tool combination usage
 SELECT 
     uses_syft,
     uses_cosign,
     uses_trivy,
     COUNT(*) as repo_count
-FROM repository_security_summary
+FROM agg_repo_summary
 GROUP BY uses_syft, uses_cosign, uses_trivy
 HAVING repo_count > 1
 ORDER BY repo_count DESC;
+```
+
+### CNCF Project Queries (when using rich format)
+
+```sql
+-- Security tool adoption by CNCF maturity level
+SELECT 
+  maturity,
+  COUNT(*) as project_count,
+  COUNT(CASE WHEN repos_with_sbom > 0 THEN 1 END) as projects_with_sbom,
+  ROUND(AVG(sbom_adoption_rate) * 100, 1) as avg_sbom_adoption_pct
+FROM agg_cncf_project_summary
+GROUP BY maturity;
+
+-- Projects with security audits
+SELECT 
+  display_name,
+  maturity,
+  security_audit_count,
+  latest_audit_date,
+  latest_audit_vendor
+FROM agg_cncf_project_summary
+WHERE has_security_audits = TRUE
+ORDER BY maturity, display_name;
+LIMIT 20;
+
+-- Projects missing SBOMs
+SELECT 
+  display_name,
+  maturity,
+  category,
+  total_repos,
+  homepage_url
+FROM agg_cncf_project_summary
+WHERE repos_with_sbom = 0
+  AND maturity IN ('graduated', 'incubating')
+ORDER BY maturity, display_name;
 ```
 
 ## Design Principles
@@ -145,12 +198,16 @@ COALESCE(ws.uses_grype, false) as uses_grype,
 ```
 sql/
 ├── models/                  # Analysis SQL models (run in order)
+│   ├── 00_initialize_indexes.sql
 │   ├── 01_artifact_analysis.sql
 │   ├── 02_workflow_tool_detection.sql
-│   └── 03_repository_security_summary.sql
+│   ├── 03_repository_security_summary.sql
+│   ├── 04_summary_views.sql
+│   └── 05_cncf_project_analysis.sql    # CNCF-specific (optional)
 └── queries/                 # Ad-hoc reporting queries
     ├── overview.sql
-    └── top_tools.sql
+    ├── top_tools.sql
+    └── cncf_security_analysis.sql      # CNCF-specific queries
 ```
 
 ## Performance
