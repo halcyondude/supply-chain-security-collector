@@ -1,0 +1,86 @@
+[
+  {
+    "project_name": "Atlantis",
+    "display_name": "Atlantis",
+    "description": "Terraform Pull Request Automation for Teams",
+    "repos": [
+      {
+        "owner": "runatlantis",
+        "name": "atlantis",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Automation & Configuration",
+    "date_accepted": "2024-06-18",
+    "homepage_url": "https://www.runatlantis.io/",
+    "repo_url": "https://github.com/runatlantis/atlantis",
+    "clomonitor_name": "atlantis",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "Harbor",
+    "display_name": "Harbor",
+    "repos": [
+      {
+        "owner": "goharbor",
+        "name": "harbor",
+        "primary": true
+      }
+    ],
+    "maturity": "graduated",
+    "category": "Provisioning",
+    "subcategory": "Container Registry",
+    "date_accepted": "2018-07-31",
+    "date_incubating": "2018-11-14",
+    "date_graduated": "2020-06-15",
+    "homepage_url": "https://goharbor.io/",
+    "repo_url": "https://github.com/goharbor/harbor",
+    "clomonitor_name": "harbor",
+    "summary_business_use_case": "Self-hosted container registry with multiple integrations for security and validation.",
+    "summary_integrations": "trivy, cosing, notary, github, gce, jfrog, snyk, clair, sysdig, oidc, ldap, ecr, acr, docker, quay, helm",
+    "summary_personas": "SREs, Cloud Architects, Platform Engineers, DevOps Engineer, DevOps practitioners, DevSecOps practitioners",
+    "summary_tags": "registry, images, OCI, container, artefacts, vulnerability scanning, self-hosted, harbor, edge, replication",
+    "summary_use_case": "Harbor is an open source registry that secures artifacts with policies and role-based access control,  ensures images are scanned and free from vulnerabilities, and signs images as trusted. Can be installed on any Kubernetes environment or on a system with Docker support.",
+    "summary_release_rate": "We aim to have 3 big releases per year with many patch releases in between.",
+    "dev_stats_url": "https://harbor.devstats.cncf.io/",
+    "has_security_audits": true,
+    "security_audit_count": 1,
+    "latest_audit_date": "2019-10-01",
+    "latest_audit_vendor": "Cure53",
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/project_harbor"
+  },
+  {
+    "project_name": "Kubernetes",
+    "display_name": "Kubernetes",
+    "description": "Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications",
+    "repos": [
+      {
+        "owner": "kubernetes",
+        "name": "kubernetes",
+        "primary": true
+      }
+    ],
+    "maturity": "graduated",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2016-03-10",
+    "date_incubating": "2016-03-10",
+    "date_graduated": "2018-03-06",
+    "homepage_url": "https://kubernetes.io/",
+    "repo_url": "https://github.com/kubernetes/kubernetes",
+    "blog_url": "http://blog.kubernetes.io/",
+    "clomonitor_name": "kubernetes",
+    "dev_stats_url": "https://k8s.devstats.cncf.io/",
+    "has_security_audits": true,
+    "security_audit_count": 2,
+    "latest_audit_date": "2023-04-19",
+    "latest_audit_vendor": "NCC Group",
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/kubernetesio"
+  }
+]

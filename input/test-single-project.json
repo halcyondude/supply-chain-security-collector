@@ -1,0 +1,31 @@
+[
+  {
+    "project_name": "Kubernetes",
+    "display_name": "Kubernetes",
+    "description": "Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications",
+    "repos": [
+      {
+        "owner": "kubernetes",
+        "name": "kubernetes",
+        "primary": true
+      }
+    ],
+    "maturity": "graduated",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2016-03-10",
+    "date_incubating": "2016-03-10",
+    "date_graduated": "2018-03-06",
+    "homepage_url": "https://kubernetes.io/",
+    "repo_url": "https://github.com/kubernetes/kubernetes",
+    "blog_url": "http://blog.kubernetes.io/",
+    "clomonitor_name": "kubernetes",
+    "dev_stats_url": "https://k8s.devstats.cncf.io/",
+    "has_security_audits": true,
+    "security_audit_count": 2,
+    "latest_audit_date": "2023-04-19",
+    "latest_audit_vendor": "NCC Group",
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/kubernetesio"
+  }
+]

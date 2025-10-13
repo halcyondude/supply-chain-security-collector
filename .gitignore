@@ -14,7 +14,9 @@ build/
 src/generated/
 
 # Output and cache
-# output/
+output/
+# But allow SIZE-REPORT.md to be committed for tracking storage growth
+!output/*/SIZE-REPORT.md
 
 
 # Environment and secrets
@@ -31,3 +33,13 @@ src/generated/
 # Misc
 coverage/
 *.log
+.private-docs/
+
+# Downloaded landscape.yml (1MB+, changes frequently)
+scripts/landscape.yml
+
+# Keep these committed:
+# scripts/landscape-schema.json     (schema change detection)
+# input/cncf-full-landscape.json    (track dataset changes)  
+# input/test-*.json                 (testing convenience)
+# input/minimal-*.json              (documentation)

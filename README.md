@@ -1,268 +1,299 @@
-# GitHub Supply Chain Security Analyzer
+# GraphQL Data Engineering Toolkit
 
-A powerful command-line tool for analyzing release artifacts and CI/CD workflows in GitHub repositories to identify software supply chain security metadata like SBOMs.
+collect data from any graphql api → normalize to relational tables → analyze with sql → export to duckdb + parquet
 
-## Features
+currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
 
-- **Comprehensive Data Collection**: Fetches repository details, descriptions, and links.
-- **Release Analysis**: Gathers the last 3 releases and inspects all associated artifacts.
-- **Artifact Identification**: Automatically flags potential SBOMs (SPDX, CycloneDX), signatures (`.sig`, `.asc`), and other attestations.
-- **CI/CD Workflow Inspection**: Enumerates all GitHub Actions workflows and analyzes their content for common SBOM generation tools (e.g., `syft`, `trivy`, `cdxgen`).
-- **Type-Safe API Calls**: Uses GraphQL Code Generator to create a fully-typed TypeScript SDK for the GitHub API.
-- **Dual-Format Reporting**: Generates a detailed `report.json` and an easy-to-use `report.csv`.
+## what it does
 
-### Example output
+1. **collects**: fetches data from graphql apis with parallel execution
+2. **normalizes**: extracts typed entities into relational tables (base_*)
+3. **stores**: writes to duckdb database + parquet files
+4. **analyzes**: runs sql models to detect patterns (agg_*), including cncf project-level analysis
 
-```bash
-npx ts-node src/main.ts --parallel --input input/graduated.jsonl
-```
-
-<img width="1090" height="1346" alt="image" src="https://github.com/user-attachments/assets/a87ed6a7-0319-4e98-a8e5-8f5c8ae2518e" />
-
-## Prerequisites
-
-- **Node.js**: Version 18.x or later.
-- **npm**: Comes bundled with Node.js.
-- **GitHub Personal Access Token (PAT)**: You need a PAT with the `repo` scope to query repository data.
-  - Go to [GitHub Developer Settings](https://github.com/settings/tokens) to generate a new token (classic).
-  - Ensure it has `repo` scope to access public and private repository data.
-
-## Installation & Setup
-
-  **Clone the repository:**
-
-    ```bash
-    git clone <repository_url>
-    cd <project_root>
-    ```
-  **Generate the GraphQL SDK:**
-    This step introspects the GitHub GraphQL schema and generates a typed SDK based on your queries.
-
-    ```bash
-    npm run codegen
-    ```
-
-    You only need to re-run this if you change the GraphQL queries in `src/graphql/`.
-
-## Example output
+## quick start
 
 ```bash
-npx ts-node src/main.ts --parallel --input input/graduated.jsonl
-```
-
-<img width="1090" height="1346" alt="image" src="https://github.com/user-attachments/assets/a87ed6a7-0319-4e98-a8e5-8f5c8ae2518e" />
-
-## Running the Analysis
-
-Execute the main script from the project root:
-
-```bash
-
-## Usage
-
-### 1. Install dependencies
-
-```bash
+# install
 npm install
+
+# set your github token
+export GITHUB_PAT=ghp_your_token_here
+
+# run a quick test (3 projects)
+npm test
 ```
 
-### 2. Generate GraphQL types
+**that's it!** test files are included in the repo.
+
+### running the full cncf landscape
 
 ```bash
-npm run codegen
+# first time only: fetch the landscape data
+npm run fetch:landscape
+
+# then run the full collection (~230 projects)
+npm start
+
+# check the output
+ls output/cncf-full-landscape-*/GetRepoDataExtendedInfo/
 ```
 
-### 3. Prepare repository input files
-
-The tool now reads repository targets from input files (JSONL format, one `{ "owner": ..., "name": ... }` per line).
-
-To generate input files for CNCF Sandbox, Incubation, and Graduated projects:
+### other test options
 
 ```bash
-chmod +x scripts/fetch-cncf-landscape.sh
-./scripts/fetch-cncf-landscape.sh
+npm run test:single      # 1 project (kubernetes)
+npm run test:three       # 3 projects (kubernetes, harbor, atlantis) - same as npm test
+npm run test:simple      # simple format (2 repos, no metadata)
 ```
 
-This will create:
+output structure:
+```
+output/test-single-project-2025-10-13T06-15-42/
+├── raw-responses.jsonl              # audit trail of all api calls
+└── GetRepoDataExtendedInfo/
+    ├── database.db                  # duckdb with all tables
+    └── parquet/                     # individual parquet files
+        ├── base_repositories.parquet
+        ├── base_releases.parquet
+        ├── base_release_assets.parquet
+        ├── base_workflows.parquet
+        ├── base_cncf_projects.parquet        # cncf project metadata
+        ├── base_cncf_project_repos.parquet   # project→repo junction
+        ├── agg_artifact_patterns.parquet
+        ├── agg_workflow_tools.parquet
+        ├── agg_repo_summary.parquet
+        └── agg_cncf_project_summary.parquet  # project-level analysis
+```
 
-- `input/sandbox.jsonl`
-- `input/incubation.jsonl`
-- `input/graduated.jsonl`
+## input formats
 
-You can also create your own input file in the same format.
+the toolkit supports two input formats (json arrays, not jsonl):
 
-## About npx
+1. **simple format** (backward compatible):
 
-This project uses `npx` to run the CLI directly from your local dependencies, without requiring a global install. `npx` is a package runner that comes with npm (since version 5.2.0+). It allows you to execute binaries from your project's `node_modules/.bin` or fetch and run packages from the npm registry on demand.
+   ```json
+   [
+     {"owner": "kubernetes", "name": "kubernetes"},
+     {"owner": "prometheus", "name": "prometheus"}
+   ]
+   ```
 
-When you run a command like:
+1. **rich format** (with cncf project metadata):
+
+   ```json
+   [
+     {
+       "project_name": "Kubernetes",
+       "display_name": "Kubernetes",
+       "description": "...",
+       "repos": [
+         {"owner": "kubernetes", "name": "kubernetes", "primary": true}
+       ],
+       "maturity": "graduated",
+       "category": "Orchestration & Management",
+       "has_security_audits": true
+     }
+   ]
+   ```
+
+**test files**:
+
+- `input/test-single-project.json` - kubernetes (1 repo)
+- `input/test-three-projects.json` - kubernetes, harbor, atlantis (3 maturities)
+- `input/test-simple-format.json` - simple format (2 repos, no metadata)
+
+## documentation
+
+- 📚 **[Query Reference](docs/QUERY-REFERENCE.md)** - Available queries and usage
+- 🔧 **[Adding New Queries](docs/adding-new-queries.md)** - Step-by-step guide for experimentation
+- 🔍 **[Detection Reference](docs/detection-reference.md)** - Supply chain security detection catalog
+- 📝 **[Cleanup Summary](docs/CLEANUP-QUERIES.md)** - Recent architecture changes
+
+## table layers
+
+tables are prefixed by layer:
+
+- **raw_*** - original graphql responses (json blob)
+- **base_*** - normalized entities from graphql types (repositories, releases, etc)
+- **agg_*** - analysis/aggregation tables (security patterns, metrics)
+
+```sql
+-- query the normalized data
+SELECT repository_name, total_releases FROM base_repositories;
+
+-- query the analysis
+SELECT repository_name, uses_cosign, uses_syft, has_sbom_artifact
+FROM agg_repo_summary 
+ORDER BY repository_name;
+```
+
+## analyzing data
+
+use duckdb cli or any tool that reads parquet:
 
 ```bash
-npx ts-node src/main.ts --help
+# interactive sql
+duckdb output/.../GetRepoDataExtendedInfo/database.db
+
+# quick queries
+duckdb database.db -c "SELECT * FROM agg_repo_summary"
+
+# export to csv
+npm run analyze -- --database database.db --export-csv summary.csv
+
+# run custom queries
+npm run analyze -- --database database.db --query sql/queries/top_tools.sql
 ```
 
-`npx` ensures that the correct version of `ts-node` (and all dependencies) are used from your project, so you don't need to install anything globally. This makes it easy to run scripts and CLIs in a reproducible, project-local way.
+## adding new queries
 
----
+1. create a new `.graphql` file in `src/graphql/`
+2. run `npm run codegen` to generate types
+3. add to `--queries` parameter: `--queries Query1,Query2`
+4. normalizers auto-create base_* tables from typed responses
 
-## CLI Usage
+## adding new analysis
 
-The CLI supports the following options:
+analysis happens in sql models (`sql/models/`):
 
-| Option                | Description                                              |
-|-----------------------|----------------------------------------------------------|
-| `-h, --help`          | Show help and usage information                          |
-| `-i, --input <file>`  | Input JSONL file with repository list (default: sandbox) |
-| `--mock`              | Run in mock mode (no GitHub API calls)                  |
-| `-o, --output <dir>`  | Output directory for reports (default: output)           |
-| `-V, --version`       | Show CLI version                                         |
+```sql
+-- sql/models/04_my_analysis.sql
+CREATE OR REPLACE TABLE agg_my_analysis AS
+SELECT 
+    repository_id,
+    -- your analysis logic here
+FROM base_repositories r
+JOIN base_releases rel ON r.id = rel.repository_id;
+```
 
-### Show help
+then update `SecurityAnalyzer.ts` to run it.
+
+## advanced usage
+
+for custom input files or options, use the `collect` command:
 
 ```bash
-npx ts-node src/main.ts --help
+npm run collect -- \
+  --input your-repos.json \              # required: json file with repos or projects
+  --queries GetRepoDataExtendedInfo \    # required: which graphql queries to run
+  --parallel \                           # optional: fetch repos in parallel
+  --analyze \                            # optional: run sql analysis after collection
+  --maturity graduated \                 # optional: filter by cncf maturity level
+  --repo-scope primary                   # optional: process only primary repos (default: all)
 ```
 
-### Run in mock mode (no GitHub API required)
+**examples**:
 
 ```bash
-npx ts-node src/main.ts --mock --input input/test-single.jsonl --output output
+# simple format (backward compatible)
+npm run collect -- --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze
+
+# filter by maturity level
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --maturity graduated --analyze
+
+# process only primary repos from multi-repo projects
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --repo-scope primary --analyze
 ```
 
-### Run with real GitHub data
+## npm scripts reference
 
-Ensure you have a `.env` file with your `GITHUB_PAT` set.
+**standard commands**:
+
+- `npm test` - quick test (3 projects)
+- `npm start` - process full cncf landscape (~230 projects)
+
+**testing** (for development):
+
+- `npm run test:single` - test with kubernetes (1 project)
+- `npm run test:three` - test with kubernetes, harbor, atlantis (3 projects, same as npm test)
+- `npm run test:simple` - test with simple format (2 repos, no metadata)
+
+**data operations**:
+
+- `npm run landscape` - alias for npm start (full landscape)
+- `npm run collect` - run data collection with custom options (see advanced usage)
+- `npm run analyze` - run sql analysis on existing database
+- `npm run fetch:landscape` - download cncf landscape and generate input files
+
+**code quality**:
+
+- `npm run lint` - check code style
+- `npm run lint:fix` - auto-fix code style issues
+- `npm run format` - alias for lint:fix
+- `npm run typecheck` - check typescript types
+
+**maintenance**:
+
+- `npm run codegen` - generate typescript types from graphql schema
+- `npm run clean` - remove generated artifacts (output, cache, generated files)
+
+## environment setup
 
 ```bash
-npx ts-node src/main.ts --input input/graduated.jsonl --output output
+cp .env.template .env
+# edit .env and add your GITHUB_PAT
 ```
 
-### 6. View reports
+## current analysis (supply chain security)
 
-- JSON: `output/report.json`
-- CSV: `output/report.csv`
+the included sql models detect:
 
-## Validation, Cleaning, and Common Scripts
+- sbom formats (spdx, cyclonedx)
+- signature artifacts (.sig, .asc)
+- attestations, vex, slsa provenance
+- ci/cd security tools (cosign, syft, trivy, codeql, etc)
+- security maturity scoring
 
-This project provides convenient npm scripts for all common development and validation tasks:
+see `sql/models/` for details.
 
-| Script              | Description                                                      |
-|---------------------|------------------------------------------------------------------|
-| `npm run validate`  | Runs the full trust-building validation script (`validate-with-mocks.sh`). Checks lint, type, CLI mock run, and report output. |
-| `npm run lint`      | Runs ESLint on all hand-written code in `src/`                   |
-| `npm run typecheck` | Runs TypeScript type checking (`tsc --noEmit`)                   |
-| `npm run codegen`   | Regenerates GraphQL types and SDK from schema and queries         |
-| `npm run clean`     | Removes build, output, cache, and generated directories           |
+## extending to other apis
 
-### Example: Full Validation
+the collection and normalization layers are generic. to use with a different graphql api:
+
+1. update `src/api.ts` with your endpoint/auth
+2. create `.graphql` queries for your api
+3. run `npm run codegen`
+4. the normalizers will auto-generate base_* tables
+5. write domain-specific sql models in `sql/models/`
+
+## project structure
+
+```
+src/
+├── neo.ts                      # main cli entry point
+├── analyze.ts                  # analysis cli
+├── api.ts                      # graphql client
+├── ArtifactWriter.ts           # writes duckdb + parquet
+├── SecurityAnalyzer.ts         # runs sql analysis models
+├── normalizers/                # extract typed entities from responses
+└── graphql/                    # query definitions
+
+sql/
+├── models/                     # sql analysis models (run in order)
+└── queries/                    # example queries
+
+input/                          # sample input files
+output/                         # timestamped output directories
+```
+
+## scripts
 
 ```bash
-npm run validate
+npm start                       # run full landscape collection
+npm test                        # quick test with 3 projects
+npm run analyze                 # run analysis on existing database
+npm run codegen                 # regenerate graphql types
+npm run lint                    # check code style
+npm run typecheck               # check typescript types
 ```
 
-This will:
+## requirements
 
-- Install dependencies
-- Run codegen
-- Lint the codebase (if ESLint is installed)
-- Type-check the codebase
-- Run tests (if defined)
-- Run the CLI in mock mode with a test input file
-- Check for generated report files
+- node 18+
+- typescript
+- github personal access token (for github api)
 
-All steps must pass for a successful validation.
+## license
 
-### Example: Clean the Project
-
-```bash
-npm run clean
-```
-
-This will remove all build artifacts, output, cache, and generated code. Use before a fresh build or troubleshooting.
-
----
-
-## GraphQL Code Generation: Best Practices (Exemplar)
-
-This project uses [GraphQL Code Generator](https://www.graphql-code-generator.com/) to create a fully-typed TypeScript SDK for the GitHub GraphQL API. The following practices make this a robust, maintainable, and lint-free codegen setup:
-
-### Why Use GraphQL Codegen?
-
-- **Type Safety**: All API calls are type-checked end-to-end, reducing runtime errors.
-- **Productivity**: No need to hand-write types for queries or responses.
-- **Maintainability**: Schema or query changes are automatically reflected in generated types.
-
-### How We Integrate Codegen
-
-- **Config File**: All codegen options are in `codegen.ts` for transparency and reproducibility.
-- **Versioned Schema**: The GraphQL schema is checked in and versioned, ensuring CI reproducibility and provenance.
-- **Pre-Scripts**: `npm run codegen` is run before builds/tests to ensure types are always up to date.
-- **Generated Directory**: All generated files are placed in `src/generated/` and excluded from linting (see ESLint config).
-- **Strict Linting**: Hand-written code is always ESLint clean. Generated files are allowed to use `any` if required by the codegen tool, but you can further tune codegen plugins to minimize this.
-- **Watch Mode**: For rapid development, you can use codegen in watch mode to regenerate types on every schema or query change.
-
-### Lint-Free Codegen Tips
-
-- **Tune Plugins**: Use the latest `@graphql-codegen/typescript` and related plugins, and enable strict options to minimize `any` in generated code.
-- **Disable Lint for Generated Files**: Add `/* eslint-disable */` to the top of generated files, or exclude them in your ESLint config, to avoid polluting lint results.
-- **Schema Provenance**: Always check in the exact schema used for codegen, and document how to update it.
-- **CI Integration**: Run codegen and lint as part of your CI pipeline to catch schema/query drift early.
-
-### Example: Running Codegen
-
-```bash
-npm run codegen
-```
-
-This will generate or update all TypeScript types and SDKs in `src/generated/` based on your current schema and queries.
-
-### Example: codegen.ts
-
-```ts
-import type { CodegenConfig } from '@graphql-codegen/cli';
-
-const config: CodegenConfig = {
-  schema: './src/graphql/schema.graphql',
-  documents: ['./src/graphql/**/*.graphql'],
-  generates: {
-    './src/generated/graphql.ts': {
-      plugins: [
-        'typescript',
-        'typescript-operations',
-        'typescript-graphql-request',
-      ],
-    },
-  },
-  hooks: {
-    afterAllFileWrite: ['prettier --write'],
-  },
-};
-export default config;
-```
-
----
-
-For more, see the [GraphQL Code Generator docs](https://www.graphql-code-generator.com/) and this repo's `codegen.ts` for a real-world, production-ready example.
-
----
-
-## Linting and Generated Code
-
-### Why are there ESLint warnings in `src/generated/`?
-
-The TypeScript GraphQL Code Generator may produce code that triggers strict ESLint rules (e.g., `no-explicit-any`, `no-unused-vars`). This is a known and accepted limitation of codegen tools, as they must support a wide range of schemas and queries.
-
-**Best Practices in this Project:**
-
-- All generated files are placed in `src/generated/`.
-- The codegen config adds `/* eslint-disable */` to the top of every generated file.
-- `.eslintignore` includes `src/generated/` to ensure ESLint does not report or fail on generated code.
-- Only hand-written code is required to be 100% ESLint clean.
-
-**You should:**
-
-- Never manually edit files in `src/generated/`.
-- If you see lint errors in generated files, they can be safely ignored.
-- If you see lint errors in your own code, fix them before committing or merging.
-
-This approach is recommended by the GraphQL Code Generator maintainers and is standard in the TypeScript ecosystem.
+MIT

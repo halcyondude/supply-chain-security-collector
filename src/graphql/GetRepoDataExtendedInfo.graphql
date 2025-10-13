@@ -1,0 +1,95 @@
+query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    __typename
+    id
+    name
+    nameWithOwner
+    url
+    description
+    licenseInfo {
+      __typename
+      key
+      name
+      spdxId
+    }
+    hasVulnerabilityAlertsEnabled
+    defaultBranchRef {
+      __typename
+      name
+      branchProtectionRule {
+        __typename
+        allowsDeletions
+        allowsForcePushes
+        dismissesStaleReviews
+        isAdminEnforced
+        requiresStatusChecks
+        requiresStrictStatusChecks
+        requiresCodeOwnerReviews
+        requiredApprovingReviewCount
+        pattern
+      }
+    }
+    branchProtectionRules(first: 10) {
+      nodes {
+        __typename
+        allowsDeletions
+        allowsForcePushes
+        dismissesStaleReviews
+        isAdminEnforced
+        requiresStatusChecks
+        requiresStrictStatusChecks
+        requiresCodeOwnerReviews
+        requiredApprovingReviewCount
+        pattern
+      }
+    }
+    securityPolicy: object(expression: "HEAD:SECURITY.md") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    dependabot: object(expression: "HEAD:.github/dependabot.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    releases(last: 5, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        __typename
+        id
+        name
+        tagName
+        url
+        createdAt
+        releaseAssets(first: 50) {
+          nodes {
+            __typename
+            id
+            name
+            downloadUrl
+          }
+        }
+      }
+    }
+    workflows: object(expression: "HEAD:.github/workflows") {
+      ... on Tree {
+        __typename
+        entries {
+          __typename
+          name
+          object {
+            ... on Blob {
+              __typename
+              id
+              text
+            }
+          }
+        }
+      }
+    }
+  }
+}

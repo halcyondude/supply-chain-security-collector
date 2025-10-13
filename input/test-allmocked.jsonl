@@ -1,8 +1,0 @@
-{"owner":"goharbor","name":"harbor"}
-{"owner":"in-toto","name":"in-toto"}
-{"owner":"oscal-compass","name":"compliance-trestle"}
-{"owner":"cilium","name":"cilium"}
-{"owner":"knative","name":"serving"}
-{"owner":"fluxcd","name":"flux2"}
-{"owner":"argoproj","name":"argo-cd"}
-{"owner":"sigstore", "name":"cosign"}
