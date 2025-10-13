@@ -165,19 +165,7 @@ SELECT
         ELSE 0 
     END as sbom_adoption_rate,
     rs.first_release_with_sbom,
-    rs.first_sbom_date,
-    
-    -- ========================================
-    -- Security Maturity Score (0-10)
-    -- ========================================
-    (
-        (CASE WHEN COALESCE(ast.has_sbom_artifact, false) THEN 2 ELSE 0 END) +
-        (CASE WHEN COALESCE(ast.has_signature_artifact, false) THEN 2 ELSE 0 END) +
-        (CASE WHEN COALESCE(ast.has_attestation_artifact, false) THEN 2 ELSE 0 END) +
-        (CASE WHEN COALESCE(ast.has_slsa_provenance, false) THEN 2 ELSE 0 END) +
-        (CASE WHEN COALESCE(ws.uses_vulnerability_scanner, false) THEN 1 ELSE 0 END) +
-        (CASE WHEN COALESCE(ws.uses_code_scanner, false) THEN 1 ELSE 0 END)
-    ) as security_maturity_score
+    rs.first_sbom_date
 
 FROM base_repositories r
 LEFT JOIN artifact_stats ast ON r.id = ast.repository_id
@@ -189,7 +177,6 @@ CREATE INDEX IF NOT EXISTS idx_summary_repository ON agg_repo_summary(repository
 CREATE INDEX IF NOT EXISTS idx_summary_owner ON agg_repo_summary(owner);
 CREATE INDEX IF NOT EXISTS idx_summary_has_sbom ON agg_repo_summary(has_sbom_artifact);
 CREATE INDEX IF NOT EXISTS idx_summary_uses_cosign ON agg_repo_summary(uses_cosign);
-CREATE INDEX IF NOT EXISTS idx_summary_maturity_score ON agg_repo_summary(security_maturity_score);
 
 -- Validation: Show summary stats
 SELECT 
@@ -197,6 +184,5 @@ SELECT
     COUNT(*) as total_repositories,
     SUM(CASE WHEN has_sbom_artifact THEN 1 ELSE 0 END) as repos_with_sbom,
     SUM(CASE WHEN uses_cosign THEN 1 ELSE 0 END) as repos_using_cosign,
-    SUM(CASE WHEN uses_syft THEN 1 ELSE 0 END) as repos_using_syft,
-    ROUND(AVG(security_maturity_score), 2) as avg_maturity_score
+    SUM(CASE WHEN uses_syft THEN 1 ELSE 0 END) as repos_using_syft
 FROM agg_repo_summary;

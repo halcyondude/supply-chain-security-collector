@@ -38,15 +38,23 @@ export class SecurityAnalyzer {
     /**
      * Run the complete security analysis pipeline
      */
-    async analyze() {
+    async analyze(recreate: boolean = false) {
         await this.connect();
         
         console.log(chalk.bold.cyan('\n🔍 Running Security Analysis...\n'));
+
+        // Drop existing agg_ tables if recreate is true
+        if (recreate) {
+            console.log(chalk.yellow('  Dropping existing aggregate tables...'));
+            await this.dropAggregateTables();
+            console.log(chalk.green('  ✓ Dropped existing tables\n'));
+        }
 
         // Run models in dependency order
         await this.runModel('01_artifact_analysis.sql');
         await this.runModel('02_workflow_tool_detection.sql');
         await this.runModel('03_repository_security_summary.sql');
+        await this.runModel('04_summary_views.sql');
 
         console.log(chalk.green.bold('\n✅ Analysis complete!\n'));
         
@@ -58,6 +66,31 @@ export class SecurityAnalyzer {
         const result = await this.con!.run("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'agg_%' ORDER BY name");
         const tables = await result.getRows();
         console.log(chalk.gray(`Created ${tables.length} aggregate analysis tables`));
+    }
+
+    /**
+     * Drop all aggregate tables (agg_*) and views
+     */
+    private async dropAggregateTables() {
+        await this.connect();
+        
+        // Drop views first (they may depend on tables)
+        const viewResult = await this.con!.run("SELECT name FROM sqlite_master WHERE type='view' AND name LIKE 'agg_%'");
+        const views = await viewResult.getRows();
+        for (const row of views) {
+            const viewName = row[0];
+            console.log(chalk.gray(`    Dropping view ${viewName}...`));
+            await this.con!.run(`DROP VIEW IF EXISTS ${viewName}`);
+        }
+        
+        // Then drop tables
+        const tableResult = await this.con!.run("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'agg_%'");
+        const tables = await tableResult.getRows();
+        for (const row of tables) {
+            const tableName = row[0];
+            console.log(chalk.gray(`    Dropping table ${tableName}...`));
+            await this.con!.run(`DROP TABLE IF EXISTS ${tableName}`);
+        }
     }
 
     /**
@@ -126,18 +159,17 @@ export class SecurityAnalyzer {
     }
 
     /**
-     * Show analysis summary
+     * Show analysis summary with comprehensive tool detection stats
      */
     private async showSummary() {
         try {
+            // Get repository summary
             const summaryQuery = `
                 SELECT 
                     COUNT(*) as total_repos,
                     SUM(CASE WHEN has_sbom_artifact THEN 1 ELSE 0 END) as repos_with_sbom,
                     SUM(CASE WHEN has_signature_artifact THEN 1 ELSE 0 END) as repos_with_signatures,
-                    SUM(CASE WHEN uses_cosign THEN 1 ELSE 0 END) as repos_with_cosign,
-                    SUM(CASE WHEN uses_syft THEN 1 ELSE 0 END) as repos_with_syft,
-                    ROUND(AVG(security_maturity_score), 2) as avg_maturity_score
+                    SUM(CASE WHEN has_attestation_artifact THEN 1 ELSE 0 END) as repos_with_attestations
                 FROM agg_repo_summary
             `;
             
@@ -145,18 +177,63 @@ export class SecurityAnalyzer {
             const rows = await result.getRows();
             
             if (rows.length > 0) {
-                const [total_repos, repos_with_sbom, repos_with_signatures, repos_with_cosign, repos_with_syft, avg_maturity_score] = rows[0];
+                const [total_repos, repos_with_sbom, repos_with_signatures, repos_with_attestations] = rows[0];
                 
-                console.log(chalk.bold('Summary:'));
+                console.log(chalk.bold('Repository Artifacts:'));
                 console.log(chalk.gray(`  Total repositories: ${total_repos}`));
-                console.log(chalk.gray(`  With SBOMs: ${repos_with_sbom} (${Math.round(100 * Number(repos_with_sbom) / Number(total_repos))}%)`));
-                console.log(chalk.gray(`  With signatures: ${repos_with_signatures} (${Math.round(100 * Number(repos_with_signatures) / Number(total_repos))}%)`));
-                console.log(chalk.gray(`  Using Cosign: ${repos_with_cosign}`));
-                console.log(chalk.gray(`  Using Syft: ${repos_with_syft}`));
-                console.log(chalk.gray(`  Average maturity score: ${avg_maturity_score}/10`));
+                console.log(chalk.gray(`  With SBOM artifacts: ${repos_with_sbom} (${Math.round(100 * Number(repos_with_sbom) / Number(total_repos))}%)`));
+                console.log(chalk.gray(`  With signature artifacts: ${repos_with_signatures} (${Math.round(100 * Number(repos_with_signatures) / Number(total_repos))}%)`));
+                console.log(chalk.gray(`  With attestation artifacts: ${repos_with_attestations} (${Math.round(100 * Number(repos_with_attestations) / Number(total_repos))}%)`));
             }
-        } catch {
-            console.log(chalk.yellow('  (Summary query failed - may need workflow data)'));
+
+            // Get tool detection stats by category
+            const toolStatsQuery = `
+                SELECT 
+                    tool_category,
+                    COUNT(DISTINCT repository_id) as repo_count,
+                    COUNT(DISTINCT tool_name) as unique_tools,
+                    COUNT(*) as total_detections
+                FROM agg_workflow_tools
+                GROUP BY tool_category
+                ORDER BY repo_count DESC
+            `;
+            
+            const toolResult = await this.con!.run(toolStatsQuery);
+            const toolRows = await toolResult.getRows();
+            
+            if (toolRows.length > 0) {
+                console.log(chalk.bold('\nCI/CD Security Tools Detected:'));
+                for (const row of toolRows) {
+                    const [category, repoCount, uniqueTools, totalDetections] = row;
+                    const categoryLabel = String(category).replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    console.log(chalk.cyan(`  ${categoryLabel}:`), 
+                        chalk.gray(`${repoCount} repos, ${uniqueTools} unique tools, ${totalDetections} workflow detections`));
+                }
+            }
+
+            // Get specific tool usage (all tools)
+            const specificToolsQuery = `
+                SELECT 
+                    tool_name,
+                    COUNT(DISTINCT repository_id) as repo_count
+                FROM agg_workflow_tools
+                GROUP BY tool_name
+                ORDER BY repo_count DESC, tool_name
+            `;
+            
+            const specificResult = await this.con!.run(specificToolsQuery);
+            const specificRows = await specificResult.getRows();
+            
+            if (specificRows.length > 0) {
+                console.log(chalk.bold('\nAll Detected Tools:'));
+                for (const row of specificRows) {
+                    const [toolName, repoCount] = row;
+                    console.log(chalk.gray(`  ${String(toolName).padEnd(25)} ${repoCount} repos`));
+                }
+            }
+
+        } catch (error) {
+            console.log(chalk.yellow('  (Summary query failed)'), error instanceof Error ? error.message : error);
         }
     }
 

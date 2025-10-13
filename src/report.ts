@@ -46,81 +46,54 @@ class ReportGenerator {
     }
 
     private async generateExecutiveSummary(): Promise<string> {
-        const result = await this.con!.run(`
-            SELECT 
-                COUNT(*) as total_repos,
-                SUM(CASE WHEN has_sbom_artifact THEN 1 ELSE 0 END) as repos_with_sbom,
-                SUM(CASE WHEN has_signature_artifact THEN 1 ELSE 0 END) as repos_with_signatures,
-                SUM(CASE WHEN uses_cosign THEN 1 ELSE 0 END) as repos_using_cosign,
-                SUM(CASE WHEN uses_syft THEN 1 ELSE 0 END) as repos_using_syft,
-                SUM(CASE WHEN uses_codeql THEN 1 ELSE 0 END) as repos_using_codeql,
-                ROUND(AVG(security_maturity_score), 2) as avg_maturity,
-                MAX(security_maturity_score) as max_maturity,
-                MIN(security_maturity_score) as min_maturity
-            FROM agg_repo_summary
-        `);
+        // Query the pre-computed executive summary view
+        const result = await this.con!.run('SELECT * FROM agg_executive_summary');
         const rows = await result.getRows();
         if (rows.length === 0) return '';
-        const [total, withSbom, withSig, cosign, syft, codeql, avgMat, maxMat, minMat] = rows[0];
-        const totalNum = Number(total);
-        const sbomPct = totalNum > 0 ? Math.round((Number(withSbom) / totalNum) * 100) : 0;
-        const sigPct = totalNum > 0 ? Math.round((Number(withSig) / totalNum) * 100) : 0;
+        
+        const row = rows[0];
+        const totalRepos = Number(row[0]); // total_repos
+        const reposWithSbom = Number(row[1]); // repos_with_sbom
+        const reposWithSigs = Number(row[2]); // repos_with_signatures
+        const reposWithAttest = Number(row[3]); // repos_with_attestations
+        const sbomPct = Number(row[4]); // sbom_percentage
+        const sigPct = Number(row[5]); // signature_percentage
+        const attestPct = Number(row[6]); // attestation_percentage
+        
         return `
 ## Executive Summary
 
-**Repositories Analyzed:** ${total}
+**Repositories Analyzed:** ${totalRepos}
 
 **Supply Chain Security Posture:**
-- **SBOM Adoption:** ${withSbom} repositories (${sbomPct}%)
-- **Signature Adoption:** ${withSig} repositories (${sigPct}%)
-- **Average Security Maturity Score:** ${avgMat}/10
-- **Score Range:** ${minMat} - ${maxMat}
-
-**Tool Usage:**
-- **Cosign:** ${cosign} repositories
-- **Syft:** ${syft} repositories  
-- **CodeQL:** ${codeql} repositories
+- **SBOM Adoption:** ${reposWithSbom} repositories (${sbomPct}%)
+- **Signature Adoption:** ${reposWithSigs} repositories (${sigPct}%)
+- **Attestation Adoption:** ${reposWithAttest} repositories (${attestPct}%)
 `;
     }
 
     private async generateRepositorySummary(): Promise<string> {
-        const result = await this.con!.run(`
-            SELECT repository_name, security_maturity_score, total_releases,
-                   has_sbom_artifact, has_signature_artifact,
-                   uses_cosign, uses_syft, uses_codeql
-            FROM agg_repo_summary
-            ORDER BY security_maturity_score DESC, repository_name
-        `);
+        // Simple query - all logic is in the SQL table
+        const result = await this.con!.run('SELECT * FROM agg_repo_summary_sorted');
         const rows = await result.getRows();
         let table = `
 ## Repository Summary
 
-| Repository | Maturity Score | Releases | SBOM | Signatures | Cosign | Syft | CodeQL |
-|------------|---------------:|----------|------|------------|--------|------|--------|
+| Repository | Releases | SBOM | Signatures | Attestations | SBOM Gen | Signer | Code Scan |
+|------------|----------|------|------------|--------------|----------|--------|-----------|
 `;
         for (const row of rows) {
-            const [name, score, releases, sbom, sig, cosign, syft, codeql] = row;
-            table += `| ${name} | ${score}/10 | ${releases} | ${this.checkMark(sbom)} | ${this.checkMark(sig)} | ${this.checkMark(cosign)} | ${this.checkMark(syft)} | ${this.checkMark(codeql)} |\n`;
+            const [name, releases, sbom, sig, attest, sbomGen, signer, codeScan] = row;
+            table += `| ${name} | ${releases} | ${this.checkMark(sbom)} | ${this.checkMark(sig)} | ${this.checkMark(attest)} | ${this.checkMark(sbomGen)} | ${this.checkMark(signer)} | ${this.checkMark(codeScan)} |\n`;
         }
         return table;
     }
 
     private async generateToolAdoption(): Promise<string> {
-        const result = await this.con!.run(`
-            WITH tool_counts AS (
-                SELECT 'Cosign' as tool, SUM(CASE WHEN uses_cosign THEN 1 ELSE 0 END) as count FROM agg_repo_summary
-                UNION ALL SELECT 'Syft', SUM(CASE WHEN uses_syft THEN 1 ELSE 0 END) FROM agg_repo_summary
-                UNION ALL SELECT 'Trivy', SUM(CASE WHEN uses_trivy THEN 1 ELSE 0 END) FROM agg_repo_summary
-                UNION ALL SELECT 'CodeQL', SUM(CASE WHEN uses_codeql THEN 1 ELSE 0 END) FROM agg_repo_summary
-                UNION ALL SELECT 'Grype', SUM(CASE WHEN uses_grype THEN 1 ELSE 0 END) FROM agg_repo_summary
-                UNION ALL SELECT 'Snyk', SUM(CASE WHEN uses_snyk THEN 1 ELSE 0 END) FROM agg_repo_summary
-                UNION ALL SELECT 'Dependabot', SUM(CASE WHEN uses_dependabot THEN 1 ELSE 0 END) FROM agg_repo_summary
-            ),
-            total AS (SELECT COUNT(*) as total_repos FROM agg_repo_summary)
-            SELECT tool, count, ROUND(100.0 * count / total_repos, 1) as percentage
-            FROM tool_counts, total WHERE count > 0 ORDER BY count DESC
-        `);
+        // Query the pre-computed tool summary view
+        const result = await this.con!.run('SELECT * FROM agg_tool_summary');
         const rows = await result.getRows();
+        
         let section = `
 ## Tool Adoption Analysis
 
@@ -129,25 +102,19 @@ class ReportGenerator {
             section += '*No security tools detected in analyzed repositories.*\n';
             return section;
         }
-        section += `| Tool | Repositories | Adoption Rate |\n`;
-        section += `|------|-------------:|--------------:|\n`;
+        
+        section += `| Tool | Category | Repositories | Workflows | Adoption Rate |\n`;
+        section += `|------|----------|-------------:|----------:|--------------:|\n`;
         for (const row of rows) {
-            const [tool, count, pct] = row;
-            section += `| ${tool} | ${count} | ${pct}% |\n`;
+            const [toolName, toolCategory, repoCount, workflowCount, percentage] = row;
+            section += `| ${toolName} | ${toolCategory} | ${repoCount} | ${workflowCount} | ${percentage}% |\n`;
         }
         return section;
     }
 
     private async generateSbomAnalysis(): Promise<string> {
-        const result = await this.con!.run(`
-            SELECT COUNT(*) as total_repos,
-                   SUM(CASE WHEN has_spdx_sbom THEN 1 ELSE 0 END) as spdx_count,
-                   SUM(CASE WHEN has_cyclonedx_sbom THEN 1 ELSE 0 END) as cyclonedx_count,
-                   SUM(CASE WHEN has_unknown_sbom_format THEN 1 ELSE 0 END) as unknown_count,
-                   SUM(CASE WHEN sbom_adoption_rate > 0 THEN 1 ELSE 0 END) as partial_adoption,
-                   SUM(CASE WHEN sbom_adoption_rate = 1.0 THEN 1 ELSE 0 END) as full_adoption
-            FROM agg_repo_summary WHERE has_sbom_artifact = true
-        `);
+        // Simple query - all logic is in the SQL table
+        const result = await this.con!.run('SELECT * FROM agg_sbom_summary');
         const rows = await result.getRows();
         if (rows.length === 0 || rows[0][0] === 0) {
             return `
@@ -174,39 +141,9 @@ class ReportGenerator {
     }
 
     private async generateAdvancedArtifactsAnalysis(): Promise<string> {
-        // Query for advanced artifact detection
-        const artifactResult = await this.con!.run(`
-            SELECT 
-                COUNT(DISTINCT ap.repository_id) as repos_with_advanced_artifacts,
-                SUM(CASE WHEN ap.is_vex THEN 1 ELSE 0 END) as vex_count,
-                SUM(CASE WHEN ap.is_slsa_provenance THEN 1 ELSE 0 END) as slsa_count,
-                SUM(CASE WHEN ap.is_in_toto_link THEN 1 ELSE 0 END) as intoto_link_count,
-                SUM(CASE WHEN ap.is_in_toto_layout THEN 1 ELSE 0 END) as intoto_layout_count,
-                SUM(CASE WHEN ap.is_sigstore_bundle THEN 1 ELSE 0 END) as sigstore_bundle_count,
-                SUM(CASE WHEN ap.is_swid_tag THEN 1 ELSE 0 END) as swid_tag_count,
-                SUM(CASE WHEN ap.is_container_attestation THEN 1 ELSE 0 END) as container_attestation_count,
-                SUM(CASE WHEN ap.is_license_file THEN 1 ELSE 0 END) as license_file_count,
-                SUM(CASE WHEN ap.is_attestation THEN 1 ELSE 0 END) as generic_attestation_count
-            FROM agg_artifact_patterns ap
-            WHERE ap.is_vex OR ap.is_slsa_provenance OR ap.is_in_toto_link OR ap.is_in_toto_layout 
-               OR ap.is_sigstore_bundle OR ap.is_swid_tag OR ap.is_container_attestation 
-               OR ap.is_license_file OR ap.is_attestation
-        `);
-
-        // Query for additional tools detected but not reported
-        const toolResult = await this.con!.run(`
-            SELECT 
-                COUNT(DISTINCT wt.repository_id) as repos_with_additional_tools,
-                SUM(CASE WHEN wt.tool_name = 'tern' THEN 1 ELSE 0 END) as tern_count,
-                SUM(CASE WHEN wt.tool_name = 'notation' THEN 1 ELSE 0 END) as notation_count,
-                SUM(CASE WHEN wt.tool_name = 'docker-scout' THEN 1 ELSE 0 END) as docker_scout_count,
-                SUM(CASE WHEN wt.tool_name = 'clair' THEN 1 ELSE 0 END) as clair_count,
-                SUM(CASE WHEN wt.tool_name = 'whitesource' THEN 1 ELSE 0 END) as whitesource_count,
-                SUM(CASE WHEN wt.tool_name = 'fossa' THEN 1 ELSE 0 END) as fossa_count,
-                SUM(CASE WHEN wt.tool_name = 'goreleaser' THEN 1 ELSE 0 END) as goreleaser_count
-            FROM agg_workflow_tools wt
-            WHERE wt.tool_name IN ('tern', 'notation', 'docker-scout', 'clair', 'whitesource', 'fossa', 'goreleaser')
-        `);
+        // Simple queries - all logic is in the SQL tables
+        const artifactResult = await this.con!.run('SELECT * FROM agg_advanced_artifacts');
+        const toolResult = await this.con!.run('SELECT * FROM agg_tool_category_summary');
 
         const artifactRows = await artifactResult.getRows();
         const toolRows = await toolResult.getRows();
@@ -242,41 +179,57 @@ class ReportGenerator {
 `;
         }
 
-        if (toolRows.length > 0 && toolRows[0] && Number(toolRows[0][0]) > 0) {
-            const [repos, tern, notation, dockerScout, clair, whitesource, fossa, goreleaser] = toolRows[0];
-            section += `**Additional Security Tools Detected:** (${repos} repositories)
-- Tern (Container SBOM): ${tern} workflows
-- Notation (Signing): ${notation} workflows
-- Docker Scout: ${dockerScout} workflows
-- Clair (Vulnerability): ${clair} workflows
-- WhiteSource (Dependency): ${whitesource} workflows
-- FOSSA (Compliance): ${fossa} workflows
-- GoReleaser (Build): ${goreleaser} workflows
+        if (toolRows.length > 0) {
+            // Group tools by category
+            const toolsByCategory = new Map<string, Array<{name: string, repos: number, workflows: number}>>();
+            for (const row of toolRows) {
+                const [category, name, repoCount, workflowCount] = row;
+                const categoryStr = String(category);
+                if (!toolsByCategory.has(categoryStr)) {
+                    toolsByCategory.set(categoryStr, []);
+                }
+                toolsByCategory.get(categoryStr)!.push({
+                    name: String(name),
+                    repos: Number(repoCount),
+                    workflows: Number(workflowCount)
+                });
+            }
 
-`;
+            section += `**Detected Security Tools by Category:**\n\n`;
+            for (const [category, tools] of toolsByCategory) {
+                const categoryLabel = category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                section += `*${categoryLabel}:*\n`;
+                for (const tool of tools) {
+                    section += `- ${tool.name}: ${tool.repos} repositories, ${tool.workflows} workflows\n`;
+                }
+                section += '\n';
+            }
         }
 
         return section;
     }
 
     private async generateDetailedFindings(): Promise<string> {
-        const result = await this.con!.run(`
-            SELECT repository_name, security_maturity_score, total_releases, total_assets,
-                   sbom_artifact_count, signature_artifact_count,
-                   uses_sbom_generator, uses_signer, uses_vulnerability_scanner, uses_code_scanner
-            FROM agg_repo_summary ORDER BY security_maturity_score DESC, repository_name
-        `);
+        // Simple query - all logic is in the SQL table
+        const result = await this.con!.run('SELECT * FROM agg_repo_detail');
         const rows = await result.getRows();
+        
+        if (rows.length === 0) {
+            return `
+## Detailed Repository Findings
+
+*No repositories analyzed.*
+`;
+        }
+
         let section = `
 ## Detailed Repository Findings
 
 `;
         for (const row of rows) {
-            const [name, score, releases, assets, sboms, sigs, sbomGen, signer, vulnScan, codeScan] = row;
+            const [name, releases, assets, sboms, sigs, sbomGen, signer, vulnScan, codeScan] = row;
             section += `
 ### ${name}
-
-**Security Maturity Score:** ${score}/10
 
 **Assets:**
 - ${releases} releases

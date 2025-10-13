@@ -16,6 +16,7 @@ async function main() {
         .requiredOption('-d, --database <path>', 'Path to DuckDB database file to analyze')
         .option('-q, --query <path>', 'Run a specific SQL query file instead of full analysis')
         .option('--export-csv <path>', 'Export agg_repo_summary to CSV file')
+        .option('--recreate', 'Drop and recreate all aggregate tables before analysis')
         .action(async (options) => {
             try {
                 const analyzer = new SecurityAnalyzer(options.database);
@@ -33,7 +34,7 @@ async function main() {
                     }
                 } else {
                     // Run full analysis
-                    await analyzer.analyze();
+                    await analyzer.analyze(options.recreate || false);
                     
                     // Export to CSV if requested
                     if (options.exportCsv) {
