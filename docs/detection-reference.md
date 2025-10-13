@@ -4,81 +4,103 @@ This document provides a comprehensive catalog of all supply chain security tool
 
 ## Summary Table
 
-| Category                                 | Query | Report | Source   | Pattern                                           |
-|------------------------------------------|-------|--------|----------|---------------------------------------------------|
-| **SBOM Formats**                         |       |        |          |                                                   |
-| SPDX                                     | ✅    | ✅      | Artifact | `(?i)\\b(spdx\|\.spdx)\\b`                        |
-| CycloneDX                                | ✅    | ✅      | Artifact | `(?i)\\b(cyclonedx\|cdx\|\.cdx)\\b`               |
-| SWID Tags                                | ✅     | ❌     | Artifact | `(?i)\\b(swid\|\.swidtag)\\b`                     |
-| **Signatures & Attestations**            |        |        |          |                                                   |
-| Standard Signatures (.sig, .asc, .pem)   | ✅     | ✅      | Artifact | `(?i)\\.(sig\|asc\|pem\|pub)$`                    |
-| Generic Attestations                     | ✅     | ✅      | Artifact | `(?i)attestation`                                 |
-| VEX Documents                            | ✅     | ✅      | Artifact | `(?i)\\b(vex\|\.vex)\\b`                          |
-| SLSA Provenance                          | ✅     | ✅      | Artifact | `(?i)\\b(provenance\|slsa\|\.intoto\.jsonl)\\b`   |
-| In-toto Links                            | ✅     | ✅      | Artifact | `(?i)\\b(link\|\.link)\\b`                        |
-| In-toto Layouts                          | ✅     | ✅      | Artifact | `(?i)\\b(layout\|\.layout)\\b`                    |
-| Sigstore Bundles                         | ✅     | ✅      | Artifact | `(?i)\.bundle$`                                   |
-| Container Attestations                   | ✅     | ✅      | Artifact | `(?i)\\b(cosign\|rekor\|fulcio)\\b`               |
-| License Files                            | ✅     | ✅      | Artifact | `(?i)\\b(license\|copying\|notice)\\b`            |
-| **SBOM Generation Tools**                |        |        |          |                                                   |
-| Syft                                     | ✅     | ✅      | CI       | `(?i)\\bsyft\\b`                                  |
-| Trivy                                    | ✅     | ✅      | CI       | `(?i)\\btrivy\\b`                                 |
-| CycloneDX Generator                      | ✅     | ✅      | CI       | `(?i)\\bcdxgen\\b`                                |
-| SPDX SBOM Generator                      | ✅     | ✅      | CI       | `(?i)\\bspdx-sbom-generator\\b`                   |
-| Tern                                     | ✅     | ✅      | CI       | `(?i)\\b(tern-tools/tern\|tern.*sbom)\\b`         |
-| Bomber                                   | ❌     | ❌      | CI       | `(?i)\\bdevops-kung-fu/bomber\\b`                 |
-| OSS Review Toolkit (ORT)                 | ❌     | ❌      | CI       | `(?i)\\boss-review-toolkit\|ort-project\\b`       |
-| **Signing & Attestation Tools**          |        |        |          |                                                   |
-| Cosign                                   | ✅     | ✅      | CI       | `(?i)\\bcosign\\b`                                |
-| Sigstore                                 | ✅     | ✅      | CI       | `(?i)\\bsigstore\\b`                              |
-| SLSA GitHub Generator                    | ✅     | ✅      | CI       | `(?i)\\bslsa-github-generator\\b`                 |
-| Notation                                 | ✅     | ✅      | CI       | `(?i)\\b(notation\|notaryproject)\\b`             |
-| Witness                                  | ❌     | ❌      | CI       | `(?i)\\btestifysec/witness\\b`                    |
-| Kyverno                                  | ❌     | ❌      | CI       | `(?i)\\bkyverno\\b`                               |
-| **Vulnerability Scanners**               |        |        |          |                                                   |
-| Snyk                                     | ✅     | ✅      | CI       | `(?i)\\bsnyk\\b`                                  |
-| Anchore/Grype                            | ✅     | ✅      | CI       | `(?i)\\b(anchore\|grype)\\b`                      |
-| Trivy                                    | ✅     | ✅      | CI       | `(?i)\\btrivy\\b`                                 |
-| Clair                                    | ✅     | ✅      | CI       | `(?i)\\bclair\\b`                                 |
-| Docker Scout                             | ✅     | ✅      | CI       | `(?i)\\bdocker.*scout\\b`                         |
-| Twistlock                                | ✅     | ❌      | CI       | `(?i)\\btwistlock\\b`                             |
-| Aqua                                     | ✅     | ❌      | CI       | `(?i)\\baqua\\b`                                  |
-| **Dependency Scanners**                  |        |        |          |                                                   |
-| Dependabot                               | ✅     | ✅      | CI       | `(?i)\\bdependabot\\b`                            |
-| Renovate                                 | ✅     | ✅      | CI       | `(?i)\\brenovate\\b`                              |
-| WhiteSource                              | ✅     | ✅      | CI       | `(?i)\\bwhitesource\\b`                           |
-| FOSSA                                    | ✅     | ✅      | CI       | `(?i)\\bfossa\\b`                                 |
-| **Code Scanners**                        |        |        |          |                                                   |
-| CodeQL                                   | ✅     | ✅      | CI       | `(?i)\\bcodeql\\b`                                |
-| Semgrep                                  | ✅     | ✅      | CI       | `(?i)\\bsemgrep\\b`                               |
-| Bandit                                   | ✅     | ✅      | CI       | `(?i)\\bbandit\\b`                                |
-| ESLint Security                          | ✅     | ❌      | CI       | `(?i)\\beslint-security\\b`                       |
-| **Build & Release Tools**                |        |        |          |                                                   |
-| GoReleaser                               | ✅     | ✅      | CI       | `(?i)\\bgoreleaser/goreleaser-action\\b`          |
-| **License & Compliance**                 |        |        |          |                                                   |
-| Scancode                                 | ❌     | ❌      | CI       | `(?i)\\bscancode\\b`                              |
-| Licensee                                 | ❌     | ❌      | CI       | `(?i)\\blicensee\\b`                              |
-| **Policy & Governance**                  |        |        |          |                                                   |
-| Open Policy Agent (OPA)                  | ❌     | ❌      | CI       | `(?i)\\bopen-policy-agent\|opa\\b`                |
-| Rego Policies                            | ❌     | ❌      | Artifact | `(?i)\.rego$`                                     |
+| Category                                 | Query | Report | Source   | Method | Pattern                                           |
+|------------------------------------------|-------|--------|----------|--------|---------------------------------------------------|
+| **SBOM Formats**                         |       |        |          |        |                                                   |
+| SPDX                                     | ✅    | ✅      | Artifact | FTS    | `spdx`                                            |
+| CycloneDX                                | ✅    | ✅      | Artifact | FTS    | `cyclonedx OR cdx`                                |
+| SWID Tags                                | ✅     | ❌     | Artifact | FTS    | `swid OR swidtag`                                 |
+| **Signatures & Attestations**            |        |        |          |        |                                                   |
+| Standard Signatures (.sig, .asc, .pem)   | ✅     | ✅      | Artifact | REGEXP | `(?i)\\.(sig\|asc\|pem\|pub)$`                    |
+| Generic Attestations                     | ✅     | ✅      | Artifact | FTS    | `attestation`                                     |
+| VEX Documents                            | ✅     | ✅      | Artifact | FTS    | `vex`                                             |
+| SLSA Provenance                          | ✅     | ✅      | Artifact | FTS    | `provenance OR slsa OR intoto`                    |
+| In-toto Links                            | ✅     | ✅      | Artifact | FTS    | `link`                                            |
+| In-toto Layouts                          | ✅     | ✅      | Artifact | FTS    | `layout`                                          |
+| Sigstore Bundles                         | ✅     | ✅      | Artifact | REGEXP | `(?i)\.bundle$`                                   |
+| Container Attestations                   | ✅     | ✅      | Artifact | FTS    | `cosign OR rekor OR fulcio`                       |
+| License Files                            | ✅     | ✅      | Artifact | FTS    | `license OR copying OR notice`                    |
+| **SBOM Generation Tools**                |        |        |          |        |                                                   |
+| Syft                                     | ✅     | ✅      | CI       | FTS    | `syft`                                            |
+| Trivy                                    | ✅     | ✅      | CI       | FTS    | `trivy`                                           |
+| CycloneDX Generator                      | ✅     | ✅      | CI       | FTS    | `cdxgen`                                          |
+| SPDX SBOM Generator                      | ✅     | ✅      | CI       | FTS    | `spdx-sbom-generator`                             |
+| Tern                                     | ✅     | ✅      | CI       | FTS    | `tern-tools OR tern`                              |
+| Bomber                                   | ❌     | ❌      | CI       | FTS    | `devops-kung-fu bomber`                           |
+| OSS Review Toolkit (ORT)                 | ❌     | ❌      | CI       | FTS    | `oss-review-toolkit OR ort-project`               |
+| **Signing & Attestation Tools**          |        |        |          |        |                                                   |
+| Cosign                                   | ✅     | ✅      | CI       | FTS    | `cosign`                                          |
+| Sigstore                                 | ✅     | ✅      | CI       | FTS    | `sigstore`                                        |
+| SLSA GitHub Generator                    | ✅     | ✅      | CI       | FTS    | `slsa-github-generator`                           |
+| Notation                                 | ✅     | ✅      | CI       | FTS    | `notation OR notaryproject`                       |
+| Witness                                  | ❌     | ❌      | CI       | FTS    | `testifysec witness`                              |
+| Kyverno                                  | ❌     | ❌      | CI       | FTS    | `kyverno`                                         |
+| **Vulnerability Scanners**               |        |        |          |        |                                                   |
+| Snyk                                     | ✅     | ✅      | CI       | FTS    | `snyk`                                            |
+| Anchore/Grype                            | ✅     | ✅      | CI       | FTS    | `anchore OR grype`                                |
+| Trivy                                    | ✅     | ✅      | CI       | FTS    | `trivy`                                           |
+| Clair                                    | ✅     | ✅      | CI       | FTS    | `clair`                                           |
+| Docker Scout                             | ✅     | ✅      | CI       | FTS    | `docker scout`                                    |
+| Twistlock                                | ✅     | ❌      | CI       | FTS    | `twistlock`                                       |
+| Aqua                                     | ✅     | ❌      | CI       | FTS    | `aqua`                                            |
+| **Dependency Scanners**                  |        |        |          |        |                                                   |
+| Dependabot                               | ✅     | ✅      | CI       | FTS    | `dependabot`                                      |
+| Renovate                                 | ✅     | ✅      | CI       | FTS    | `renovate`                                        |
+| WhiteSource                              | ✅     | ✅      | CI       | FTS    | `whitesource`                                     |
+| FOSSA                                    | ✅     | ✅      | CI       | FTS    | `fossa`                                           |
+| **Code Scanners**                        |        |        |          |        |                                                   |
+| CodeQL                                   | ✅     | ✅      | CI       | FTS    | `codeql`                                          |
+| Semgrep                                  | ✅     | ✅      | CI       | FTS    | `semgrep`                                         |
+| Bandit                                   | ✅     | ✅      | CI       | FTS    | `bandit`                                          |
+| ESLint Security                          | ✅     | ❌      | CI       | FTS    | `eslint-security`                                 |
+| **Build & Release Tools**                |        |        |          |        |                                                   |
+| GoReleaser                               | ✅     | ✅      | CI       | FTS    | `goreleaser`                                      |
+| **License & Compliance**                 |        |        |          |        |                                                   |
+| Scancode                                 | ❌     | ❌      | CI       | FTS    | `scancode`                                        |
+| Licensee                                 | ❌     | ❌      | CI       | FTS    | `licensee`                                        |
+| **Policy & Governance**                  |        |        |          |        |                                                   |
+| Open Policy Agent (OPA)                  | ❌     | ❌      | CI       | FTS    | `open-policy-agent OR opa`                        |
+| Rego Policies                            | ❌     | ❌      | Artifact | REGEXP | `(?i)\.rego$`                                     |
 
 **Legend:**
+
 - ✅ = Fully functional
 - ❌ = Not yet implemented
 - **Query** = Can detect in SQL queries
 - **Report** = Included in generated reports
 - **Source** = Where the pattern is matched (Artifact = release assets, CI = workflow files)
-- **Pattern** = Regular expression used for detection
+- **Method** = Search method used (FTS = Full-Text Search, REGEXP = Regular Expression)
+- **Pattern** = Search pattern used for detection
 
-**Regex Syntax Notes:**
-- `(?i)` = Case-insensitive matching
-- `\\b` = Word boundary (double backslash is needed for SQL string escaping)
-- `\\d` = Digit character
-- `\\.` = Literal dot/period (escaped)
-- `|` = OR operator (e.g., `spdx|cdx` matches either "spdx" or "cdx")
-- `.*` = Match any character, zero or more times
+**Search Method Notes:**
+
+- **FTS (Full-Text Search)**: Uses DuckDB's `match_bm25()` function with BM25 ranking algorithm
+  - Fast index-backed search (10-100x faster than REGEXP)
+  - Handles stemming, case-folding, stopwords automatically
+  - Boolean operators: `OR`, `AND` for combining terms
+  - Best for: keyword detection, tool names, flexible text matching
+  - Example: `match_bm25(id, 'cosign OR sigstore')`
+
+- **REGEXP (Regular Expression)**: Uses DuckDB's `REGEXP_MATCHES()` function
+  - Best for: exact pattern matching, file extensions, structural patterns
+  - Used when precision is critical (e.g., `.sig` vs `signature`)
+  - Syntax: `(?i)` = case-insensitive, `\\.` = literal dot, `$` = end of string
+  - Example: `REGEXP_MATCHES(name, '(?i)\\.sig$')`
+
+**Pattern Syntax by Method:**
+
+FTS Patterns:
+- Simple terms: `cosign`, `trivy`, `sbom`
+- Boolean OR: `spdx OR cyclonedx`, `anchore OR grype`
+- Boolean AND: `docker AND scout` (implicit with space in phrase search)
+- Case-insensitive by default
+
+REGEXP Patterns:
+- `(?i)` = Case-insensitive flag
+- `\\.` = Literal dot/period (double backslash for SQL escaping)
 - `$` = End of string anchor
-- The double backslashes (`\\`) you see are due to SQL string literal escaping - in the actual regex engine, they become single backslashes
+- `|` = Alternation (e.g., `sig|asc|pem`)
+- `\\b` = Word boundary (when needed for precision)
 
 ---
 
@@ -162,12 +184,13 @@ This document provides a comprehensive catalog of all supply chain security tool
 **Documentation:** https://spdx.dev/
 
 **Detection Pattern:**
+
 ```sql
--- File name contains SPDX indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(spdx|\.spdx)\b')
+-- FTS-based detection for SPDX artifacts
+fts_main_base_release_assets.match_bm25(ra.id, 'spdx') IS NOT NULL
 
 -- Classified as SPDX format
-CASE WHEN REGEXP_MATCHES(ra.name, '(?i)\b(spdx|\.spdx)\b') THEN 'spdx'
+CASE WHEN fts_main_base_release_assets.match_bm25(ra.id, 'spdx') IS NOT NULL THEN 'spdx'
 ```
 
 **Typical Artifacts:**
@@ -189,12 +212,13 @@ CASE WHEN REGEXP_MATCHES(ra.name, '(?i)\b(spdx|\.spdx)\b') THEN 'spdx'
 **Documentation:** https://cyclonedx.org/
 
 **Detection Pattern:**
+
 ```sql
--- File name contains CycloneDX indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(cyclonedx|cdx|\.cdx)\b')
+-- FTS-based detection for CycloneDX artifacts
+fts_main_base_release_assets.match_bm25(ra.id, 'cyclonedx OR cdx') IS NOT NULL
 
 -- Classified as CycloneDX format
-CASE WHEN REGEXP_MATCHES(ra.name, '(?i)\b(cyclonedx|cdx|\.cdx)\b') THEN 'cyclonedx'
+CASE WHEN fts_main_base_release_assets.match_bm25(ra.id, 'cyclonedx OR cdx') IS NOT NULL THEN 'cyclonedx'
 ```
 
 **Typical Artifacts:**
@@ -216,9 +240,10 @@ CASE WHEN REGEXP_MATCHES(ra.name, '(?i)\b(cyclonedx|cdx|\.cdx)\b') THEN 'cyclone
 **Documentation:** https://csrc.nist.gov/projects/software-identification-swid
 
 **Detection Pattern:**
+
 ```sql
--- File name contains SWID indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(swid|\.swidtag)\b') as is_swid_tag
+-- FTS-based detection for SWID tags
+fts_main_base_release_assets.match_bm25(ra.id, 'swid OR swidtag') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -267,9 +292,10 @@ REGEXP_MATCHES(ra.name, '(?i)\.(sig|asc|pem|pub)$')
 **Documentation:** https://github.com/in-toto/attestation
 
 **Detection Pattern:**
+
 ```sql
--- File name contains attestation indicators
-REGEXP_MATCHES(ra.name, '(?i)attestation')
+-- FTS-based detection for generic attestations
+fts_main_base_release_assets.match_bm25(ra.id, 'attestation') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -290,9 +316,10 @@ REGEXP_MATCHES(ra.name, '(?i)attestation')
 **Documentation:** https://www.cisa.gov/sites/default/files/publications/VEX_Use_Cases_April2022.pdf
 
 **Detection Pattern:**
+
 ```sql
--- File name contains VEX indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(vex|\.vex)\b')
+-- FTS-based detection for VEX documents
+fts_main_base_release_assets.match_bm25(ra.id, 'vex') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -313,9 +340,10 @@ REGEXP_MATCHES(ra.name, '(?i)\b(vex|\.vex)\b')
 **Documentation:** https://slsa.dev/
 
 **Detection Pattern:**
+
 ```sql
--- File name contains SLSA/provenance indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(provenance|slsa|\.intoto\.jsonl)\b')
+-- FTS-based detection for SLSA provenance
+fts_main_base_release_assets.match_bm25(ra.id, 'provenance OR slsa OR intoto') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -336,9 +364,10 @@ REGEXP_MATCHES(ra.name, '(?i)\b(provenance|slsa|\.intoto\.jsonl)\b')
 **Documentation:** https://in-toto.io/
 
 **Detection Pattern:**
+
 ```sql
--- File name contains link indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(link|\.link)\b')
+-- FTS-based detection for in-toto links
+fts_main_base_release_assets.match_bm25(ra.id, 'link') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -359,9 +388,10 @@ REGEXP_MATCHES(ra.name, '(?i)\b(link|\.link)\b')
 **Documentation:** https://github.com/in-toto/docs/blob/master/in-toto-spec.md
 
 **Detection Pattern:**
+
 ```sql
--- File name contains layout indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(layout|\.layout)\b') as is_in_toto_layout
+-- FTS-based detection for in-toto layouts
+fts_main_base_release_assets.match_bm25(ra.id, 'layout') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -405,9 +435,10 @@ REGEXP_MATCHES(ra.name, '(?i)\.bundle$') as is_sigstore_bundle
 **Documentation:** https://github.com/sigstore/cosign
 
 **Detection Pattern:**
+
 ```sql
--- File name contains container/signing tool indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(cosign|rekor|fulcio)\b')
+-- FTS-based detection for container attestations
+fts_main_base_release_assets.match_bm25(ra.id, 'cosign OR rekor OR fulcio') IS NOT NULL
 ```
 
 **Typical Artifacts:**
@@ -428,9 +459,10 @@ REGEXP_MATCHES(ra.name, '(?i)\b(cosign|rekor|fulcio)\b')
 **Documentation:** https://choosealicense.com/
 
 **Detection Pattern:**
+
 ```sql
--- File name contains license indicators
-REGEXP_MATCHES(ra.name, '(?i)\b(license|copying|notice)\b')
+-- FTS-based detection for license files
+fts_main_base_release_assets.match_bm25(ra.id, 'license OR copying OR notice') IS NOT NULL
 ```
 
 **Typical Artifacts:**

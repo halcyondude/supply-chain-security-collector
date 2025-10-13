@@ -24,34 +24,34 @@ SELECT
     ra.downloadUrl as download_url,
     
     -- ========================================
-    -- SBOM Detection
+    -- SBOM Detection (FTS-based)
     -- ========================================
-    REGEXP_MATCHES(ra.name, '(?i)\b(sbom|spdx|cyclonedx)\b') as is_sbom,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'sbom OR spdx OR cyclonedx') IS NOT NULL) as is_sbom,
     
     CASE 
-        WHEN REGEXP_MATCHES(ra.name, '(?i)\b(spdx|\.spdx)\b') THEN 'spdx'
-        WHEN REGEXP_MATCHES(ra.name, '(?i)\b(cyclonedx|cdx|\.cdx)\b') THEN 'cyclonedx'
-        WHEN REGEXP_MATCHES(ra.name, '(?i)\bsbom\b') THEN 'unknown'
+        WHEN fts_main_base_release_assets.match_bm25(ra.id, 'spdx') IS NOT NULL THEN 'spdx'
+        WHEN fts_main_base_release_assets.match_bm25(ra.id, 'cyclonedx OR cdx') IS NOT NULL THEN 'cyclonedx'
+        WHEN fts_main_base_release_assets.match_bm25(ra.id, 'sbom') IS NOT NULL THEN 'unknown'
         ELSE NULL
     END as sbom_format,
     
     -- ========================================
-    -- Signature & Attestation Detection
+    -- Signature & Attestation Detection (FTS + Regex for extensions)
     -- ========================================
     REGEXP_MATCHES(ra.name, '(?i)\.(sig|asc|pem|pub)$') as is_signature,
-    REGEXP_MATCHES(ra.name, '(?i)attestation') as is_attestation,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'attestation') IS NOT NULL) as is_attestation,
     
     -- ========================================
-    -- Advanced Supply Chain Artifacts
+    -- Advanced Supply Chain Artifacts (FTS-based)
     -- ========================================
-    REGEXP_MATCHES(ra.name, '(?i)\b(vex|\.vex)\b') as is_vex,
-    REGEXP_MATCHES(ra.name, '(?i)\b(provenance|slsa|\.intoto\.jsonl)\b') as is_slsa_provenance,
-    REGEXP_MATCHES(ra.name, '(?i)\b(link|\.link)\b') as is_in_toto_link,
-    REGEXP_MATCHES(ra.name, '(?i)\b(layout|\.layout)\b') as is_in_toto_layout,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'vex') IS NOT NULL) as is_vex,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'provenance OR slsa OR intoto') IS NOT NULL) as is_slsa_provenance,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'link') IS NOT NULL) as is_in_toto_link,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'layout') IS NOT NULL) as is_in_toto_layout,
     REGEXP_MATCHES(ra.name, '(?i)\.bundle$') as is_sigstore_bundle,
-    REGEXP_MATCHES(ra.name, '(?i)\b(swid|\.swidtag)\b') as is_swid_tag,
-    REGEXP_MATCHES(ra.name, '(?i)\b(cosign|rekor|fulcio)\b') as is_container_attestation,
-    REGEXP_MATCHES(ra.name, '(?i)\b(license|copying|notice)\b') as is_license_file
+    (fts_main_base_release_assets.match_bm25(ra.id, 'swid OR swidtag') IS NOT NULL) as is_swid_tag,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'cosign OR rekor OR fulcio') IS NOT NULL) as is_container_attestation,
+    (fts_main_base_release_assets.match_bm25(ra.id, 'license OR copying OR notice') IS NOT NULL) as is_license_file
 
 FROM base_release_assets ra
 JOIN base_releases rel ON ra.release_id = rel.id

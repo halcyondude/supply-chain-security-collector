@@ -32,7 +32,23 @@ export class SecurityAnalyzer {
         if (!this.db) {
             this.db = await DuckDBInstance.create(this.dbPath);
             this.con = await this.db.connect();
+            await this.initializeExtensions();
         }
+    }
+
+    /**
+     * Initialize DuckDB extensions for enhanced functionality
+     */
+    private async initializeExtensions() {
+        console.log(chalk.gray('  Loading DuckDB extensions...'));
+        
+        // Full-text search for workflow content and descriptions
+        await this.con!.run("INSTALL fts; LOAD fts;");
+        console.log(chalk.gray('    ✓ fts (Full-Text Search)'));
+        
+        // Enhanced JSON processing for API responses and security features
+        await this.con!.run("INSTALL json; LOAD json;");
+        console.log(chalk.gray('    ✓ json (JSON Processing)'));
     }
 
     /**
@@ -50,7 +66,10 @@ export class SecurityAnalyzer {
             console.log(chalk.green('  ✓ Dropped existing tables\n'));
         }
 
-        // Run models in dependency order
+        // Create indexes (including FTS indexes)
+        await this.runModel('00_initialize_indexes.sql');
+
+        // Run analysis models in dependency order
         await this.runModel('01_artifact_analysis.sql');
         await this.runModel('02_workflow_tool_detection.sql');
         await this.runModel('03_repository_security_summary.sql');

@@ -7,7 +7,9 @@
 -- - GoReleaser
 -- - Security scanners (vulnerability, dependency, code, container)
 -- 
--- Depends on: base_workflows table
+-- Uses Full-Text Search (FTS) for efficient tool detection in workflow content.
+-- 
+-- Depends on: base_workflows table, FTS index on content
 -- Creates: agg_workflow_tools table
 -- ============================================================================
 
@@ -23,15 +25,15 @@ SELECT
     w.filename as workflow_name,
     'sbom-generator' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bsyft\b') THEN 'syft'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\btrivy\b') THEN 'trivy'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bcdxgen\b') THEN 'cdxgen'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b') THEN 'spdx-sbom-generator'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') THEN 'tern'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'syft') IS NOT NULL THEN 'syft'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL THEN 'trivy'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'cdxgen') IS NOT NULL THEN 'cdxgen'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'spdx-sbom-generator') IS NOT NULL THEN 'spdx-sbom-generator'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'tern') IS NOT NULL THEN 'tern'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(syft|trivy|cdxgen|spdx-sbom-generator|tern-tools/tern|tern.*sbom)\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'syft OR trivy OR cdxgen OR spdx-sbom-generator OR tern') IS NOT NULL
 
 UNION ALL
 
@@ -46,14 +48,15 @@ SELECT
     w.filename,
     'signer' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bcosign\b') THEN 'cosign'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bsigstore\b') THEN 'sigstore'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bslsa-github-generator\b') THEN 'slsa-github-generator'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') THEN 'notation'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'cosign') IS NOT NULL THEN 'cosign'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'sigstore') IS NOT NULL THEN 'sigstore'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'slsa-github-generator') IS NOT NULL THEN 'slsa-github-generator'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'notation') IS NOT NULL THEN 'notation'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'notaryproject') IS NOT NULL THEN 'notation'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(cosign|sigstore|slsa-github-generator|notation|notaryproject)\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'cosign OR sigstore OR slsa-github-generator OR notation OR notaryproject') IS NOT NULL
 
 UNION ALL
 
@@ -70,7 +73,7 @@ SELECT
     'goreleaser' as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\bgoreleaser/goreleaser-action\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'goreleaser-action') IS NOT NULL
 
 UNION ALL
 
@@ -85,15 +88,15 @@ SELECT
     w.filename,
     'vulnerability-scanner' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bsnyk\b') THEN 'snyk'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\banchore\b') THEN 'anchore'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\btwistlock\b') THEN 'twistlock'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\baqua\b') THEN 'aqua'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bclair\b') THEN 'clair'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'snyk') IS NOT NULL THEN 'snyk'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'anchore') IS NOT NULL THEN 'anchore'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'twistlock') IS NOT NULL THEN 'twistlock'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'aqua') IS NOT NULL THEN 'aqua'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'clair') IS NOT NULL THEN 'clair'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(snyk|anchore|twistlock|aqua|clair)\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'snyk OR anchore OR twistlock OR aqua OR clair') IS NOT NULL
 
 UNION ALL
 
@@ -108,14 +111,14 @@ SELECT
     w.filename,
     'dependency-scanner' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bdependabot\b') THEN 'dependabot'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\brenovate\b') THEN 'renovate'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bwhitesource\b') THEN 'whitesource'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bfossa\b') THEN 'fossa'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'dependabot') IS NOT NULL THEN 'dependabot'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'renovate') IS NOT NULL THEN 'renovate'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'whitesource') IS NOT NULL THEN 'whitesource'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'fossa') IS NOT NULL THEN 'fossa'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(dependabot|renovate|whitesource|fossa)\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'dependabot OR renovate OR whitesource OR fossa') IS NOT NULL
 
 UNION ALL
 
@@ -130,14 +133,14 @@ SELECT
     w.filename,
     'code-scanner' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bcodeql\b') THEN 'codeql'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bsemgrep\b') THEN 'semgrep'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bbandit\b') THEN 'bandit'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\beslint-security\b') THEN 'eslint-security'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'codeql') IS NOT NULL THEN 'codeql'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'semgrep') IS NOT NULL THEN 'semgrep'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'bandit') IS NOT NULL THEN 'bandit'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'eslint-security') IS NOT NULL THEN 'eslint-security'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(codeql|semgrep|bandit|eslint-security)\b')
+WHERE fts_main_base_workflows.match_bm25(w.id, 'codeql OR semgrep OR bandit OR eslint-security') IS NOT NULL
 
 UNION ALL
 
@@ -152,13 +155,13 @@ SELECT
     w.filename,
     'container-scanner' as tool_category,
     CASE 
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bdocker.*scout\b') THEN 'docker-scout'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\bgrype\b') THEN 'grype'
-        WHEN REGEXP_MATCHES(w.content, '(?i)\btrivy\b') THEN 'trivy'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'docker-scout') IS NOT NULL THEN 'docker-scout'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL THEN 'grype'
+        WHEN fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL THEN 'trivy'
     END as tool_name
 FROM base_workflows w
 JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE REGEXP_MATCHES(w.content, '(?i)\b(docker.*scout|grype|trivy)\b');
+WHERE fts_main_base_workflows.match_bm25(w.id, 'docker-scout OR grype OR trivy') IS NOT NULL;
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_workflow_repository ON agg_workflow_tools(repository_id);

@@ -37,3 +37,150 @@ The project implements a sophisticated two-stage data pipeline:
 - **Immediate:** Remove artifacts of the old analysis pipeline (pre-SQL, pre-normalizer architecture).
 - **Ongoing:** Keep documentation synchronized with code changes.
 - **Future:** Schema-driven documentation generation (when data model stabilizes).
+
+---
+
+## DuckDB Query Optimization: When to Use JSON vs Full-Text Search
+
+The toolkit leverages two powerful DuckDB extensions for analyzing workflow data. Understanding when to use each is critical for performance and correctness.
+
+### **Full-Text Search (FTS) - Use for Unstructured Text**
+
+**When to use:**
+
+- Searching for **keywords or tool names** in YAML/text content
+- **Fuzzy matching** where exact structure doesn't matter
+- Finding mentions across **any part of the workflow**
+- Relevance-ranked results (BM25 scoring)
+
+**Examples:**
+
+```sql
+-- Find workflows mentioning security tools (anywhere in YAML)
+WHERE fts_main_base_workflows.match_bm25(id, 'cosign OR sigstore OR slsa') IS NOT NULL
+
+-- Search for specific CI patterns
+WHERE fts_main_base_workflows.match_bm25(id, 'docker build push', fields := 'content') IS NOT NULL
+
+-- Find workflows with SBOM in filename
+WHERE fts_main_base_workflows.match_bm25(id, 'sbom OR spdx', fields := 'filename') IS NOT NULL
+```
+
+**Strengths:**
+
+- ⚡ **Fast** - Index-backed, no full table scans
+- 🎯 **Smart** - Handles stemming, case-folding, stopwords automatically
+- 📊 **Ranked** - BM25 relevance scoring for result ordering
+- 🔍 **Flexible** - Boolean operators (OR, AND), field-specific search
+
+**Limitations:**
+
+- ❌ Cannot extract **structured data** (e.g., which step uses tool X)
+- ❌ Cannot parse **relationships** (e.g., tool versions, dependencies)
+- ❌ Limited to **presence detection**, not context analysis
+
+---
+
+### **JSON Extension - Use for Structured Data**
+
+**When to use:**
+
+- Extracting **specific fields** from structured data (GitHub Actions YAML → JSON)
+- Querying **relationships** (e.g., which jobs use tool X in which steps)
+- Parsing **configuration values** (versions, parameters, secrets)
+- Building **dependency graphs** or analyzing CI/CD pipelines
+
+**Examples:**
+
+```sql
+-- Extract specific GitHub Action versions
+SELECT json_extract(content, '$.jobs.*.steps[*].uses') as actions_used
+FROM base_workflows
+
+-- Find workflows using specific action versions
+SELECT * FROM base_workflows
+WHERE json_extract_string(content, '$.jobs.build.steps[0].uses') LIKE 'actions/checkout@v4'
+
+-- Parse matrix build configurations
+SELECT json_extract(content, '$.jobs.*.strategy.matrix') as build_matrix
+FROM base_workflows
+```
+
+**Strengths:**
+
+- 🏗️ **Structured** - Extract nested fields, arrays, objects
+- 🔗 **Relational** - Join on extracted values, build relationships
+- 📐 **Precise** - Path-based queries for exact data location
+- 🎨 **Transformative** - Reshape data, aggregate nested structures
+
+**Limitations:**
+
+- ❌ Requires **valid JSON/structured format** (GitHub Actions workflows are YAML, need conversion)
+- ❌ **Path-dependent** - Must know exact structure
+- ❌ No **fuzzy matching** or text search capabilities
+- ❌ Slower for **full-text scanning** (no indexes on JSON content)
+
+---
+
+### **Decision Matrix**
+
+| Use Case | Tool | Why |
+|----------|------|-----|
+| "Find workflows using Cosign" | **FTS** | Keyword search, don't care where it appears |
+| "Extract Cosign version from step 3" | **JSON** | Need structured field from specific location |
+| "Which repos mention SBOM in workflow names?" | **FTS** | Text search on filename field |
+| "Parse matrix build configurations" | **JSON** | Extract structured nested data |
+| "Find workflows with security scanning" | **FTS** | Broad keyword search (codeql, snyk, trivy, etc.) |
+| "Get all GitHub Action versions used" | **JSON** | Extract structured `uses:` fields |
+| "Search release notes for CVE mentions" | **FTS** | Unstructured text search |
+| "Parse security_features JSON column" | **JSON** | Structured data already in JSON format |
+
+---
+
+### **Hybrid Approach (Best of Both Worlds)**
+
+Combine FTS and JSON for powerful queries:
+
+```sql
+-- Find workflows using Cosign (FTS), then extract version info (JSON)
+WITH cosign_workflows AS (
+  SELECT id, content
+  FROM base_workflows
+  WHERE fts_main_base_workflows.match_bm25(id, 'cosign') IS NOT NULL
+)
+SELECT 
+  nameWithOwner,
+  json_extract_string(content, '$.jobs.*.steps[*].uses') as actions
+FROM cosign_workflows
+JOIN base_repositories ON repository_id = id
+WHERE json_extract_string(content, '$.jobs.*.steps[*].uses') LIKE '%cosign%';
+```
+
+---
+
+### **Current Implementation**
+
+**FTS Indexes (Enabled):**
+
+- `base_workflows.content` - Tool detection in workflow YAML
+- `base_workflows.filename` - Workflow name search
+- `base_repositories.description` - Project description search
+- `base_repositories.nameWithOwner` - Repo/owner search
+- `base_release_assets.name` - Artifact filename search
+- `base_releases.name` - Release name search
+
+**JSON Queries (Future):**
+
+- Parse GitHub Actions workflow structure (when converted from YAML)
+- Extract security feature flags from `security_features` columns
+- Analyze tool configurations and parameters
+
+**Performance Guidelines:**
+
+1. **Always use FTS** for initial filtering (keyword presence)
+2. **Use JSON** for detailed extraction after filtering
+3. **Avoid** `LIKE '%pattern%'` on large text fields (use FTS instead)
+4. **Index** FTS-searchable columns during schema creation
+5. **Benchmark** - FTS is 10-100x faster than regex for text search
+
+---
