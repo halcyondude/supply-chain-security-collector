@@ -1,16 +1,15 @@
 # GraphQL Data Engineering Toolkit
 
-collect data from any graphql api → normalize to relational tables → analyze with sql → export to duckdb + parquet
+collect data github graphql api → schema/type driven normalization to relational tables → duckdb → analysis
 
 currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
 
 ## what it does
 
-1. **collects**: fetches data from graphql apis with parallel execution
-2. **normalizes**: extracts typed entities into relational tables (base_*)
-3. **stores**: writes to duckdb database + parquet files
-4. **analyzes**: runs sql models to detect patterns (agg_*), including cncf project-level analysis
-
+1. **collects**: fetches data from graphql api (GitHub presently) with parallel execution & batching
+2. **normalizes**: uses typeded SDK (created via GraphQL codegen) to create normalized tables (base_*)
+3. **stores**: base_* tables (GraphQL responses + CNCF landscape metadata)  → to duckdb database
+4. **analyzes**: runs sql models to build aggregation tables (agg_*) and analyze release artifacts and CI workflows 
 ## quick start
 
 ```bash
@@ -29,7 +28,7 @@ npm test
 ### running the full cncf landscape
 
 ```bash
-# first time only: fetch the landscape data
+# (optional) fetch and update the CNCF landscape metadata
 npm run fetch:landscape
 
 # then run the full collection (~230 projects)
@@ -52,8 +51,8 @@ output structure:
 output/test-single-project-2025-10-13T06-15-42/
 ├── raw-responses.jsonl              # audit trail of all api calls
 └── GetRepoDataExtendedInfo/
-    ├── database.db                  # duckdb with all tables
-    └── parquet/                     # individual parquet files
+    ├── database.db                  # duckdb database with all tables and indices
+    └── parquet/                     
         ├── base_repositories.parquet
         ├── base_releases.parquet
         ├── base_release_assets.parquet
@@ -68,7 +67,7 @@ output/test-single-project-2025-10-13T06-15-42/
 
 ## input formats
 
-the toolkit supports two input formats (json arrays, not jsonl):
+the toolkit supports two input formats:
 
 1. **simple format** (backward compatible):
 
@@ -79,7 +78,7 @@ the toolkit supports two input formats (json arrays, not jsonl):
    ]
    ```
 
-1. **rich format** (with cncf project metadata):
+1. **rich format** (with cncf project metadata generated from CNCF curated landscape.yml):
 
    ```json
    [
