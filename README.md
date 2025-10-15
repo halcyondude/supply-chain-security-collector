@@ -1,4 +1,4 @@
-# GraphQL Data Engineering Toolkit
+# GitHub Supply Chain Data Collector
 
 collect data github graphql api → schema/type driven normalization to relational tables → duckdb → analysis
 
