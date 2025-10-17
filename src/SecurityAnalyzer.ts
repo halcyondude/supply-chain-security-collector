@@ -2,6 +2,7 @@ import { DuckDBInstance } from '@duckdb/node-api';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import chalk from 'chalk';
+import { installAndLoadExtensions } from './duckdb-extensions.js';
 
 /**
  * SecurityAnalyzer - Domain-specific analyzer for GitHub supply chain security
@@ -32,23 +33,8 @@ export class SecurityAnalyzer {
         if (!this.db) {
             this.db = await DuckDBInstance.create(this.dbPath);
             this.con = await this.db.connect();
-            await this.initializeExtensions();
+            await installAndLoadExtensions(this.con);
         }
-    }
-
-    /**
-     * Initialize DuckDB extensions for enhanced functionality
-     */
-    private async initializeExtensions() {
-        console.log(chalk.gray('  Loading DuckDB extensions...'));
-        
-        // Full-text search for workflow content and descriptions
-        await this.con!.run("INSTALL fts; LOAD fts;");
-        console.log(chalk.gray('    ✓ fts (Full-Text Search)'));
-        
-        // Enhanced JSON processing for API responses and security features
-        await this.con!.run("INSTALL json; LOAD json;");
-        console.log(chalk.gray('    ✓ json (JSON Processing)'));
     }
 
     /**

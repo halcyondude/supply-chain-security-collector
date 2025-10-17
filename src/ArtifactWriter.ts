@@ -4,6 +4,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
 import type { ProjectMetadata, RepositoryTarget } from './config';
+import { installAndLoadExtensions } from './duckdb-extensions.js';
 import { 
     normalizeGetRepoDataArtifacts, 
     getNormalizationStats as getArtifactsStats 
@@ -33,12 +34,7 @@ export async function writeArtifacts(
 
     try {
         // Install and load required extensions
-        await con.run("INSTALL 'json'");
-        await con.run("LOAD 'json'");
-        await con.run("INSTALL 'parquet'");
-        await con.run("LOAD 'parquet'");
-
-        console.log('✅ DuckDB extensions loaded (json, parquet)');
+        await installAndLoadExtensions(con);
 
         // Write responses to temporary JSON file for DuckDB to load
         const tempJsonPath = path.join(outputDir, 'temp_responses.json');
@@ -83,7 +79,6 @@ export async function writeArtifacts(
         try {
             // Force checkpoint to write WAL to database file
             await con.run('CHECKPOINT');
-            // Explicitly close the connection
             con.closeSync();
             console.log('✅ Database connection closed');
         } catch (error) {
