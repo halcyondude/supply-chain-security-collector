@@ -229,19 +229,49 @@ async function createTablesForMetrics(
     console.log(getMetricsStats(normalized));
 
     if (normalized.base_repositories.length > 0) {
-        const tempFile = path.join(outputDir, 'temp_repositories.json');
-        fs.writeFileSync(tempFile, JSON.stringify(normalized.base_repositories, null, 2));
-
-        await con.run(`
-            CREATE TABLE base_repositories AS 
-            SELECT * FROM read_json('${tempFile}')
-        `);
-
-        fs.unlinkSync(tempFile);
+        await createTableFromArray(con, 'base_repositories', normalized.base_repositories);
         console.log('  ✓ base_repositories');
     }
 }
+
+// Helper function (already exists in ArtifactWriter.ts)
+async function createTableFromArray(
+    con: DuckDBConnection,
+    tableName: string,
+    data: unknown[]
+) {
+    const arrow = tableFromJSON(data);
+    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
+}
 ```
+
+#### 5c. Export Parquet Files (automatic)
+
+The `exportTablesToParquet()` function automatically exports all tables in the database to Parquet files. No code changes needed.
+
+---
+
+## Data Loading: Arrow IPC (Not Temporary JSON Files)
+
+**Important:** The current implementation uses Apache Arrow IPC format for loading data into DuckDB, not temporary JSON files. This is ~10x faster for large datasets.
+
+**Pattern:**
+```typescript
+import { tableFromJSON } from 'apache-arrow';
+
+async function createTableFromArray(con: DuckDBConnection, tableName: string, data: unknown[]) {
+    const arrow = tableFromJSON(data);
+    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
+}
+```
+
+**Why Arrow?**
+- 10x faster than JSON for large datasets
+- Zero-copy data transfer
+- Native DuckDB format
+- No temp file cleanup needed
+
+---
 
 ## Running Your New Query
 
@@ -249,32 +279,33 @@ Once everything is wired up, you can run your query:
 
 ```bash
 # Run just your new query
-npm start -- --input input/test-single.jsonl --queries GetRepoDataMetrics
+npm run collect -- --input input/test-single.jsonl --queries GetRepoDataMetrics
 
 # Run multiple queries including yours
-npm start -- --input input/repos.jsonl --queries GetRepoDataExtendedInfo GetRepoDataMetrics
+npm run collect -- --input input/repos.jsonl --queries GetRepoDataExtendedInfo GetRepoDataMetrics
 
 # With other options
-npm start -- --input input/repos.jsonl --queries GetRepoDataMetrics --parallel --analyze
+npm run collect -- --input input/repos.jsonl --queries GetRepoDataMetrics --parallel --analyze
 ```
 
 ## Output Structure
 
 Each query produces its own isolated output:
 
-```
+```text
 output/
 └── repos-2025-01-15T10-30-00/
     ├── raw-responses.jsonl          # Audit trail for all queries
     ├── GetRepoDataMetrics/
-    │   ├── database.db               # DuckDB database
+    │   ├── database.db               # DuckDB database with all tables
     │   └── parquet/
     │       ├── raw_GetRepoDataMetrics.parquet
     │       └── base_repositories.parquet
     └── GetRepoDataExtendedInfo/
         ├── database.db
         └── parquet/
-            └── ...
+            ├── raw_GetRepoDataExtendedInfo.parquet
+            └── ... (other tables)
 ```
 
 ## Testing Your Query
@@ -299,6 +330,25 @@ output/
    ```bash
    npm run view-parquet -- output/test-single-*/GetRepoDataMetrics/parquet/base_repositories.parquet
    ```
+
+## Query Name Validation
+
+Query names are **case-sensitive** and must match exactly across:
+
+1. GraphQL file name: `GetRepoDataMetrics.graphql`
+2. Generated types: `GetRepoDataMetricsQuery`, `GetRepoDataMetricsDocument`
+3. Query registry key: `'GetRepoDataMetrics'` (exact match in neo.ts)
+4. CLI argument: `--queries GetRepoDataMetrics`
+
+**Troubleshooting:**
+
+If you see `⚠️  Unknown query type: YourQuery`, check:
+- Query name in `queryFunctions` map matches CLI argument exactly
+- No typos or case mismatches
+- Query file has been codegen'd successfully (`npm run codegen`)
+- Query is imported in `api.ts` and `ArtifactWriter.ts`
+
+---
 
 ## Best Practices
 

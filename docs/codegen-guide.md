@@ -128,3 +128,211 @@ console.log(response.repository?.name);
 ```
 
 By following this pattern, we guarantee that our application's data access is always synchronized with our GraphQL operations, which are in turn validated against the official GitHub schema.
+
+---
+
+## Real-World Usage Patterns from Our Codebase
+
+### Pattern 1: Fetch Function (`src/api.ts`)
+
+This shows how we use generated types in our API layer:
+
+```typescript
+import { GetRepoDataExtendedInfoDocument, GetRepoDataExtendedInfoQuery } from './generated/graphql';
+import { GraphQLClient } from 'graphql-request';
+
+export async function fetchRepositoryExtendedInfo(
+  client: GraphQLClient,
+  variables: { owner: string; name: string },
+  verbose: boolean
+): Promise<GetRepoDataExtendedInfoQuery | null> {
+  try {
+    const data = await client.request<GetRepoDataExtendedInfoQuery>(
+      GetRepoDataExtendedInfoDocument,
+      variables
+    );
+    
+    if (data.repository === null) {
+      console.log(`Repository not found: ${variables.owner}/${variables.name}`);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Failed to fetch repository data:`, error);
+    return null;
+  }
+}
+```
+
+**Key Points:**
+- Import both the `Document` (query) and `Query` (return type)
+- Use the `Document` constant directly with the client
+- TypeScript infers all types automatically
+- Handle null repository case (GitHub returns this for missing repos)
+
+### Pattern 2: Normalizer (`src/normalizers/GetRepoDataExtendedInfoNormalizer.ts`)
+
+This shows how we transform typed GraphQL responses into flat relational arrays:
+
+```typescript
+import type { GetRepoDataExtendedInfoQuery } from '../generated/graphql';
+
+export interface GetRepoDataExtendedInfoNormalized {
+    base_repositories: RepositoryRow[];
+    base_releases: ReleaseRow[];
+    base_release_assets: ReleaseAssetRow[];
+    base_workflows: WorkflowRow[];
+}
+
+export function normalizeGetRepoDataExtendedInfo(
+    responses: GetRepoDataExtendedInfoQuery[]
+): GetRepoDataExtendedInfoNormalized {
+    const repositories: RepositoryRow[] = [];
+    const releases: ReleaseRow[] = [];
+    const releaseAssets: ReleaseAssetRow[] = [];
+    const workflows: WorkflowRow[] = [];
+
+    for (const response of responses) {
+        const repo = response.repository;
+        if (!repo) continue;
+
+        // Extract repository data
+        repositories.push({
+            id: repo.id,
+            __typename: repo.__typename,
+            name: repo.name,
+            nameWithOwner: repo.nameWithOwner,
+            url: repo.url,
+            description: repo.description ?? null,
+            // ... more fields
+        });
+
+        // Extract nested releases
+        if (repo.releases?.nodes) {
+            for (const release of repo.releases.nodes) {
+                if (!release) continue;
+                
+                releases.push({
+                    id: release.id,
+                    repository_id: repo.id,
+                    tagName: release.tagName,
+                    name: release.name ?? null,
+                    // ... more fields
+                });
+
+                // Extract nested release assets
+                if (release.releaseAssets?.nodes) {
+                    for (const asset of release.releaseAssets.nodes) {
+                        if (!asset) continue;
+                        
+                        releaseAssets.push({
+                            id: asset.id,
+                            repository_id: repo.id,
+                            release_id: release.id,
+                            name: asset.name,
+                            // ... more fields
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    return { base_repositories: repositories, base_releases: releases, 
+             base_release_assets: releaseAssets, base_workflows: workflows };
+}
+```
+
+**Key Points:**
+- Import the `Query` type to get full type safety
+- Use nullish coalescing (`??`) for optional fields
+- Check for null/undefined at each nesting level
+- Transform nested GraphQL structure into flat arrays
+- Preserve foreign key relationships (repository_id, release_id)
+
+### Pattern 3: Type-Safe Variable Construction
+
+When building variables for queries, TypeScript ensures you provide correct types:
+
+```typescript
+import type { GetRepoDataExtendedInfoQueryVariables } from './generated/graphql';
+
+// This is type-checked at compile time
+const variables: GetRepoDataExtendedInfoQueryVariables = {
+  owner: 'kubernetes',
+  name: 'kubernetes'
+};
+
+// TypeScript will error if you forget a required variable or use wrong type
+const invalidVariables: GetRepoDataExtendedInfoQueryVariables = {
+  owner: 'kubernetes'
+  // Error: Property 'name' is missing
+};
+```
+
+### Pattern 4: Response Type Narrowing
+
+Handle different response scenarios with type guards:
+
+```typescript
+import type { GetRepoDataExtendedInfoQuery } from './generated/graphql';
+
+function processResponse(response: GetRepoDataExtendedInfoQuery) {
+  // Check if repository exists
+  if (!response.repository) {
+    console.log('Repository not found or inaccessible');
+    return;
+  }
+  
+  const repo = response.repository;
+  
+  // Now TypeScript knows repo is not null
+  console.log(`Repository: ${repo.nameWithOwner}`);
+  
+  // Check nested optional fields
+  if (repo.releases?.nodes) {
+    const releaseCount = repo.releases.nodes.length;
+    console.log(`Found ${releaseCount} releases`);
+  }
+}
+```
+
+### Complete Data Flow Example
+
+Here's how the generated types flow through the entire system:
+
+```typescript
+// 1. Define query in .graphql file
+// src/graphql/GetRepoDataExtendedInfo.graphql
+
+// 2. Run codegen (npm run codegen) generates:
+//    - GetRepoDataExtendedInfoDocument
+//    - GetRepoDataExtendedInfoQuery
+//    - GetRepoDataExtendedInfoQueryVariables
+
+// 3. Use in API layer (src/api.ts)
+import { GetRepoDataExtendedInfoDocument, GetRepoDataExtendedInfoQuery } 
+  from './generated/graphql';
+
+const data = await client.request<GetRepoDataExtendedInfoQuery>(
+  GetRepoDataExtendedInfoDocument,
+  { owner: 'sigstore', name: 'cosign' }
+);
+
+// 4. Transform in normalizer (src/normalizers/)
+import type { GetRepoDataExtendedInfoQuery } from './generated/graphql';
+
+function normalize(responses: GetRepoDataExtendedInfoQuery[]) {
+  // TypeScript ensures we handle all fields correctly
+  return transformToFlatArrays(responses);
+}
+
+// 5. Load into DuckDB (src/ArtifactWriter.ts)
+const normalized = normalize([data]);
+await createTableFromArray(con, 'base_repositories', normalized.base_repositories);
+```
+
+This pattern ensures type safety from GraphQL query → API call → normalization → database, catching errors at compile time rather than runtime.
+
+````
