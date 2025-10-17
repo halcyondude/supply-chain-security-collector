@@ -10,14 +10,23 @@ This document describes the output file structure and Parquet generation strateg
 
 Each run creates a timestamped directory:
 
-```
+```text
 output/
-  graduated-2025-10-06T22-30-15/
+  test-single-2025-10-17T14-30-00/
     raw-responses.jsonl           # Raw GraphQL API responses (JSONL)
-    graduated-analyzed.json       # Analyzed domain model
-    graduated.csv                 # Normalized flat CSV
-    graduated-schema.json         # Schema documentation with field descriptions
-    graduated-analyzed.parquet    # Parquet with embedded metadata
+    GetRepoDataExtendedInfo/      # Query-specific subdirectory
+      database.db                 # DuckDB database with all tables
+      parquet/                    # Parquet exports of all tables
+        raw_GetRepoDataExtendedInfo.parquet
+        base_repositories.parquet
+        base_releases.parquet
+        base_release_assets.parquet
+        base_workflows.parquet
+        base_branch_protection_rules.parquet
+        agg_artifact_patterns.parquet
+        agg_workflow_tools.parquet
+        agg_repo_summary.parquet
+        (... CNCF tables if applicable)
 ```
 
 ### Benefits
@@ -34,14 +43,36 @@ ISO 8601 with colons replaced: `2025-10-06T22-30-15`
 - Human-readable
 - Filesystem-safe (no colons)
 
-## Parquet Generation with DuckDB
+## Output Formats
+
+### Primary: DuckDB Database
+
+The `database.db` file is a fully-functional DuckDB database containing:
+- All `base_*` tables (normalized GraphQL data)
+- All `agg_*` tables (analysis results)
+- Full-text search indexes
+- Foreign key relationships
+
+**Use this for:**
+- Interactive SQL queries
+- Joining across tables
+- Complex analytics
+- Report generation
+
+### Secondary: Parquet Files
+
+Parquet files are exports of all DuckDB tables for:
+- Portability (no DuckDB installation needed)
+- Language interop (Python, R, Spark, etc.)
+- Cloud storage (S3, GCS)
+- Data lake integration
 
 ### Why DuckDB?
 
 - Stable and production-ready (used by many data tools)
-- Simple SQL interface for JSON → Parquet conversion
-- Built-in key-value metadata support (embeds schema docs)
-- Handles nested JSON automatically
+- Simple SQL interface for transformations
+- Built-in Parquet support with metadata
+- Handles relational data naturally
 - ZSTD compression for smaller files
 
 ### Schema Metadata Preservation
@@ -92,7 +123,7 @@ field_artifact_is_sbom      | Boolean indicating if artifact is a Software Bill 
 
 The Parquet writing logic is integrated into the main `ArtifactWriter.ts` module, which handles:
 
-1. Writing raw GraphQL responses to DuckDB `raw_*` tables
+1. Writing raw GraphQL responses to `raw-responses.jsonl` audit log
 2. Calling query-specific normalizers to produce flat, relational arrays
 3. Writing normalized data to DuckDB `base_*` tables
 4. Exporting all tables to Parquet files with metadata

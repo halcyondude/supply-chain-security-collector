@@ -1389,7 +1389,7 @@ REGEXP_MATCHES(ra.name, '(?i)\.rego$') as is_rego_policy
 
 ### Testing New Detections
 
-1. Run analysis: `npm start -- --input INPUT --queries GetRepoDataExtendedInfo --analyze`
+1. Run analysis: `npm run collect -- --input INPUT --queries GetRepoDataExtendedInfo --analyze`
 2. Check detection: `npm run analyze -- --database DB_PATH`
 3. Verify reporting: `npm run report -- --database DB_PATH --format markdown`
 

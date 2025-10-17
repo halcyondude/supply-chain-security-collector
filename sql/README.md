@@ -43,11 +43,13 @@ Analyzes release assets to detect security artifact patterns:
 **Output**: `agg_artifact_patterns` table with one row per asset
 
 ### 02_workflow_tool_detection.sql
-Scans GitHub Actions workflow files for security tools:
+Scans GitHub Actions workflow files for security tools using **Full-Text Search (FTS)**:
 - **SBOM generators**: Syft, Trivy, CycloneDX Generator
 - **Signing tools**: Cosign, Sigstore, SLSA Generator
 - **Scanners**: Snyk, CodeQL, Grype, Anchore
 - **Dependency tools**: Dependabot, Renovate
+
+**Detection Method:** Uses DuckDB's FTS indexes with BM25 ranking for fast keyword-based detection. See `docs/workflow-json-strategy.md` for plans to enhance with JSON-based structured extraction.
 
 **Output**: `agg_workflow_tools` table with one row per tool detection
 
@@ -70,7 +72,9 @@ Aggregates security metrics at the CNCF project level:
 - **Maturity correlation**: How security practices vary by CNCF maturity level
 - **Category analysis**: Security posture by Cloud Native landscape category
 
-**Note**: Only runs when `base_cncf_projects` table exists (rich format input)
+**Note**: This model only runs when `base_cncf_projects` table exists (rich format input with project metadata). The SQL uses `CREATE OR REPLACE TABLE` which will fail gracefully if the base CNCF tables don't exist. When using simple format input (owner/repo only), this model is skipped and no CNCF analysis tables are created.
+
+**Output**: `agg_cncf_project_summary` table with one row per CNCF project (conditional)
 
 **Output**: `agg_cncf_project_summary` table with one row per CNCF project
 
@@ -83,7 +87,10 @@ npm run analyze -- --database output/test-single-TIMESTAMP/GetRepoDataExtendedIn
 
 ### Collect data AND analyze:
 ```bash
-npm start -- --input repos.json --queries GetRepoDataExtendedInfo --analyze
+# Use collect or neo.ts directly, NOT npm start
+npm run collect -- --input repos.json --queries GetRepoDataExtendedInfo --analyze
+# OR
+ts-node src/neo.ts --input repos.json --queries GetRepoDataExtendedInfo --analyze
 ```
 
 ### Run custom queries:
@@ -182,9 +189,18 @@ Example - adding Grype detection:
 ```sql
 -- In 02_workflow_tool_detection.sql
 UNION ALL
-SELECT w.id, w.repository_id, w.filename, 'container-scanner', 'grype'
-FROM workflows w
-WHERE REGEXP_MATCHES(w.content, '(?i)\bgrype\b')
+SELECT 
+    w.id as workflow_id,
+    w.repository_id,
+    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
+    repo.name as repo,
+    repo.nameWithOwner as nameWithOwner,
+    w.filename as workflow_name,
+    'container-scanner' as tool_category,
+    'grype' as tool_name
+FROM base_workflows w
+JOIN base_repositories repo ON w.repository_id = repo.id
+WHERE fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL;
 
 -- In 03_repository_security_summary.sql (in workflow_stats CTE)
 BOOL_OR(tool_name = 'grype') as uses_grype,

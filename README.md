@@ -47,22 +47,24 @@ npm run test:simple      # simple format (2 repos, no metadata)
 ```
 
 output structure:
-```
+```text
 output/test-single-project-2025-10-13T06-15-42/
-├── raw-responses.jsonl              # audit trail of all api calls
+├── raw-responses.jsonl              # Audit trail of all API calls
 └── GetRepoDataExtendedInfo/
-    ├── database.db                  # duckdb database with all tables and indices
-    └── parquet/                     
+    ├── database.db                  # DuckDB database with all tables
+    └── parquet/
+        ├── raw_GetRepoDataExtendedInfo.parquet  # Raw GraphQL responses
         ├── base_repositories.parquet
+        ├── base_branch_protection_rules.parquet
         ├── base_releases.parquet
         ├── base_release_assets.parquet
         ├── base_workflows.parquet
-        ├── base_cncf_projects.parquet        # cncf project metadata
-        ├── base_cncf_project_repos.parquet   # project→repo junction
+        ├── base_cncf_projects.parquet        # (if CNCF input format)
+        ├── base_cncf_project_repos.parquet   # (if CNCF input format)
         ├── agg_artifact_patterns.parquet
         ├── agg_workflow_tools.parquet
         ├── agg_repo_summary.parquet
-        └── agg_cncf_project_summary.parquet  # project-level analysis
+        └── agg_cncf_project_summary.parquet  # (if CNCF input format)
 ```
 
 ## input formats
@@ -113,9 +115,10 @@ the toolkit supports two input formats:
 
 tables are prefixed by layer:
 
-- **raw_*** - original graphql responses (json blob)
-- **base_*** - normalized entities from graphql types (repositories, releases, etc)
-- **agg_*** - analysis/aggregation tables (security patterns, metrics)
+- **base_*** - normalized entities from GraphQL responses (repositories, releases, workflows, etc.)
+- **agg_*** - analysis/aggregation tables (security patterns, tool detection, summary metrics)
+
+**Note:** Raw GraphQL responses are preserved in `raw-responses.jsonl` (JSONL file), not in database tables.
 
 ```sql
 -- query the normalized data
@@ -132,17 +135,22 @@ ORDER BY repository_name;
 use duckdb cli or any tool that reads parquet:
 
 ```bash
-# interactive sql
-duckdb output/.../GetRepoDataExtendedInfo/database.db
+# Query a specific run's database
+duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db
 
-# quick queries
-duckdb database.db -c "SELECT * FROM agg_repo_summary"
+# Quick queries
+duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
+  -c "SELECT * FROM agg_repo_summary"
 
-# export to csv
-npm run analyze -- --database database.db --export-csv summary.csv
+# Export to CSV
+npm run analyze -- \
+  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
+  --export-csv summary.csv
 
-# run custom queries
-npm run analyze -- --database database.db --query sql/queries/top_tools.sql
+# Run custom queries
+npm run analyze -- \
+  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
+  --query sql/queries/top_tools.sql
 ```
 
 ## adding new queries
@@ -173,13 +181,14 @@ then update `SecurityAnalyzer.ts` to run it.
 for custom input files or options, use the `collect` command:
 
 ```bash
+# Run data collection with custom options
 npm run collect -- \
   --input your-repos.json \              # required: json file with repos or projects
   --queries GetRepoDataExtendedInfo \    # required: which graphql queries to run
   --parallel \                           # optional: fetch repos in parallel
-  --analyze \                            # optional: run sql analysis after collection
-  --maturity graduated \                 # optional: filter by cncf maturity level
-  --repo-scope primary                   # optional: process only primary repos (default: all)
+  --analyze                              # optional: run sql analysis after collection
+
+# Note: 'collect' is an alias for 'ts-node src/neo.ts'
 ```
 
 **examples**:
@@ -188,11 +197,8 @@ npm run collect -- \
 # simple format (backward compatible)
 npm run collect -- --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze
 
-# filter by maturity level
-npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --maturity graduated --analyze
-
-# process only primary repos from multi-repo projects
-npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --repo-scope primary --analyze
+# parallel execution
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --parallel --analyze
 ```
 
 ## npm scripts reference
@@ -211,7 +217,7 @@ npm run collect -- --input input/test-three-projects.json --queries GetRepoDataE
 **data operations**:
 
 - `npm run landscape` - alias for npm start (full landscape)
-- `npm run collect` - run data collection with custom options (see advanced usage)
+- `npm run collect` - shorthand for `ts-node src/neo.ts` with custom options
 - `npm run analyze` - run sql analysis on existing database
 - `npm run fetch:landscape` - download cncf landscape and generate input files
 
@@ -246,15 +252,18 @@ the included sql models detect:
 
 see `sql/models/` for details.
 
-## extending to other apis
+## extending to other graphql apis
 
-the collection and normalization layers are generic. to use with a different graphql api:
+the collection layer is generic and can work with any graphql api. to adapt:
 
-1. update `src/api.ts` with your endpoint/auth
-2. create `.graphql` queries for your api
-3. run `npm run codegen`
-4. the normalizers will auto-generate base_* tables
-5. write domain-specific sql models in `sql/models/`
+1. update `src/api.ts` with your endpoint and authentication
+2. create `.graphql` query files for your api in `src/graphql/`
+3. run `npm run codegen` to generate typescript types
+4. **write a custom normalizer** in `src/normalizers/YourQueryNormalizer.ts`
+5. register your normalizer in `ArtifactWriter.ts`
+6. write domain-specific sql models in `sql/models/`
+
+**note:** normalizers are not auto-generated. each query requires a hand-written typescript normalizer to transform nested graphql responses into flat relational arrays.
 
 ## project structure
 

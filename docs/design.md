@@ -1,12 +1,39 @@
-# System Design: Two-Stage Data Pipeline# System Design
+# System Design (ARCHIVED)
 
+**⚠️ This document describes an OLD architecture and is preserved for historical reference only.**
 
+## Current Architecture
 
-## Overview## Overview
+For current design documentation, see:
+- **[AGENTS.md](../AGENTS.md)** - Current two-stage architecture
+- **[sql/README.md](../sql/README.md)** - SQL-based analysis layer
+- **[data-model.md](./data-model.md)** - Current data structures
 
+## What Changed
 
+**Old Design** (described below in this file):
+- Single-stage pipeline with JS-based pattern matching
+- `analysis.ts` classified artifacts
+- JSON/CSV output only
+- Simple GetRepoDataArtifacts query
 
-The GitHub Supply Chain Security Analyzer implements a **two-stage data pipeline** that separates generic data engineering from domain-specific analysis:The GitHub Supply Chain Security Analyzer is a data collection and analysis tool that searches GitHub repositories for the **presence** of supply chain security artifacts. It does NOT validate or analyze the content of these artifacts - it simply reports what exists.
+**Current Design** (October 2025):
+- Two-stage pipeline: Collection (neo.ts) → Analysis (SQL models)
+- DuckDB-based transformations
+- SQL models for all business logic
+- Comprehensive GetRepoDataExtendedInfo query with workflows
+
+## Historical Context
+
+This file is preserved to show the evolution from a simple analysis tool to a comprehensive data engineering pipeline.
+
+---
+
+# Original Design Document (ARCHIVED CONTENT BELOW)
+
+## Overview (OLD)
+
+The GitHub Supply Chain Security Analyzer implemented a simple data pipeline:The GitHub Supply Chain Security Analyzer is a data collection and analysis tool that searches GitHub repositories for the **presence** of supply chain security artifacts. It does NOT validate or analyze the content of these artifacts - it simply reports what exists.
 
 
 
