@@ -1,5 +1,5 @@
 {
-  "name": "graphql-data-collector",
+  "name": "github-repo-supply-chain-datacollector",
   "version": "1.0.0",
   "description": "Generic GraphQL data collection tool with DuckDB storage and Parquet export",
   "scripts": {

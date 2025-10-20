@@ -347,7 +347,11 @@ async function createTablesForExtendedInfoQuery(
             }
         }
         
-        console.log(chalk.green(`  ✅ Processed ${processedCount} Security Insights files (${skippedCount} skipped)`));
+        const statusIcon = skippedCount > 0 ? chalk.yellow('⚠') : chalk.green('✅');
+        const statusMessage = skippedCount > 0 
+            ? `Processed ${processedCount} Security Insights files (${skippedCount} skipped - no SECURITY-INSIGHTS.yml found)`
+            : `Processed ${processedCount} Security Insights files`;
+        console.log(chalk.green(`  ${statusIcon} ${statusMessage}`));
         
     } catch (error) {
         console.error(chalk.red('  ✗ Failed to process Security Insights files:'), error instanceof Error ? error.message : error);
