@@ -10,6 +10,7 @@ export interface GetRepoDataExtendedInfoNormalized {
     base_releases: Release[];
     base_release_assets: ReleaseAsset[];
     base_workflows: Workflow[];
+    base_security_md: SecurityMarkdown[];
 }
 
 interface Repository {
@@ -68,6 +69,39 @@ interface Workflow {
     repository_id: string;  // FK to repositories
     filename: string;
     content: string | null;
+}
+
+interface SecurityMarkdown {
+    id: string;  // Generated from repository_id + path
+    __typename: string;
+    repository_id: string;  // FK to repositories
+    path: string;  // Always "SECURITY.md"
+    content: string | null;
+}
+
+/**
+ * Extract SECURITY.md content from responses
+ */
+function extractSecurityMarkdown(responses: GetRepoDataExtendedInfoQuery[]): SecurityMarkdown[] {
+    return responses
+        .map(response => {
+            const repo = response.repository;
+            if (!repo) return null;
+            
+            // Check if securityPolicy exists and is a Blob
+            if (!repo.securityPolicy || repo.securityPolicy.__typename !== 'Blob') {
+                return null;
+            }
+            
+            return {
+                id: `${repo.id}:SECURITY.md`,
+                __typename: 'SecurityMarkdown',
+                repository_id: repo.id,
+                path: 'SECURITY.md',
+                content: repo.securityPolicy.text,
+            };
+        })
+        .filter((md): md is SecurityMarkdown => md !== null);
 }
 
 /**
@@ -223,6 +257,7 @@ export function normalizeGetRepoDataExtendedInfo(
         base_releases: releases,
         base_release_assets: release_assets,
         base_workflows: workflows,
+        base_security_md: extractSecurityMarkdown(responses),
     };
 }
 
@@ -236,5 +271,6 @@ export function getNormalizationStats(normalized: GetRepoDataExtendedInfoNormali
   Extracted ${normalized.base_releases.length} releases
   Extracted ${normalized.base_release_assets.length} release assets
   Extracted ${normalized.base_workflows.length} workflow files
+  Extracted ${normalized.base_security_md.length} SECURITY.md files
     `.trim();
 }

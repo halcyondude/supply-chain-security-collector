@@ -149,7 +149,7 @@ async function createTablesForArtifactsQuery(
     fs.writeFileSync(repoTempPath, JSON.stringify(normalized.base_repositories));
     await con.run(`
         CREATE TABLE base_repositories AS 
-        SELECT * FROM read_json('${repoTempPath}', format='array', auto_detect=true)
+        SELECT * FROM read_json('${repoTempPath}', format='array', auto_detect=true, union_by_name=true)
     `);
     fs.unlinkSync(repoTempPath);
     console.log(`  ✅ Created table: base_repositories (${normalized.base_repositories.length} rows)`);
@@ -159,7 +159,7 @@ async function createTablesForArtifactsQuery(
     fs.writeFileSync(releaseTempPath, JSON.stringify(normalized.base_releases));
     await con.run(`
         CREATE TABLE base_releases AS 
-        SELECT * FROM read_json('${releaseTempPath}', format='array', auto_detect=true)
+        SELECT * FROM read_json('${releaseTempPath}', format='array', auto_detect=true, union_by_name=true)
     `);
     fs.unlinkSync(releaseTempPath);
     console.log(`  ✅ Created table: base_releases (${normalized.base_releases.length} rows)`);
@@ -169,7 +169,7 @@ async function createTablesForArtifactsQuery(
     fs.writeFileSync(assetTempPath, JSON.stringify(normalized.base_release_assets));
     await con.run(`
         CREATE TABLE base_release_assets AS 
-        SELECT * FROM read_json('${assetTempPath}', format='array', auto_detect=true)
+        SELECT * FROM read_json('${assetTempPath}', format='array', auto_detect=true, union_by_name=true)
     `);
     fs.unlinkSync(assetTempPath);
     console.log(`  ✅ Created table: base_release_assets (${normalized.base_release_assets.length} rows)`);
@@ -254,6 +254,13 @@ async function createTablesForExtendedInfoQuery(
             repository_id TEXT,
             filename TEXT,
             content TEXT
+        `,
+        'security_md': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            repository_id TEXT,
+            path TEXT,
+            content TEXT
         `
     };
 
@@ -266,7 +273,7 @@ async function createTablesForExtendedInfoQuery(
             fs.writeFileSync(tempPath, JSON.stringify(data));
             await con.run(`
                 CREATE TABLE base_${tableName} AS 
-                SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
+                SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
             `);
             fs.unlinkSync(tempPath);
         } else {
@@ -286,6 +293,7 @@ async function createTablesForExtendedInfoQuery(
     await writeTable('releases', normalized.base_releases);
     await writeTable('release_assets', normalized.base_release_assets);
     await writeTable('workflows', normalized.base_workflows);
+    await writeTable('security_md', normalized.base_security_md);
     
     // --- NEW SECTION: Landing Security Insights Files ---
     console.log(chalk.cyan('📄 Processing Security Insights files...'));
@@ -456,7 +464,7 @@ async function createCNCFTables(
     fs.writeFileSync(tempProjectsPath, JSON.stringify(projectRecords));
     await con.run(`
         CREATE TABLE base_cncf_projects AS 
-        SELECT * FROM read_json('${tempProjectsPath}', format='array', auto_detect=true)
+        SELECT * FROM read_json('${tempProjectsPath}', format='array', auto_detect=true, union_by_name=true)
     `);
     fs.unlinkSync(tempProjectsPath);
     console.log(`  ✅ Created table: base_cncf_projects (${projectRecords.length} rows)`);
@@ -488,7 +496,7 @@ async function createCNCFTables(
     fs.writeFileSync(tempReposPath, JSON.stringify(projectRepoRecords));
     await con.run(`
         CREATE TABLE base_cncf_project_repos AS 
-        SELECT * FROM read_json('${tempReposPath}', format='array', auto_detect=true)
+        SELECT * FROM read_json('${tempReposPath}', format='array', auto_detect=true, union_by_name=true)
     `);
     fs.unlinkSync(tempReposPath);
     console.log(`  ✅ Created table: base_cncf_project_repos (${projectRepoRecords.length} rows)`);
