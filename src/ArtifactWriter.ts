@@ -22,12 +22,14 @@ import {
  * - Normalized relational tables (repositories, releases, release_assets)
  * - Parquet files for all tables
  * - Optional CNCF metadata tables (base_cncf_projects, base_cncf_project_repos)
+ * - Optional file persistence (SECURITY.md, security-insights.yml)
  */
 export async function writeArtifacts(
     responses: unknown[],
     outputDir: string,
     queryName: string, // Base name of the query file (e.g., "GetRepoDataArtifacts")
-    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> // Optional CNCF metadata
+    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>, // Optional CNCF metadata
+    persistFiles = true // Persist downloaded files to disk
 ) {
     // Create database file
     const dbPath = path.join(outputDir, 'database.db');
@@ -62,7 +64,7 @@ export async function writeArtifacts(
         // Create normalized relational tables from typed GraphQL responses
         // This leverages TypeScript's type system and language features
         console.log('⏳ Creating normalized tables from typed GraphQL responses...');
-        await createNormalizedTables(con, responses as GetRepoDataArtifactsQuery[], queryName, outputDir, responseMetadata);
+        await createNormalizedTables(con, responses as GetRepoDataArtifactsQuery[], queryName, outputDir, responseMetadata, persistFiles);
 
         // Export all tables to Parquet using DuckDB's native Parquet writer
         const parquetDir = path.join(outputDir, 'parquet');
@@ -108,13 +110,15 @@ async function createNormalizedTables(
     responses: unknown[], 
     queryName: string,
     outputDir: string,
-    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
+    responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>,
+    persistFiles = true
 ) {
     console.log(`  Query type: ${queryName}`);
     
     // Dispatch to the appropriate normalizer based on query name
     if (queryName === 'GetRepoDataExtendedInfo') {
-        await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir, responseMetadata);
+        // New query with extended information
+        await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir, responseMetadata, persistFiles);
     } else if (queryName === 'GetRepoDataArtifacts') {
         // Legacy query - kept for compatibility
         await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir, responseMetadata);
@@ -182,7 +186,8 @@ async function createTablesForExtendedInfoQuery(
     con: DuckDBConnection,
     responses: GetRepoDataExtendedInfoQuery[],
     outputDir: string,
-    _responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
+    _responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>,
+    persistFiles = true
 ) {
     const normalized = normalizeGetRepoDataExtendedInfo(responses);
     console.log(getExtendedStats(normalized));
@@ -295,6 +300,44 @@ async function createTablesForExtendedInfoQuery(
     await writeTable('workflows', normalized.base_workflows);
     await writeTable('security_md', normalized.base_security_md);
     
+    // Create files directory if persisting files
+    const filesDir = persistFiles ? path.join(outputDir, 'files') : null;
+    if (filesDir) {
+        fs.mkdirSync(filesDir, { recursive: true });
+        
+        // Persist workflow files
+        for (const workflow of normalized.base_workflows) {
+            const repo = normalized.base_repositories.find(r => r.id === workflow.repository_id);
+            if (repo && workflow.content) {
+                const safeOwner = repo.nameWithOwner.split('/')[0].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                const safeName = repo.nameWithOwner.split('/')[1].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                // Preserve extension, sanitize the rest
+                const parts = workflow.filename.split('.');
+                const ext = parts.length > 1 ? `.${parts.pop()}` : '';
+                const baseName = parts.join('.').replace(/\//g, '__');
+                const fileName = `${safeOwner}__${safeName}__workflows__${baseName}${ext}`;
+                const filePath = path.join(filesDir, fileName);
+                fs.writeFileSync(filePath, workflow.content);
+            }
+        }
+        
+        // Persist SECURITY.md files (note: path may vary - SECURITY.md, .github/SECURITY.md, etc.)
+        for (const securityMd of normalized.base_security_md) {
+            const repo = normalized.base_repositories.find(r => r.id === securityMd.repository_id);
+            if (repo && securityMd.content) {
+                const safeOwner = repo.nameWithOwner.split('/')[0].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                const safeName = repo.nameWithOwner.split('/')[1].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                // Preserve the original path structure in the filename, keep .md extension
+                const parts = securityMd.path.split('.');
+                const ext = parts.length > 1 ? `.${parts.pop()}` : '';
+                const basePath = parts.join('.').replace(/\//g, '__');
+                const fileName = `${safeOwner}__${safeName}__${basePath}${ext}`;
+                const filePath = path.join(filesDir, fileName);
+                fs.writeFileSync(filePath, securityMd.content);
+            }
+        }
+    }
+    
     // --- NEW SECTION: Landing Security Insights Files ---
     console.log(chalk.cyan('📄 Processing Security Insights files...'));
     
@@ -362,6 +405,19 @@ async function createTablesForExtendedInfoQuery(
                         document = EXCLUDED.document,
                         fetched_at = EXCLUDED.fetched_at
                 `, [repo.id, sourceUrl, schemaVersion, jsonString]);
+                
+                // Persist file to disk if enabled
+                if (filesDir) {
+                    const safeOwner = repo.nameWithOwner.split('/')[0].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                    const safeName = repo.nameWithOwner.split('/')[1].replace(/[^a-zA-Z0-9-_.]/g, '_');
+                    // Preserve extension, sanitize path
+                    const parts = insightsPath.split('.');
+                    const ext = parts.length > 1 ? `.${parts.pop()}` : '';
+                    const basePath = parts.join('.').replace(/\//g, '__');
+                    const fileName = `${safeOwner}__${safeName}__${basePath}${ext}`;
+                    const filePath = path.join(filesDir, fileName);
+                    fs.writeFileSync(filePath, insightsText);
+                }
                 
                 processedCount++;
                 

@@ -94,6 +94,7 @@ async function main() {
     .option('--repo-scope <scope>', 'Repository scope: primary (default) or all', 'primary')
     .option('--parallel', 'Fetch repositories in parallel', false)
     .option('--analyze', 'Run security analysis after data collection', false)
+    .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
@@ -105,7 +106,8 @@ async function main() {
     maturity: maturityLevels,
     repoScope,
     parallel: useParallel, 
-    analyze: runAnalysis, 
+    analyze: runAnalysis,
+    persistFiles,
     verbose 
   } = options;
 
@@ -291,7 +293,7 @@ async function main() {
         const queryDir = path.join(runDir, queryName);
         await fs.mkdir(queryDir, { recursive: true });
         
-        await writeArtifacts(allResponses, queryDir, queryName, responseMetadata);
+        await writeArtifacts(allResponses, queryDir, queryName, responseMetadata, persistFiles);
         
         console.log(chalk.green('  ✓ Database created'));
         console.log(chalk.green('  ✓ Parquet files exported'));
