@@ -91,5 +91,12 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
         }
       }
     }
+    insightsFile: object(expression: "HEAD:SECURITY-INSIGHTS.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
   }
 }

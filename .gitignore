@@ -14,7 +14,7 @@ build/
 src/generated/
 
 # Output and cache
-output/
+output*/
 # But allow SIZE-REPORT.md to be committed for tracking storage growth
 !output/*/SIZE-REPORT.md
 
