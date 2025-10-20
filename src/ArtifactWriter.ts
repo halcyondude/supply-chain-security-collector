@@ -304,6 +304,7 @@ async function createTablesForExtendedInfoQuery(
             CREATE TABLE IF NOT EXISTS base_si_documents (
                 repo_id TEXT NOT NULL,
                 source_url TEXT NOT NULL,
+                schema_version TEXT,
                 document JSON,
                 fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (repo_id, source_url)
@@ -317,32 +318,70 @@ async function createTablesForExtendedInfoQuery(
             const repo = response.repository;
             if (!repo) continue;
             
-            // Check if insightsFile exists and has content (type guard for Blob)
-            if (!repo.insightsFile || repo.insightsFile.__typename !== 'Blob' || !repo.insightsFile.text) {
+            // Try all case/location combinations - use the first one found
+            // Some projects use uppercase SECURITY-INSIGHTS.yml, others use lowercase security-insights.yml
+            // Can be in root or .github/ directory
+            let insightsText: string | null = null;
+            let insightsPath = 'security-insights.yml';
+            
+            if (repo.insightsFileRootUpper && repo.insightsFileRootUpper.__typename === 'Blob' && repo.insightsFileRootUpper.text) {
+                insightsText = repo.insightsFileRootUpper.text;
+                insightsPath = 'SECURITY-INSIGHTS.yml';
+            } else if (repo.insightsFileRootLower && repo.insightsFileRootLower.__typename === 'Blob' && repo.insightsFileRootLower.text) {
+                insightsText = repo.insightsFileRootLower.text;
+                insightsPath = 'security-insights.yml';
+            } else if (repo.insightsFileGithubUpper && repo.insightsFileGithubUpper.__typename === 'Blob' && repo.insightsFileGithubUpper.text) {
+                insightsText = repo.insightsFileGithubUpper.text;
+                insightsPath = '.github/SECURITY-INSIGHTS.yml';
+            } else if (repo.insightsFileGithubLower && repo.insightsFileGithubLower.__typename === 'Blob' && repo.insightsFileGithubLower.text) {
+                insightsText = repo.insightsFileGithubLower.text;
+                insightsPath = '.github/security-insights.yml';
+            }
+            
+            if (!insightsText) {
                 skippedCount++;
+                console.log(chalk.gray(`  ○ ${repo.nameWithOwner}: No security-insights.yml found`));
                 continue;
             }
             
             try {
                 // Validate YAML and convert to JSON
-                const rawObject = yaml.parse(repo.insightsFile.text);
+                const rawObject = yaml.parse(insightsText);
                 const jsonString = JSON.stringify(rawObject);
-                const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/HEAD/SECURITY-INSIGHTS.yml`;
+                const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/HEAD/${insightsPath}`;
+                
+                // Detect schema version from header.schema-version field
+                const schemaVersion = rawObject?.header?.['schema-version'] || rawObject?.header?.schemaVersion || 'unknown';
                 
                 // Insert into base_si_documents table
                 await con.run(`
-                    INSERT INTO base_si_documents (repo_id, source_url, document, fetched_at)
-                    VALUES (?, ?, ?::JSON, CURRENT_TIMESTAMP)
+                    INSERT INTO base_si_documents (repo_id, source_url, schema_version, document, fetched_at)
+                    VALUES (?, ?, ?, ?::JSON, CURRENT_TIMESTAMP)
                     ON CONFLICT (repo_id, source_url) DO UPDATE SET
+                        schema_version = EXCLUDED.schema_version,
                         document = EXCLUDED.document,
                         fetched_at = EXCLUDED.fetched_at
-                `, [repo.id, sourceUrl, jsonString]);
+                `, [repo.id, sourceUrl, schemaVersion, jsonString]);
                 
                 processedCount++;
                 
+                // Report version found with appropriate color
+                if (schemaVersion !== 'unknown') {
+                    const majorVersion = schemaVersion.split('.')[0];
+                    if (majorVersion === '1') {
+                        console.log(chalk.yellow(`  ✓ ${repo.nameWithOwner}: ${insightsPath} (v1 schema: ${schemaVersion})`));
+                    } else if (majorVersion === '2') {
+                        console.log(chalk.green(`  ✓ ${repo.nameWithOwner}: ${insightsPath} (v2 schema: ${schemaVersion})`));
+                    } else {
+                        console.log(chalk.cyan(`  ✓ ${repo.nameWithOwner}: ${insightsPath} (schema: ${schemaVersion})`));
+                    }
+                } else {
+                    console.log(chalk.cyan(`  ✓ ${repo.nameWithOwner}: ${insightsPath} (schema version not detected)`));
+                }
+                
             } catch (parseError) {
                 // Log YAML parsing errors but continue processing
-                console.log(chalk.yellow(`  ⚠ Could not parse SECURITY-INSIGHTS.yml for ${repo.nameWithOwner}: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`));
+                console.log(chalk.red(`  ✗ ${repo.nameWithOwner}: Could not parse ${insightsPath} - ${parseError instanceof Error ? parseError.message : 'Unknown error'}`));
                 skippedCount++;
             }
         }

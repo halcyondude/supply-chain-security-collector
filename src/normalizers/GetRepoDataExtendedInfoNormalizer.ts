@@ -81,27 +81,28 @@ interface SecurityMarkdown {
 
 /**
  * Extract SECURITY.md content from responses
+ * Note: SECURITY.md is typically uppercase per GitHub convention
  */
 function extractSecurityMarkdown(responses: GetRepoDataExtendedInfoQuery[]): SecurityMarkdown[] {
-    return responses
-        .map(response => {
-            const repo = response.repository;
-            if (!repo) return null;
-            
-            // Check if securityPolicy exists and is a Blob
-            if (!repo.securityPolicy || repo.securityPolicy.__typename !== 'Blob') {
-                return null;
-            }
-            
-            return {
+    const results: SecurityMarkdown[] = [];
+    
+    for (const response of responses) {
+        const repo = response.repository;
+        if (!repo) continue;
+        
+        // Check for SECURITY.md (standard GitHub convention)
+        if (repo.securityPolicy && repo.securityPolicy.__typename === 'Blob' && repo.securityPolicy.text) {
+            results.push({
                 id: `${repo.id}:SECURITY.md`,
                 __typename: 'SecurityMarkdown',
                 repository_id: repo.id,
                 path: 'SECURITY.md',
                 content: repo.securityPolicy.text,
-            };
-        })
-        .filter((md): md is SecurityMarkdown => md !== null);
+            });
+        }
+    }
+    
+    return results;
 }
 
 /**

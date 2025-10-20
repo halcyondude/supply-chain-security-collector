@@ -4,8 +4,11 @@
 -- Reads the nested JSON from base_si_documents and flattens attestations from
 -- repository.release.attestations[] into a wide, analytics-friendly table.
 -- 
--- Based on OSSF Security Insights Schema v1.0.0+
+-- Based on OSSF Security Insights Schema v2.0.0+
 -- See: https://github.com/ossf/security-insights/blob/main/spec/schema.cue
+-- 
+-- Note: This model is designed for v2 schema. V1 schema (deprecated) may not
+-- have all fields. The schema_version column indicates which version was found.
 --
 -- Depends on: base_si_documents
 -- Creates: agg_si_attestations
