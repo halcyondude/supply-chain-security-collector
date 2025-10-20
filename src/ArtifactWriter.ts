@@ -1,10 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
+import * as yaml from 'yaml';
+import chalk from 'chalk';
 
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
 import type { ProjectMetadata, RepositoryTarget } from './config';
-import { installAndLoadExtensions } from './duckdb-extensions.js';
+import { installAndLoadExtensions } from './duckdb-extensions';
 import { 
     normalizeGetRepoDataArtifacts, 
     getNormalizationStats as getArtifactsStats 
@@ -140,39 +142,37 @@ async function createTablesForArtifactsQuery(
     console.log(getArtifactsStats(normalized));
 
     // Write each table to a temp JSON file and load into DuckDB
-    // Create base entity tables from normalized data
-    if (normalized.base_repositories.length > 0) {
-        const tempPath = path.join(outputDir, 'temp_repositories.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
-        await con.run(`
-            CREATE TABLE base_repositories AS 
-            SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
-        `);
-        fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: base_repositories (${normalized.base_repositories.length} rows)`);
-    }
+    // Always create all base entity tables, even if empty, so SQL models don't fail
+    
+    // base_repositories
+    const repoTempPath = path.join(outputDir, 'temp_repositories.json');
+    fs.writeFileSync(repoTempPath, JSON.stringify(normalized.base_repositories));
+    await con.run(`
+        CREATE TABLE base_repositories AS 
+        SELECT * FROM read_json('${repoTempPath}', format='array', auto_detect=true)
+    `);
+    fs.unlinkSync(repoTempPath);
+    console.log(`  ✅ Created table: base_repositories (${normalized.base_repositories.length} rows)`);
 
-    if (normalized.base_releases.length > 0) {
-        const tempPath = path.join(outputDir, 'temp_releases.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_releases));
-        await con.run(`
-            CREATE TABLE base_releases AS 
-            SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
-        `);
-        fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: base_releases (${normalized.base_releases.length} rows)`);
-    }
+    // base_releases
+    const releaseTempPath = path.join(outputDir, 'temp_releases.json');
+    fs.writeFileSync(releaseTempPath, JSON.stringify(normalized.base_releases));
+    await con.run(`
+        CREATE TABLE base_releases AS 
+        SELECT * FROM read_json('${releaseTempPath}', format='array', auto_detect=true)
+    `);
+    fs.unlinkSync(releaseTempPath);
+    console.log(`  ✅ Created table: base_releases (${normalized.base_releases.length} rows)`);
 
-    if (normalized.base_release_assets.length > 0) {
-        const tempPath = path.join(outputDir, 'temp_release_assets.json');
-        fs.writeFileSync(tempPath, JSON.stringify(normalized.base_release_assets));
-        await con.run(`
-            CREATE TABLE base_release_assets AS 
-            SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
-        `);
-        fs.unlinkSync(tempPath);
-        console.log(`  ✅ Created table: base_release_assets (${normalized.base_release_assets.length} rows)`);
-    }
+    // base_release_assets - Always create, even if empty
+    const assetTempPath = path.join(outputDir, 'temp_release_assets.json');
+    fs.writeFileSync(assetTempPath, JSON.stringify(normalized.base_release_assets));
+    await con.run(`
+        CREATE TABLE base_release_assets AS 
+        SELECT * FROM read_json('${assetTempPath}', format='array', auto_detect=true)
+    `);
+    fs.unlinkSync(assetTempPath);
+    console.log(`  ✅ Created table: base_release_assets (${normalized.base_release_assets.length} rows)`);
 }
 
 /**
@@ -187,17 +187,96 @@ async function createTablesForExtendedInfoQuery(
     const normalized = normalizeGetRepoDataExtendedInfo(responses);
     console.log(getExtendedStats(normalized));
 
+    // Schema definitions for empty tables (when auto_detect can't infer from data)
+    const tableSchemas: Record<string, string> = {
+        'repositories': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            nameWithOwner TEXT,
+            name TEXT,
+            owner_login TEXT,
+            description TEXT,
+            url TEXT,
+            isPrivate BOOLEAN,
+            isFork BOOLEAN,
+            isArchived BOOLEAN,
+            stargazerCount INTEGER,
+            forkCount INTEGER,
+            primaryLanguage_name TEXT,
+            primaryLanguage_color TEXT,
+            createdAt TIMESTAMP,
+            updatedAt TIMESTAMP,
+            pushedAt TIMESTAMP,
+            hasIssuesEnabled BOOLEAN,
+            hasWikiEnabled BOOLEAN,
+            hasProjectsEnabled BOOLEAN,
+            hasDiscussionsEnabled BOOLEAN,
+            licenseInfo_name TEXT,
+            licenseInfo_spdxId TEXT,
+            defaultBranchRef_name TEXT,
+            security_features JSON
+        `,
+        'branch_protection_rules': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            repository_id TEXT,
+            pattern TEXT,
+            requiresApprovingReviews BOOLEAN,
+            requiredApprovingReviewCount INTEGER,
+            requiresCommitSignatures BOOLEAN,
+            requiresLinearHistory BOOLEAN,
+            requiresStatusChecks BOOLEAN,
+            restrictsPushes BOOLEAN,
+            restrictsReviewDismissals BOOLEAN
+        `,
+        'releases': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            repository_id TEXT,
+            name TEXT,
+            tagName TEXT,
+            isPrerelease BOOLEAN,
+            isDraft BOOLEAN,
+            createdAt TIMESTAMP,
+            publishedAt TIMESTAMP,
+            url TEXT
+        `,
+        'release_assets': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            release_id TEXT,
+            name TEXT,
+            downloadUrl TEXT
+        `,
+        'workflows': `
+            id TEXT PRIMARY KEY,
+            __typename TEXT,
+            repository_id TEXT,
+            filename TEXT,
+            content TEXT
+        `
+    };
+
     // Helper to write table from array with base_ prefix
+    // Always create tables even if empty, so SQL models don't fail
     const writeTable = async (tableName: string, data: unknown[]) => {
-        if (data.length === 0) return;
-        
-        const tempPath = path.join(outputDir, `temp_${tableName}.json`);
-        fs.writeFileSync(tempPath, JSON.stringify(data));
-        await con.run(`
-            CREATE TABLE base_${tableName} AS 
-            SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
-        `);
-        fs.unlinkSync(tempPath);
+        if (data.length > 0) {
+            // Use auto-detect when we have data
+            const tempPath = path.join(outputDir, `temp_${tableName}.json`);
+            fs.writeFileSync(tempPath, JSON.stringify(data));
+            await con.run(`
+                CREATE TABLE base_${tableName} AS 
+                SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true)
+            `);
+            fs.unlinkSync(tempPath);
+        } else {
+            // Use explicit schema for empty tables
+            const schema = tableSchemas[tableName];
+            if (!schema) {
+                throw new Error(`No schema defined for empty table: base_${tableName}`);
+            }
+            await con.run(`CREATE TABLE base_${tableName} (${schema})`);
+        }
         console.log(`  ✅ Created table: base_${tableName} (${data.length} rows)`);
     };
 
@@ -207,6 +286,65 @@ async function createTablesForExtendedInfoQuery(
     await writeTable('releases', normalized.base_releases);
     await writeTable('release_assets', normalized.base_release_assets);
     await writeTable('workflows', normalized.base_workflows);
+    
+    // --- NEW SECTION: Landing Security Insights Files ---
+    console.log(chalk.cyan('📄 Processing Security Insights files...'));
+    
+    try {
+        // Create base_si_documents table (inline schema definition)
+        await con.run(`
+            CREATE TABLE IF NOT EXISTS base_si_documents (
+                repo_id TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                document JSON,
+                fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (repo_id, source_url)
+            );
+        `);
+        
+        let processedCount = 0;
+        let skippedCount = 0;
+        
+        for (const response of responses) {
+            const repo = response.repository;
+            if (!repo) continue;
+            
+            // Check if insightsFile exists and has content (type guard for Blob)
+            if (!repo.insightsFile || repo.insightsFile.__typename !== 'Blob' || !repo.insightsFile.text) {
+                skippedCount++;
+                continue;
+            }
+            
+            try {
+                // Validate YAML and convert to JSON
+                const rawObject = yaml.parse(repo.insightsFile.text);
+                const jsonString = JSON.stringify(rawObject);
+                const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/HEAD/SECURITY-INSIGHTS.yml`;
+                
+                // Insert into base_si_documents table
+                await con.run(`
+                    INSERT INTO base_si_documents (repo_id, source_url, document, fetched_at)
+                    VALUES (?, ?, ?::JSON, CURRENT_TIMESTAMP)
+                    ON CONFLICT (repo_id, source_url) DO UPDATE SET
+                        document = EXCLUDED.document,
+                        fetched_at = EXCLUDED.fetched_at
+                `, [repo.id, sourceUrl, jsonString]);
+                
+                processedCount++;
+                
+            } catch (parseError) {
+                // Log YAML parsing errors but continue processing
+                console.log(chalk.yellow(`  ⚠ Could not parse SECURITY-INSIGHTS.yml for ${repo.nameWithOwner}: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`));
+                skippedCount++;
+            }
+        }
+        
+        console.log(chalk.green(`  ✅ Processed ${processedCount} Security Insights files (${skippedCount} skipped)`));
+        
+    } catch (error) {
+        console.error(chalk.red('  ✗ Failed to process Security Insights files:'), error instanceof Error ? error.message : error);
+        throw error;
+    }
 }
 
 /**
