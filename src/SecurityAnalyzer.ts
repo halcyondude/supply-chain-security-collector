@@ -22,6 +22,38 @@ export class SecurityAnalyzer {
     private db?: DuckDBInstance;
     private con?: DuckDBConnection;
 
+    private async getAndLogTableRowCount(tableName: string) {
+        try {
+            const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tableName}`);
+            const countRows = await countResult.getRows();
+            const rawCount = countRows[0]?.[0];
+            const rowCount = Number(rawCount || 0);
+            const checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
+
+            // Fetch column names and types
+            const schemaResult = await this.con!.run(`
+                SELECT column_name, data_type
+                FROM information_schema.columns
+                WHERE table_name = '${tableName}'
+                ORDER BY ordinal_position
+            `);
+            const schemaRows = await schemaResult.getRows();
+
+            // Print table name in green, with checkbox and row count
+            console.log(chalk.green(`  ${checkbox} ${tableName}: ${rowCount} row(s)`));
+            // Print each column indented (4 spaces), in gray, one per line
+            // Find max column name length for alignment
+            const maxColLen = schemaRows.reduce((max, [colName]) => Math.max(max, String(colName).length), 0);
+            for (const [colName, colType] of schemaRows) {
+                const paddedCol = String(colName).padEnd(maxColLen + 2); // 2 spaces after colon
+                console.log(chalk.gray(`    ${' '.repeat(4)}${paddedCol}: ${colType}`));
+            }
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.log(chalk.red(`  ✗ ${tableName}: (error getting row count: ${errorMsg})`));
+        }
+    }
+
     /**
      * Create or replace a table and log the result with row count and checkbox
      */
@@ -29,22 +61,7 @@ export class SecurityAnalyzer {
         await this.connect();
         try {
             await this.con!.run(tableSql);
-            // Get row count
-            const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tableName}`);
-            const countRows = await countResult.getRows();
-            let rawCount = countRows[0][0];
-            let rowCount: number = 0;
-            if (typeof rawCount === 'number') {
-                rowCount = rawCount;
-            } else if (typeof rawCount === 'string') {
-                rowCount = Number(rawCount) || 0;
-            } else if (rawCount === null || rawCount === undefined) {
-                rowCount = 0;
-            } else {
-                rowCount = Number(rawCount) || 0;
-            }
-            let checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
-            console.log(chalk.gray(`  ${checkbox} ${tableName}: ${rowCount} row(s)`));
+            await this.getAndLogTableRowCount(tableName);
         } catch (err) {
             console.log(chalk.red(`  ✗ ${tableName}: (error creating or counting rows)`));
         }
@@ -167,33 +184,52 @@ export class SecurityAnalyzer {
 
         // List all created tables (agg_*, base_*) and show row counts for key tables
         console.log(chalk.gray('\nVerifying tables...'));
-        const allTablesResult = await this.con!.run("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND (table_name LIKE 'agg_%' OR table_name LIKE 'base_%') ORDER BY table_name");
+        const allTablesResult = await this.con!.run("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name");
         const allTables = await allTablesResult.getRows().then(rows => rows.map(r => r[0]));
         if (allTables.length === 0) {
             console.log(chalk.red('No analysis tables created!'));
         } else {
             console.log(chalk.gray(`Created analysis tables:`));
+            // Gather all schemas first
+            const tableSchemas: Array<{tableName: string, rowCount: number, schemaRows: Array<[string, string]>, checkbox: string}> = [];
+            let globalMaxColLen = 0;
             for (const tbl of allTables) {
-                // Show row count for each table with checkbox
+                const tableName = typeof tbl === 'string' ? tbl : (tbl ?? '').toString();
                 try {
-                    const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tbl}`);
+                    const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tableName}`);
                     const countRows = await countResult.getRows();
-                    let rawCount = countRows[0][0];
-                    let rowCount: number = 0;
-                    if (typeof rawCount === 'number') {
-                        rowCount = rawCount;
-                    } else if (typeof rawCount === 'string') {
-                        rowCount = Number(rawCount) || 0;
-                    } else if (rawCount === null || rawCount === undefined) {
-                        rowCount = 0;
-                    } else {
-                        // fallback for other types
-                        rowCount = Number(rawCount) || 0;
+                    const rawCount = countRows[0]?.[0];
+                    const rowCount = Number(rawCount || 0);
+                    const checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
+                    const schemaResult = await this.con!.run(`
+                        SELECT column_name, data_type
+                        FROM information_schema.columns
+                        WHERE table_name = '${tableName}'
+                        ORDER BY ordinal_position
+                    `);
+                    let schemaRowsRaw = await schemaResult.getRows();
+                    // Only keep rows with exactly two elements (column name and type)
+                    const schemaRows: [string, string][] = schemaRowsRaw.filter(row => row.length === 2) as [string, string][];
+                    // Update global max column name length
+                    for (const [colName] of schemaRows) {
+                        globalMaxColLen = Math.max(globalMaxColLen, String(colName).length);
                     }
-                    let checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
-                    console.log(chalk.gray(`  ${checkbox} ${tbl}: ${rowCount} row(s)`));
-                } catch {
-                    console.log(chalk.red(`  ✗ ${tbl}: (error getting row count)`));
+                    tableSchemas.push({tableName, rowCount, schemaRows, checkbox});
+                } catch (err) {
+                    const errorMsg = err instanceof Error ? err.message : String(err);
+                    tableSchemas.push({tableName, rowCount: 0, schemaRows: [], checkbox: chalk.red('✗') + ` (error getting row count: ${errorMsg})`});
+                }
+            }
+            // Print all tables with global alignment
+            for (const {tableName, rowCount, schemaRows, checkbox} of tableSchemas) {
+                if (schemaRows.length === 0) {
+                    console.log(chalk.red(`  ✗ ${tableName}: (error or no columns)`));
+                    continue;
+                }
+                console.log(chalk.green(`  ${checkbox} ${tableName}: ${rowCount} row(s)`));
+                for (const [colName, colType] of schemaRows) {
+                    const paddedCol = String(colName).padEnd(globalMaxColLen + 2);
+                    console.log(chalk.gray(`    ${' '.repeat(4)}${paddedCol}: ${colType}`));
                 }
             }
         }
@@ -267,7 +303,7 @@ export class SecurityAnalyzer {
             
             // Only handle missing table errors gracefully
             if (errorMsg.includes('does not exist') || errorMsg.includes('Catalog Error')) {
-                console.log(chalk.gray(`    ⓘ Skipped - required tables not present`));
+                console.log(chalk.gray(`    ⓘ Skipped - required tables not present` + errorMsg));
             } else {
                 // Log other errors but don't abort
                 console.log(chalk.yellow(`    ⚠ Warning: ${errorMsg.substring(0, 200)}`));

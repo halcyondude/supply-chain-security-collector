@@ -1,4 +1,5 @@
 {
+
   "name": "github-repo-supply-chain-datacollector",
   "version": "1.0.0",
   "description": "Generic GraphQL data collection tool with DuckDB storage and Parquet export",
@@ -19,10 +20,9 @@
     "format": "npx eslint src/ --fix",
     "typecheck": "npx tsc --noEmit",
     "clean": "rm -rf output .cache src/generated .virtual-documents .ipynb_checkpoints",
-    "lab": "uv run jupyter lab"
-  ,
-  "lab:sbom-ci": "uv run jupyter lab notebooks/sbom-ci-analysis.ipynb",
-  "lab:agg-tables": "uv run jupyter lab notebooks/agg_tables_overview.ipynb"
+    "lab": "uv run jupyter lab",
+    "lab:sbom-ci": "uv run jupyter lab notebooks/sbom-ci-analysis.ipynb",
+    "lab:agg-tables": "uv run jupyter lab notebooks/agg_tables_overview.ipynb"
   },
   "keywords": [
     "graphql",
