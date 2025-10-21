@@ -18,7 +18,11 @@
     "lint:fix": "npx eslint src/ --fix",
     "format": "npx eslint src/ --fix",
     "typecheck": "npx tsc --noEmit",
-    "clean": "rm -rf output .cache src/generated"
+    "clean": "rm -rf output .cache src/generated",
+    "lab": "uv run jupyter lab"
+  ,
+  "lab:sbom-ci": "uv run jupyter lab notebooks/sbom-ci-analysis.ipynb",
+  "lab:agg-tables": "uv run jupyter lab notebooks/agg_tables_overview.ipynb"
   },
   "keywords": [
     "graphql",

@@ -38,6 +38,9 @@ coverage/
 # Downloaded landscape.yml (1MB+, changes frequently)
 scripts/landscape.yml
 
+**/.ipynb_checkpoints
+**/.virtual_documents
+
 # Keep these committed:
 # scripts/landscape-schema.json     (schema change detection)
 # input/cncf-full-landscape.json    (track dataset changes)  
