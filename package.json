@@ -18,7 +18,7 @@
     "lint:fix": "npx eslint src/ --fix",
     "format": "npx eslint src/ --fix",
     "typecheck": "npx tsc --noEmit",
-    "clean": "rm -rf output .cache src/generated",
+    "clean": "rm -rf output .cache src/generated .virtual-documents .ipynb_checkpoints",
     "lab": "uv run jupyter lab"
   ,
   "lab:sbom-ci": "uv run jupyter lab notebooks/sbom-ci-analysis.ipynb",
