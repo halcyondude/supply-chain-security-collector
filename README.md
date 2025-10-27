@@ -1,8 +1,14 @@
+
 # Supply Chain Security Collector
 
-collect data from {github api, static files} → schema driven normalization to relational tables → {duckdb, ladybugdb}
+🚧 **CONSTRUCTION ZONE** 🚧
 
-currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
+> This project is actively being refactored!
+> Expect breaking changes, experimental features, and lots of dust.
+
+collect data from {github api, static files} → {duckdb, ladybugdb}
+
+currently configured for github supply chain security analysis of cncf projects.
 
 ## what it does
 
