@@ -1,0 +1,27 @@
+[project]
+name = "github-repo-supply-chain-datacollector"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+	"duckdb",
+	"pandas",
+    "polars",
+	"numpy",
+	"altair",
+	"vegafusion[embed]",
+	"plotly",
+	"pygwalker",
+	"ipywidgets",
+	"jupyterlab",
+	"jupyterlab-lsp",
+	"python-lsp-server[all]",
+	"jupyterlab-git",
+	"jupyterlab-system-monitor",
+	"pyyaml",
+	"rich",
+	"python-dotenv",
+	"pydantic",
+	"jsonschema"
+]

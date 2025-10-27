@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // neo.ts - Clean GraphQL Data Collection Tool
 // Fetches GraphQL data, logs audit trail, stores in DuckDB with normalized tables
 
@@ -19,35 +18,23 @@ type QueryFunction = (client: ReturnType<typeof createApiClient>, variables: { o
 // INPUT NORMALIZATION
 // ============================================================================
 
-/**
- * Normalize input format - convert both simple and rich formats to internal representation
- * 
- * Simple format: [{ owner: "kubernetes", name: "kubernetes" }]
- * Rich format:   [{ project_name: "Kubernetes", repos: [{owner: "kubernetes", name: "kubernetes", primary: true}], ...metadata }]
- * 
- * Output: Array of { repo: RepositoryTarget, metadata?: ProjectMetadata }
- */
 function normalizeInput(
   inputData: (RepositoryTarget | ProjectMetadata)[],
   repoScope: 'primary' | 'all'
 ): Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> {
   const results: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
-
   for (const item of inputData) {
-    // Check if it's rich format (has 'repos' field) or simple format (has only owner/name)
-    if ('repos' in item && Array.isArray(item.repos)) {
+    if ('repos' in item && Array.isArray((item as any).repos)) {
       // Rich format: ProjectMetadata
       const metadata = item as ProjectMetadata;
-      
-      // Filter repositories based on scope
-      const reposToProcess = repoScope === 'primary' 
+      const reposToProcess = repoScope === 'primary'
         ? metadata.repos.filter(r => r.primary)
         : metadata.repos;
-
+      
       for (const repo of reposToProcess) {
-        results.push({
-          repo: { owner: repo.owner, name: repo.name },
-          metadata
+        results.push({ 
+          repo: { owner: repo.owner, name: repo.name }, 
+          metadata 
         });
       }
     } else {
@@ -56,7 +43,6 @@ function normalizeInput(
       results.push({ repo, metadata: undefined });
     }
   }
-
   return results;
 }
 
@@ -70,7 +56,7 @@ function filterByMaturity(
   if (!maturityLevels || maturityLevels.length === 0) {
     return normalizedInput;
   }
-
+  
   return normalizedInput.filter(item => {
     // If no metadata, keep it (simple format repos)
     if (!item.metadata || !item.metadata.maturity) {
@@ -94,6 +80,7 @@ async function main() {
     .option('--repo-scope <scope>', 'Repository scope: primary (default) or all', 'primary')
     .option('--parallel', 'Fetch repositories in parallel', false)
     .option('--analyze', 'Run security analysis after data collection', false)
+    .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
@@ -105,7 +92,8 @@ async function main() {
     maturity: maturityLevels,
     repoScope,
     parallel: useParallel, 
-    analyze: runAnalysis, 
+    analyze: runAnalysis,
+    persistFiles,
     verbose 
   } = options;
 
@@ -123,13 +111,12 @@ async function main() {
     throw new Error('GITHUB_PAT environment variable is required');
   }
 
-  // Setup output directory with timestamp
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  // Output directory: output/<InputFileBase>/<timestamp>/
   const inputBaseName = path.basename(input, path.extname(input));
-  const runDir = path.join(output, `${inputBaseName}-${timestamp}`);
-  await fs.mkdir(runDir, { recursive: true });
-
-  const rawResponsesPath = path.join(runDir, 'raw-responses.jsonl');
+  const inputBaseDir = path.join(output, inputBaseName);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const timestampedDir = path.join(inputBaseDir, timestamp);
+  await fs.mkdir(timestampedDir, { recursive: true });
 
   // Read and normalize input file
   const inputContent = await fs.readFile(input, 'utf-8');
@@ -145,7 +132,6 @@ async function main() {
   const repositories = normalizedInput.map(item => item.repo);
 
   console.log(chalk.cyan(`📂 Input:  ${input}`));
-  console.log(chalk.cyan(`📁 Output: ${runDir}`));
   console.log(chalk.cyan(`📊 Repos:  ${repositories.length}`));
   console.log(chalk.cyan(`🔍 Queries: ${queryNames.join(', ')}`));
   if (maturityLevels && maturityLevels.length > 0) {
@@ -181,170 +167,128 @@ async function main() {
     }
   }
 
-  // Fetch data for each query
+  // Fetch data for all queries, aggregate all responses and metadata
+  let allResponses: unknown[] = [];
+  let responseMetadata: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
   for (const queryName of queryNames) {
     console.log(chalk.bold.green(`\n🔄 Fetching ${queryName}...\n`));
-    const allResponses: unknown[] = [];
-    const responseMetadata: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
+    const queryResponses: unknown[] = [];
+    const queryMetadata: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }> = [];
     let successCount = 0;
     let failureCount = 0;
-
+    const rawResponsesPath = path.join(timestampedDir, `raw-responses.${queryName}.jsonl`);
     const fetchFn = queryFunctions[queryName];
-
-    if (useParallel) {
-      // Parallel fetching with batching to avoid rate limits
-      const BATCH_SIZE = 5; // Safe default: well under GitHub's 100 concurrent limit
-      const BATCH_DELAY_MS = 1000; // 1 second between batches
-      
-      for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
-        const batch = repositories.slice(i, i + BATCH_SIZE);
-        const batchStart = i;
-        
-        const fetchPromises = batch.map(async (repo, batchIdx) => {
-          const idx = batchStart + batchIdx;
-          if (verbose) {
-            console.log(chalk.gray(`  → ${repo.owner}/${repo.name}`));
-          }
-          
-          const data = await fetchFn(client, { owner: repo.owner, name: repo.name }, verbose);
-
-          if (data) {
-            await appendRawResponse(rawResponsesPath, {
-              queryType: queryName,
-              owner: repo.owner,
-              repo: repo.name,
-              response: data,
-            });
-            return { repo, data, metadata: normalizedInput[idx].metadata };
-          }
-          return { repo, data: null, metadata: normalizedInput[idx].metadata };
-        });
-
-        const results = await Promise.allSettled(fetchPromises);
-        
-        for (const result of results) {
-          if (result.status === 'fulfilled' && result.value.data) {
-            allResponses.push(result.value.data);
-            responseMetadata.push({ repo: result.value.repo, metadata: result.value.metadata });
-            successCount++;
-            if (!verbose) {
-              console.log(chalk.green(`  ✓ ${result.value.repo.owner}/${result.value.repo.name}`));
-            }
-          } else if (result.status === 'fulfilled') {
-            failureCount++;
-            console.log(chalk.red(`  ✗ ${result.value.repo.owner}/${result.value.repo.name}`));
-          } else {
-            failureCount++;
-            console.log(chalk.red(`  ✗ Error: ${result.reason?.message || 'Unknown error'}`));
-          }
-        }
-        
-        // Delay between batches (except after the last batch)
-        if (i + BATCH_SIZE < repositories.length) {
-          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-        }
-      }
-    } else {
-      // Sequential fetching
-      for (let idx = 0; idx < repositories.length; idx++) {
-        const repo = repositories[idx];
+    // Unified batching logic for both parallel and sequential
+    const BATCH_SIZE = useParallel ? 5 : 1;
+    const BATCH_DELAY_MS = 1000;
+    for (let i = 0; i < repositories.length; i += BATCH_SIZE) {
+      const batch = repositories.slice(i, i + BATCH_SIZE);
+      const batchStart = i;
+      const fetchPromises = batch.map(async (repo, batchIdx) => {
+        const idx = batchStart + batchIdx;
         if (verbose) {
           console.log(chalk.gray(`  → ${repo.owner}/${repo.name}`));
         }
-
-        try {
-          const data = await fetchFn(client, { owner: repo.owner, name: repo.name }, verbose);
-
-          if (data) {
-            await appendRawResponse(rawResponsesPath, {
-              queryType: queryName,
-              owner: repo.owner,
-              repo: repo.name,
-              response: data,
-            });
-            allResponses.push(data);
-            responseMetadata.push({ repo, metadata: normalizedInput[idx].metadata });
-            successCount++;
-            if (!verbose) {
-              console.log(chalk.green(`  ✓ ${repo.owner}/${repo.name}`));
-            }
-          } else {
-            failureCount++;
-            console.log(chalk.red(`  ✗ ${repo.owner}/${repo.name}`));
+        const data = await fetchFn(client, { owner: repo.owner, name: repo.name }, verbose);
+        if (data) {
+          await appendRawResponse(rawResponsesPath, {
+            queryType: queryName,
+            owner: repo.owner,
+            repo: repo.name,
+            response: data,
+          });
+          return { repo, data, metadata: normalizedInput[idx].metadata };
+        }
+        return { repo, data: null, metadata: normalizedInput[idx].metadata };
+      });
+      const results = await Promise.allSettled(fetchPromises);
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.data) {
+          queryResponses.push(result.value.data);
+          queryMetadata.push({ repo: result.value.repo, metadata: result.value.metadata });
+          successCount++;
+          if (!verbose) {
+            console.log(chalk.green(`  ✓ ${result.value.repo.owner}/${result.value.repo.name}`));
           }
-        } catch (error) {
+        } else if (result.status === 'fulfilled') {
           failureCount++;
-          console.log(chalk.red(`  ✗ ${repo.owner}/${repo.name}: ${error instanceof Error ? error.message : 'Unknown error'}`));
+          console.log(chalk.red(`  ✗ ${result.value.repo.owner}/${result.value.repo.name}`));
+        } else {
+          failureCount++;
+          console.log(chalk.red(`  ✗ Error: ${result.reason?.message || 'Unknown error'}`));
         }
       }
+      if (useParallel && i + BATCH_SIZE < repositories.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+      }
     }
-
+    // Output summary for this query
     console.log(chalk.gray('\n' + '─'.repeat(50)));
     console.log(chalk.bold(`📈 ${queryName}: ${chalk.green(successCount.toString())} success, ${chalk.red(failureCount.toString())} failed`));
-
-    // Create DuckDB database with normalized tables for this query
-    if (allResponses.length > 0) {
-      console.log(chalk.bold.green('\n📊 Creating DuckDB database...\n'));
-      
-      try {
-        // Create subdirectory for this query to avoid table name conflicts
-        const queryDir = path.join(runDir, queryName);
-        await fs.mkdir(queryDir, { recursive: true });
-        
-        await writeArtifacts(allResponses, queryDir, queryName, responseMetadata);
-        
-        console.log(chalk.green('  ✓ Database created'));
-        console.log(chalk.green('  ✓ Parquet files exported'));
-      } catch (error) {
-        console.error(chalk.red('\n❌ Database creation failed:'), error);
-        throw error;
-      }
-    } else {
-      console.log(chalk.yellow('\n⚠  No data collected for this query, skipping database creation'));
-    }
+    allResponses = allResponses.concat(queryResponses);
+    responseMetadata = responseMetadata.concat(queryMetadata);
   }
 
-  // Summary
+  // Write all responses to the main output directory (single DB for all queries)
+  if (allResponses.length > 0) {
+    console.log(chalk.bold.green('\n📊 Creating DuckDB database...\n'));
+    try {
+      await writeArtifacts(allResponses, timestampedDir, queryNames.join('_'), responseMetadata, persistFiles);
+      console.log(chalk.green('  ✓ Database created'));
+      console.log(chalk.green('  ✓ Parquet files exported'));
+    } catch (error) {
+      console.error(chalk.red('\n❌ Database creation failed:'), error);
+      throw error;
+    }
+  } else {
+    console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
+  }
+
+  // Update 'current' symlink for this input
+  const currentSymlink = path.join(inputBaseDir, 'current');
+  try {
+    await fs.unlink(currentSymlink).catch(() => {});
+    await fs.symlink(path.basename(timestampedDir), currentSymlink, 'dir');
+    console.log(chalk.gray(`  ✓ Updated 'current' symlink for input: ${inputBaseName}`));
+  } catch (err) {
+    console.log(chalk.yellow(`  ⚠ Could not update 'current' symlink for input: ${err instanceof Error ? err.message : String(err)}`));
+  }
+
+  // Summary for all queries
   console.log(chalk.gray('\n' + '─'.repeat(50)));
   console.log(chalk.blue.bold('✨ Complete\n'));
   console.log(chalk.gray('Output:'));
-  console.log(chalk.gray(`  Directory: ${runDir}`));
-  console.log(chalk.gray(`  Audit log: raw-responses.jsonl`));
-  if (queryNames.length > 0) {
-    console.log(chalk.gray(`  Databases: ${queryNames.length} query types`));
-    for (const queryName of queryNames) {
-      console.log(chalk.gray(`    - ${queryName}/database.db`));
-      console.log(chalk.gray(`    - ${queryName}/parquet/`));
-    }
+  console.log(chalk.gray(`  Directory: ${timestampedDir}`));
+  console.log(chalk.gray(`  Symlink:   ${currentSymlink}`));
+  console.log(chalk.gray('  Audit log(s):'));
+  for (const queryName of queryNames) {
+    console.log(chalk.gray(`    - raw-responses.${queryName}.jsonl`));
   }
+  console.log(chalk.gray(`  Database:  ${path.join(timestampedDir, 'database.db')}`));
+  console.log(chalk.gray(`  Parquet:   ${path.join(timestampedDir, 'parquet/')}`));
   console.log();
 
   // Run analysis if requested
   if (runAnalysis) {
     console.log(chalk.gray('\n' + '─'.repeat(50)));
-    
-    // Run analysis on each database
-    for (const queryName of queryNames) {
-      const dbPath = path.join(runDir, queryName, 'database.db');
-      
-      console.log(chalk.bold.cyan(`\n🔍 Analyzing ${queryName}...\n`));
-      
-      try {
-        const analyzer = new SecurityAnalyzer(dbPath);
-        await analyzer.analyze();
-        await analyzer.close();
-      } catch (error) {
-        console.error(chalk.yellow(`  ⚠ Analysis failed for ${queryName}: ${error instanceof Error ? error.message : error}`));
-        console.log(chalk.gray('  (This is expected if workflow data is not available)'));
-      }
+    const dbPath = path.join(timestampedDir, 'database.db');
+    console.log(chalk.bold.cyan(`\n🔍 Analyzing database...\n`));
+    try {
+      const analyzer = new SecurityAnalyzer(dbPath);
+      await analyzer.analyze();
+      await analyzer.close();
+    } catch (error) {
+      console.error(chalk.yellow(`  ⚠ Analysis failed: ${error instanceof Error ? error.message : error}`));
+      console.log(chalk.gray('  (This is expected if workflow data is not available)'));
     }
   }
 }
 
-main().catch((error) => {
-  console.error(chalk.red.bold('\n❌ Fatal Error:'), error.message);
-  if (error.stack) {
-    console.error(chalk.gray(error.stack));
-  }
-  process.exit(1);
-});
+// Only run main if this file is executed directly (not imported)
+if (require.main === module) {
+  main().catch(err => {
+    console.error(chalk.red('Fatal error in neo.ts:'), err);
+    process.exit(1);
+  });
+}
+      

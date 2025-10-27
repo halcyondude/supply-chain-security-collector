@@ -1,31 +1,37 @@
 [
   {
-    "project_name": "Kubernetes",
-    "display_name": "Kubernetes",
-    "description": "Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications",
+    "project_name": "Jaeger",
+    "display_name": "Jaeger",
+    "description": "Distributed tracing platform for monitoring and troubleshooting microservices-based distributed systems",
     "repos": [
       {
-        "owner": "kubernetes",
-        "name": "kubernetes",
+        "owner": "jaegertracing",
+        "name": "jaeger",
         "primary": true
       }
     ],
     "maturity": "graduated",
-    "category": "Orchestration & Management",
-    "subcategory": "Scheduling & Orchestration",
-    "date_accepted": "2016-03-10",
-    "date_incubating": "2016-03-10",
-    "date_graduated": "2018-03-06",
-    "homepage_url": "https://kubernetes.io/",
-    "repo_url": "https://github.com/kubernetes/kubernetes",
-    "blog_url": "http://blog.kubernetes.io/",
-    "clomonitor_name": "kubernetes",
-    "dev_stats_url": "https://k8s.devstats.cncf.io/",
+    "category": "Observability and Analysis",
+    "subcategory": "Observability",
+    "date_accepted": "2017-09-13",
+    "date_incubating": "2017-09-13",
+    "date_graduated": "2019-10-31",
+    "homepage_url": "https://www.jaegertracing.io/",
+    "repo_url": "https://github.com/jaegertracing/jaeger",
+    "blog_url": "https://medium.com/jaegertracing/",
+    "clomonitor_name": "jaeger",
+    "summary_business_use_case": "Monitoring and troubleshooting distributed workflows; root cause localization; understanding service dependncies; latency and performance optimization.",
+    "summary_integrations": "OpenTelemetry, Prometheus, multiple [storage backends](https://www.jaegertracing.io/docs/latest/deployment/#span-storage-backends).",
+    "summary_personas": "Developers, SREs, Platform Engineers, Network Engineers",
+    "summary_tags": "monitoring, observability, tracing",
+    "summary_use_case": "tracing-based observability for distributed systems",
+    "summary_release_rate": "monthly",
+    "dev_stats_url": "https://jaeger.devstats.cncf.io/",
     "has_security_audits": true,
-    "security_audit_count": 2,
-    "latest_audit_date": "2023-04-19",
-    "latest_audit_vendor": "NCC Group",
+    "security_audit_count": 1,
+    "latest_audit_date": "2019-05-04",
+    "latest_audit_vendor": "Cure53",
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/kubernetesio"
+    "twitter": "https://twitter.com/JaegerTracing"
   }
 ]

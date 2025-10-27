@@ -24,6 +24,7 @@
   {
     "project_name": "Harbor",
     "display_name": "Harbor",
+    "description": "Cloud native registry that stores, signs, and scans container images for vulnerabilities",
     "repos": [
       {
         "owner": "goharbor",

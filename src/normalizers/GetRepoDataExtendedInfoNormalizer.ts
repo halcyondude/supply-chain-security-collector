@@ -1,7 +1,7 @@
-import type { GetRepoDataExtendedInfoQuery } from '../generated/graphql';
+import type { GetRepoDataExtendedInfoQuery } from '../generated/graphql.d.ts';
 
 /**
- * Normalized tables extracted from GetRepoDataExtendedInfo query
+ * Normalized tables extracted from GetRepoDataExtendedInfo query 
  * Tables use 'base_' prefix to indicate normalized entity layer
  */
 export interface GetRepoDataExtendedInfoNormalized {
@@ -10,7 +10,9 @@ export interface GetRepoDataExtendedInfoNormalized {
     base_releases: Release[];
     base_release_assets: ReleaseAsset[];
     base_workflows: Workflow[];
+    base_security_md: SecurityMarkdown[];
 }
+
 
 interface Repository {
     id: string;
@@ -62,6 +64,7 @@ interface ReleaseAsset {
     downloadUrl: string;
 }
 
+
 interface Workflow {
     id: string;  // Generated from repository_id + filename
     __typename: string;
@@ -69,6 +72,88 @@ interface Workflow {
     filename: string;
     content: string | null;
 }
+
+interface SecurityMarkdown {
+    id: string;  // Generated from repository_id + path
+    __typename: string;
+    repository_id: string;  // FK to repositories
+    content: string | null;
+    path: string;
+}
+
+
+import { processYaml, processMarkdown, processDockerfile } from '../NormalizerTools.js';
+
+interface RepoFile {
+    id: string;
+    repository_id: string;
+    path: string;
+    type: 'markdown' | 'yml' | 'dockerfile' | 'text';
+    content: string | null;
+    parsed_json?: any;
+    markdown_headings?: string[];
+}
+
+
+const fileConfig = [
+    { path: 'SECURITY.md', type: 'markdown', source: 'securityPolicy' },
+    { path: 'SECURITY-INSIGHTS.yml', type: 'yml', source: 'insightsFileRootUpper' },
+    { path: 'security-insights.yml', type: 'yml', source: 'insightsFileRootLower' },
+    { path: '.github/SECURITY-INSIGHTS.yml', type: 'yml', source: 'insightsFileGithubUpper' },
+    { path: '.github/security-insights.yml', type: 'yml', source: 'insightsFileGithubLower' },
+    { path: '.github/dependabot.yml', type: 'yml', source: 'dependabot' },
+    // Add more config entries as needed
+];
+
+function extractRepoFiles(responses: GetRepoDataExtendedInfoQuery[]): RepoFile[] {
+    const results: RepoFile[] = [];
+    for (const response of responses) {
+        const repo = response.repository;
+        if (!repo) continue;
+
+        for (const cfg of fileConfig) {
+            const fileObj = (repo as any)[cfg.source];
+            if (fileObj && fileObj.__typename === 'Blob' && fileObj.text) {
+                const file: RepoFile = {
+                    id: `${repo.id}:${cfg.path}`,
+                    repository_id: repo.id,
+                    path: cfg.path,
+                    type: cfg.type as 'markdown' | 'yml' | 'dockerfile' | 'text',
+                    content: fileObj.text,
+                };
+                if (cfg.type === 'yml' || cfg.path.endsWith('.yaml')) {
+                    file.parsed_json = processYaml(fileObj.text);
+                }
+                if (cfg.type === 'markdown') {
+                    file.markdown_headings = processMarkdown(fileObj.text).headings;
+                }
+                results.push(file);
+            }
+        }
+        // Workflows (.github/workflows/*.yml or *.yaml)
+        const workflowsObj = repo.workflows;
+        if (workflowsObj && workflowsObj.__typename === 'Tree' && workflowsObj.entries) {
+            for (const entry of workflowsObj.entries as Array<{ name: string; object: any }>) {
+                if (entry.object && entry.object.__typename === 'Blob' && entry.object.text) {
+                    const ext = entry.name.endsWith('.yaml') ? 'yaml' : entry.name.endsWith('.yml') ? 'yml' : null;
+                    const file: RepoFile = {
+                        id: `${repo.id}:.github/workflows/${entry.name}`,
+                        repository_id: repo.id,
+                        path: `.github/workflows/${entry.name}`,
+                        type: (ext === 'yaml' || ext === 'yml' ? 'yml' : 'text') as 'markdown' | 'yml' | 'dockerfile' | 'text',
+                        content: entry.object.text,
+                    };
+                    if (file.type === 'yml') {
+                        file.parsed_json = processYaml(entry.object.text);
+                    }
+                    results.push(file);
+                }
+            }
+        }
+    }
+    return results;
+}
+
 
 /**
  * Normalize GetRepoDataExtendedInfo responses into relational tables
@@ -86,7 +171,7 @@ export function normalizeGetRepoDataExtendedInfo(
     // Extract repositories with flattened license info
     const repositories: Repository[] = responses
         .filter(r => r.repository !== null)
-        .map(r => ({
+    .map((r: any) => ({
             id: r.repository!.id,
             __typename: r.repository!.__typename || 'Repository',
             name: r.repository!.name,
@@ -131,8 +216,8 @@ export function normalizeGetRepoDataExtendedInfo(
         // Add additional branch protection rules
         if (r.repository!.branchProtectionRules.nodes) {
             r.repository!.branchProtectionRules.nodes
-                .filter((rule): rule is NonNullable<typeof rule> => rule !== null)
-                .forEach((rule, idx) => {
+                .filter((rule: any): rule is NonNullable<typeof rule> => rule !== null)
+                .forEach((rule: any, idx: number) => {
                     branch_protection_rules.push({
                         id: `${repoId}_rule_${idx}`,
                         __typename: rule.__typename || 'BranchProtectionRule',
@@ -157,8 +242,8 @@ export function normalizeGetRepoDataExtendedInfo(
         .filter(r => r.repository !== null && r.repository.releases.nodes !== null)
         .flatMap(r =>
             r.repository!.releases.nodes!
-                .filter((rel): rel is NonNullable<typeof rel> => rel !== null)
-                .map(release => ({
+                .filter((rel: any): rel is NonNullable<typeof rel> => rel !== null)
+                .map((release: any) => ({
                     id: release.id,
                     __typename: release.__typename || 'Release',
                     repository_id: r.repository!.id,
@@ -174,12 +259,12 @@ export function normalizeGetRepoDataExtendedInfo(
         .filter(r => r.repository !== null && r.repository.releases.nodes !== null)
         .flatMap(r =>
             r.repository!.releases.nodes!
-                .filter((rel): rel is NonNullable<typeof rel> => rel !== null)
-                .filter(release => release.releaseAssets.nodes !== null)
-                .flatMap(release =>
+                .filter((rel: any): rel is NonNullable<typeof rel> => rel !== null)
+                .filter((release: any) => release.releaseAssets.nodes !== null)
+                .flatMap((release: any) =>
                     release.releaseAssets.nodes!
-                        .filter((asset): asset is NonNullable<typeof asset> => asset !== null)
-                        .map(asset => ({
+                        .filter((asset: any): asset is NonNullable<typeof asset> => asset !== null)
+                        .map((asset: any) => ({
                             id: asset.id,
                             __typename: asset.__typename || 'ReleaseAsset',
                             release_id: release.id,
@@ -200,7 +285,7 @@ export function normalizeGetRepoDataExtendedInfo(
         if (workflowsObj && '__typename' in workflowsObj && workflowsObj.__typename === 'Tree') {
             const tree = workflowsObj;
             if (tree.entries) {
-                tree.entries.forEach(entry => {
+                tree.entries.forEach((entry: any) => {
                     // Check if the entry's object is a Blob
                     if (entry.object && '__typename' in entry.object && entry.object.__typename === 'Blob') {
                         const blob = entry.object;
@@ -217,17 +302,23 @@ export function normalizeGetRepoDataExtendedInfo(
         }
     }
 
+    // Dummy extractSecurityMarkdown for now (returns empty array)
+    function extractSecurityMarkdown(_responses: GetRepoDataExtendedInfoQuery[]): SecurityMarkdown[] {
+        return [];
+    }
     return {
         base_repositories: repositories,
         base_branch_protection_rules: branch_protection_rules,
         base_releases: releases,
         base_release_assets: release_assets,
         base_workflows: workflows,
+        base_security_md: extractSecurityMarkdown(responses),
     };
 }
 
+
 /**
- * Get table statistics for logging
+  Extracted ${normalized.base_repo_files.length} repo files (SECURITY.md, security-insights.yml, dependabot.yml, workflows)
  */
 export function getNormalizationStats(normalized: GetRepoDataExtendedInfoNormalized): string {
     return `
@@ -236,5 +327,6 @@ export function getNormalizationStats(normalized: GetRepoDataExtendedInfoNormali
   Extracted ${normalized.base_releases.length} releases
   Extracted ${normalized.base_release_assets.length} release assets
   Extracted ${normalized.base_workflows.length} workflow files
+  Extracted ${normalized.base_security_md.length} SECURITY.md files
     `.trim();
 }

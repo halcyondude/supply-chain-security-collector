@@ -1,5 +1,9 @@
 [
   {
+    "owner": "jaegertracing",
+    "name": "jaeger"
+  },
+    {
     "owner": "sigstore",
     "name": "cosign"
   },

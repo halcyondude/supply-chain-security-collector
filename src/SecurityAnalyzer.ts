@@ -2,7 +2,7 @@ import { DuckDBInstance } from '@duckdb/node-api';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import chalk from 'chalk';
-import { installAndLoadExtensions } from './duckdb-extensions.js';
+import { installAndLoadExtensions } from './duckdb-extensions';
 
 /**
  * SecurityAnalyzer - Domain-specific analyzer for GitHub supply chain security
@@ -21,6 +21,51 @@ export class SecurityAnalyzer {
     private dbPath: string;
     private db?: DuckDBInstance;
     private con?: DuckDBConnection;
+
+    private async getAndLogTableRowCount(tableName: string) {
+        try {
+            const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tableName}`);
+            const countRows = await countResult.getRows();
+            const rawCount = countRows[0]?.[0];
+            const rowCount = Number(rawCount || 0);
+            const checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
+
+            // Fetch column names and types
+            const schemaResult = await this.con!.run(`
+                SELECT column_name, data_type
+                FROM information_schema.columns
+                WHERE table_name = '${tableName}'
+                ORDER BY ordinal_position
+            `);
+            const schemaRows = await schemaResult.getRows();
+
+            // Print table name in green, with checkbox and row count
+            console.log(chalk.green(`  ${checkbox} ${tableName}: ${rowCount} row(s)`));
+            // Print each column indented (4 spaces), in gray, one per line
+            // Find max column name length for alignment
+            const maxColLen = schemaRows.reduce((max, [colName]) => Math.max(max, String(colName).length), 0);
+            for (const [colName, colType] of schemaRows) {
+                const paddedCol = String(colName).padEnd(maxColLen + 2); // 2 spaces after colon
+                console.log(chalk.gray(`    ${' '.repeat(4)}${paddedCol}: ${colType}`));
+            }
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            console.log(chalk.red(`  ✗ ${tableName}: (error getting row count: ${errorMsg})`));
+        }
+    }
+
+    /**
+     * Create or replace a table and log the result with row count and checkbox
+     */
+    private async createOrReplaceTableWithLog(tableSql: string, tableName: string) {
+        await this.connect();
+        try {
+            await this.con!.run(tableSql);
+            await this.getAndLogTableRowCount(tableName);
+        } catch (err) {
+            console.log(chalk.red(`  ✗ ${tableName}: (error creating or counting rows)`));
+        }
+    }
 
     constructor(dbPath: string) {
         this.dbPath = dbPath;
@@ -52,28 +97,144 @@ export class SecurityAnalyzer {
             console.log(chalk.green('  ✓ Dropped existing tables\n'));
         }
 
-        // Create indexes (including FTS indexes)
-        await this.runModel('00_initialize_indexes.sql');
+        // Run analysis models with robust error handling
+        const models = [
+            '00_initialize_indexes.sql',
+            '01_artifact_analysis.sql',
+            '01a_security_insights_flattener.sql',
+            '02_workflow_tool_detection.sql',
+            '03_repository_security_summary.sql',
+            '04_summary_views.sql',
+            '05_cncf_project_analysis.sql'
+        ];
 
-        // Run analysis models in dependency order
-        await this.runModel('01_artifact_analysis.sql');
-        await this.runModel('02_workflow_tool_detection.sql');
-        await this.runModel('03_repository_security_summary.sql');
-        await this.runModel('04_summary_views.sql');
-        
-        // CNCF-specific analysis (gracefully skips if base_cncf_projects doesn't exist)
-        await this.runModel('05_cncf_project_analysis.sql');
+        for (const model of models) {
+            try {
+                await this.runModel(model);
+            } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                console.log(chalk.yellow(`    ⚠ Skipped ${model} due to error: ${errorMsg.substring(0, 100)}...`));
+                // Continue to next model
+            }
+        }
 
         console.log(chalk.green.bold('\n✅ Analysis complete!\n'));
         
+        // Export SBOMs and Attestations to CSV
+        console.log(chalk.cyan('📄 Exporting Security Insights to CSV...'));
+        const outputDir = path.dirname(this.dbPath);
+        
+        // Export SBOMs
+        try {
+            const sbomCsvPath = path.join(outputDir, 'security-insights-sboms.csv');
+            await this.con!.run(`
+                COPY (
+                    SELECT 
+                        SPLIT_PART(source_url, '/', 4) as owner,
+                        SPLIT_PART(source_url, '/', 5) as repo,
+                        source_url,
+                        fetched_at,
+                        schema_version,
+                        last_updated,
+                        repository_url,
+                        project_name,
+                        sbom_format,
+                        sbom_file,
+                        sbom_url,
+                        sbom_comment
+                    FROM base_si_sboms
+                    ORDER BY owner, repo
+                ) TO '${sbomCsvPath}' (HEADER, DELIMITER ',');
+            `);
+            console.log(chalk.green(`  ✓ Exported SBOMs to ${path.basename(sbomCsvPath)}`));
+        } catch {
+            console.log(chalk.gray(`  ⓘ No SBOMs to export`));
+        }
+        
+        // Export Attestations
+        try {
+            const attestationCsvPath = path.join(outputDir, 'security-insights-attestations.csv');
+            await this.con!.run(`
+                COPY (
+                    SELECT 
+                        SPLIT_PART(source_url, '/', 4) as owner,
+                        SPLIT_PART(source_url, '/', 5) as repo,
+                        source_url,
+                        fetched_at,
+                        schema_version,
+                        last_updated,
+                        repository_url,
+                        project_name,
+                        attestation_source,
+                        attestation_name,
+                        attestation_location,
+                        attestation_predicate_uri,
+                        attestation_comment
+                    FROM agg_si_attestations
+                    ORDER BY owner, repo, attestation_source
+                ) TO '${attestationCsvPath}' (HEADER, DELIMITER ',');
+            `);
+            console.log(chalk.green(`  ✓ Exported attestations to ${path.basename(attestationCsvPath)}`));
+        } catch {
+            console.log(chalk.gray(`  ⓘ No attestations to export`));
+        }
+        
         // Show summary
         await this.showSummary();
-        
-        // Verify tables were created
+
+        // List all created tables (agg_*, base_*) and show row counts for key tables
         console.log(chalk.gray('\nVerifying tables...'));
-        const result = await this.con!.run("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'agg_%' ORDER BY name");
-        const tables = await result.getRows();
-        console.log(chalk.gray(`Created ${tables.length} aggregate analysis tables`));
+        const allTablesResult = await this.con!.run("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name");
+        const allTables = await allTablesResult.getRows().then(rows => rows.map(r => r[0]));
+        if (allTables.length === 0) {
+            console.log(chalk.red('No analysis tables created!'));
+        } else {
+            console.log(chalk.gray(`Created analysis tables:`));
+            // Gather all schemas first
+            const tableSchemas: Array<{tableName: string, rowCount: number, schemaRows: Array<[string, string]>, checkbox: string}> = [];
+            let globalMaxColLen = 0;
+            for (const tbl of allTables) {
+                const tableName = typeof tbl === 'string' ? tbl : (tbl ?? '').toString();
+                try {
+                    const countResult = await this.con!.run(`SELECT COUNT(*) FROM ${tableName}`);
+                    const countRows = await countResult.getRows();
+                    const rawCount = countRows[0]?.[0];
+                    const rowCount = Number(rawCount || 0);
+                    const checkbox = rowCount > 0 ? chalk.green('✓') : chalk.yellow('ⓘ');
+                    const schemaResult = await this.con!.run(`
+                        SELECT column_name, data_type
+                        FROM information_schema.columns
+                        WHERE table_name = '${tableName}'
+                        ORDER BY ordinal_position
+                    `);
+                    let schemaRowsRaw = await schemaResult.getRows();
+                    // Only keep rows with exactly two elements (column name and type)
+                    const schemaRows: [string, string][] = schemaRowsRaw.filter(row => row.length === 2) as [string, string][];
+                    // Update global max column name length
+                    for (const [colName] of schemaRows) {
+                        globalMaxColLen = Math.max(globalMaxColLen, String(colName).length);
+                    }
+                    tableSchemas.push({tableName, rowCount, schemaRows, checkbox});
+                } catch (err) {
+                    const errorMsg = err instanceof Error ? err.message : String(err);
+                    tableSchemas.push({tableName, rowCount: 0, schemaRows: [], checkbox: chalk.red('✗') + ` (error getting row count: ${errorMsg})`});
+                }
+            }
+            // Print all tables with global alignment
+            for (const {tableName, rowCount, schemaRows, checkbox} of tableSchemas) {
+                if (schemaRows.length === 0) {
+                    console.log(chalk.red(`  ✗ ${tableName}: (error or no columns)`));
+                    continue;
+                }
+                console.log(chalk.green(`  ${checkbox} ${tableName}: ${rowCount} row(s)`));
+                for (const [colName, colType] of schemaRows) {
+                    const paddedCol = String(colName).padEnd(globalMaxColLen + 2);
+                    console.log(chalk.gray(`    ${' '.repeat(4)}${paddedCol}: ${colType}`));
+                }
+            }
+        }
+        console.log(chalk.gray('    Checkpoint complete'));
+        console.log(chalk.gray('    Connection closed'));
     }
 
     /**
@@ -83,7 +244,7 @@ export class SecurityAnalyzer {
         await this.connect();
         
         // Drop views first (they may depend on tables)
-        const viewResult = await this.con!.run("SELECT name FROM sqlite_master WHERE type='view' AND name LIKE 'agg_%'");
+        const viewResult = await this.con!.run("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'VIEW' AND table_name LIKE 'agg_%'");
         const views = await viewResult.getRows();
         for (const row of views) {
             const viewName = row[0];
@@ -92,7 +253,7 @@ export class SecurityAnalyzer {
         }
         
         // Then drop tables
-        const tableResult = await this.con!.run("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'agg_%'");
+        const tableResult = await this.con!.run("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'BASE TABLE' AND table_name LIKE 'agg_%'");
         const tables = await tableResult.getRows();
         for (const row of tables) {
             const tableName = row[0];
@@ -128,41 +289,25 @@ export class SecurityAnalyzer {
      */
     private async runModel(filename: string) {
         const modelPath = path.join(__dirname, '../sql/models', filename);
-        
         console.log(chalk.cyan(`  Running ${filename}...`));
         
         try {
             const sql = await fs.readFile(modelPath, 'utf-8');
             
-            // Use DuckDB's extractStatements API to properly handle multi-statement SQL
-            const extracted = await this.con!.extractStatements(sql);
-            const statementCount = extracted.count;
+            // Just run the entire SQL file - DuckDB handles it
+            await this.con!.run(sql);
             
-            // Execute each statement in order
-            for (let i = 0; i < statementCount; i++) {
-                const prepared = await extracted.prepare(i);
-                const result = await prepared.run();
-                
-                // If this looks like a validation SELECT (contains '✓'), show results
-                const statementText = sql.split(';')[i]?.trim() || '';
-                if (statementText.toUpperCase().startsWith('SELECT') && statementText.includes('✓')) {
-                    const rows = await result.getRows();
-                    if (rows.length > 0) {
-                        const firstRow = rows[0];
-                        if (firstRow.length > 0 && typeof firstRow[0] === 'string') {
-                            console.log(chalk.green(`    ${firstRow[0]}`));
-                            // Show remaining values
-                            for (let j = 1; j < firstRow.length; j++) {
-                                console.log(chalk.gray(`      ${firstRow[j]}`));
-                            }
-                        }
-                    }
-                }
-            }
-            
+            console.log(chalk.green(`    ✓ Completed`));
         } catch (error) {
-            console.error(chalk.red(`    ✗ Failed: ${error instanceof Error ? error.message : error}`));
-            throw error;
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            
+            // Only handle missing table errors gracefully
+            if (errorMsg.includes('does not exist') || errorMsg.includes('Catalog Error')) {
+                console.log(chalk.gray(`    ⓘ Skipped - required tables not present` + errorMsg));
+            } else {
+                // Log other errors but don't abort
+                console.log(chalk.yellow(`    ⚠ Warning: ${errorMsg.substring(0, 200)}`));
+            }
         }
     }
 

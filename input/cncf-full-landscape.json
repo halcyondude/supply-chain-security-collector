@@ -2164,10 +2164,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Runtime",
     "subcategory": "Container Runtime",
     "date_accepted": "2022-09-14",
+    "date_incubating": "2025-10-14",
     "homepage_url": "https://github.com/lima-vm/lima",
     "repo_url": "https://github.com/lima-vm/lima",
     "clomonitor_name": "lima",

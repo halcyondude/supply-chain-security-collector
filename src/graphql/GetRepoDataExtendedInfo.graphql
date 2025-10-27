@@ -91,5 +91,36 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
         }
       }
     }
+    # Security Insights file - check both case variations in both standard locations
+    # Some projects use SECURITY-INSIGHTS.yml (uppercase), others use security-insights.yml (lowercase)
+    # Locations: root directory or .github/ directory (per OSSF spec)
+    insightsFileRootUpper: object(expression: "HEAD:SECURITY-INSIGHTS.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    insightsFileRootLower: object(expression: "HEAD:security-insights.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    insightsFileGithubUpper: object(expression: "HEAD:.github/SECURITY-INSIGHTS.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    insightsFileGithubLower: object(expression: "HEAD:.github/security-insights.yml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
   }
 }
