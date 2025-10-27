@@ -1,6 +1,6 @@
-# GitHub Supply Chain Data Collector
+# Supply Chain Security Collector
 
-collect data github graphql api → schema/type driven normalization to relational tables → duckdb → analysis
+collect data from {github api, static files} → schema driven normalization to relational tables → {duckdb, ladybugdb}
 
 currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
 
@@ -32,18 +32,18 @@ npm test
 npm run fetch:landscape
 
 # then run the full collection (~230 projects)
-npm start
+npm start landscape
 
 # check the output
-ls output/cncf-full-landscape-*/GetRepoDataExtendedInfo/
+ls output/
 ```
 
 ### other test options
 
 ```bash
-npm run test:single      # 1 project (kubernetes)
-npm run test:three       # 3 projects (kubernetes, harbor, atlantis) - same as npm test
-npm run test:simple      # simple format (2 repos, no metadata)
+npm run test:single      # 1 project (Jaeger)
+npm run test:three       # 3 projects - same as npm test
+npm run test:simple      # simple (legacy) input format (2 repos, no metadata)
 ```
 
 output structure:
@@ -136,22 +136,19 @@ use duckdb cli or any tool that reads parquet:
 
 ```bash
 # Query a specific run's database
-duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db
+duckdb database.db
 
 # Quick queries
-duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  -c "SELECT * FROM agg_repo_summary"
+duckdb database.db -c "SELECT * FROM agg_repo_summary"
 
 # Export to CSV
-npm run analyze -- \
-  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  --export-csv summary.csv
+npm run analyze -- --database database.db --export-csv summary.csv
 
 # Run custom queries
-npm run analyze -- \
-  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  --query sql/queries/top_tools.sql
+npm run analyze -- --database database.db --query sql/queries/top_tools.sql
 ```
+
+See package.json for how to run scripts directly :)
 
 ## adding new queries
 
@@ -162,7 +159,7 @@ npm run analyze -- \
 
 ## adding new analysis
 
-analysis happens in sql models (`sql/models/`):
+analysis happens in sql models (`sql/models/`). Data shaping should always be done in SQL or CYPHER, not typescript.
 
 ```sql
 -- sql/models/04_my_analysis.sql
@@ -195,7 +192,7 @@ npm run collect -- \
 
 ```bash
 # simple format (backward compatible)
-npm run collect -- --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze
+npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --analyze
 
 # parallel execution
 npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --parallel --analyze
@@ -304,4 +301,4 @@ npm run typecheck               # check typescript types
 
 ## license
 
-MIT
+Apache 2.0
