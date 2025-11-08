@@ -581,6 +581,7 @@
   {
     "project_name": "Dragonfly",
     "display_name": "Dragonfly",
+    "description": "Delivers efficient, stable, and secure data distribution and acceleration powered by P2P technology, with an optional content‑addressable filesystem that accelerates OCI container launch.",
     "repos": [
       {
         "owner": "dragonflyoss",
@@ -588,11 +589,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Provisioning",
     "subcategory": "Container Registry",
     "date_accepted": "2018-11-13",
     "date_incubating": "2020-04-09",
+    "date_graduated": "2025-10-28",
     "homepage_url": "https://d7y.io/",
     "repo_url": "https://github.com/dragonflyoss/dragonfly",
     "clomonitor_name": "dragonfly",
@@ -1235,6 +1237,34 @@
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
+    "project_name": "OAuth2 Proxy",
+    "display_name": "OAuth2 Proxy",
+    "description": "A generic reverse proxy that provides authentication with Google, Azure, OpenID Connect and many more identity providers.",
+    "repos": [
+      {
+        "owner": "oauth2-proxy",
+        "name": "oauth2-proxy",
+        "primary": true
+      },
+      {
+        "owner": "oauth2-proxy",
+        "name": "manifests",
+        "primary": false
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Security & Compliance",
+    "date_accepted": "2025-10-02",
+    "homepage_url": "https://oauth2-proxy.github.io/oauth2-proxy/",
+    "repo_url": "https://github.com/oauth2-proxy/oauth2-proxy",
+    "clomonitor_name": "oauth2-proxy",
+    "dev_stats_url": "https://oauth2-proxy.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "Open Policy Agent OPA",
     "display_name": "Open Policy Agent (OPA)",
     "repos": [
@@ -1297,10 +1327,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2022-09-14",
+    "date_incubating": "2025-10-28",
     "homepage_url": "https://openfga.dev",
     "repo_url": "https://github.com/openfga/openfga",
     "clomonitor_name": "openfga",
@@ -2273,7 +2304,7 @@
     "description": "InterLink aims to provide an abstraction for the execution of a Kubernetes pod on any remote resource capable of managing a Container execution lifecycle thanks to the Virtual Kubelet interface. It allows you to extend your cloud environment anywhere by running Kubernetes workloads on various infrastructures, creating a seamless cloud-native experience across diverse environments.",
     "repos": [
       {
-        "owner": "interTwin-eu",
+        "owner": "interlink-hq",
         "name": "interLink",
         "primary": true
       }
@@ -2282,8 +2313,8 @@
     "category": "Runtime",
     "subcategory": "Container Runtime",
     "date_accepted": "2025-03-04",
-    "homepage_url": "https://intertwin-eu.github.io/interLink/",
-    "repo_url": "https://github.com/interTwin-eu/interLink",
+    "homepage_url": "https://interlink-project.dev",
+    "repo_url": "https://github.com/interlink-hq/interLink",
     "blog_url": "https://intertwin-eu.github.io/interLink/blog/",
     "clomonitor_name": "interlink",
     "dev_stats_url": "https://interlink.devstats.cncf.io/",
@@ -2730,11 +2761,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2020-06-25",
     "date_incubating": "2021-09-14",
+    "date_graduated": "2025-10-28",
     "homepage_url": "https://crossplane.io/",
     "repo_url": "https://github.com/crossplane/crossplane",
     "url_for_bestpractices": "https://www.bestpractices.dev/en/projects/3260",
@@ -3052,7 +3084,7 @@
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2025-01-21",
-    "homepage_url": "https://github.com/kubefleet-dev/kubefleet",
+    "homepage_url": "https://kubefleet.dev/",
     "repo_url": "https://github.com/kubefleet-dev/kubefleet",
     "summary_business_use_case": "Streamlines resource management across multiple Kubernetes clusters, enhancing operational efficiency and enabling  teams to effectively manage Kubernetes native configurations at scale, with support for intelligent scheduling and staged rollouts.",
     "summary_personas": "Platform Engineers, DevOps Engineers, Kubernetes Administrators",
@@ -3375,6 +3407,34 @@
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "annual_review_date": "2022-05-11",
     "annual_review_url": "https://github.com/cncf/toc/pull/837"
+  },
+  {
+    "project_name": "Oxia",
+    "display_name": "Oxia",
+    "description": "Oxia is a scalable metadata store and coordination system",
+    "repos": [
+      {
+        "owner": "oxia-db",
+        "name": "oxia",
+        "primary": true
+      },
+      {
+        "owner": "oxia-db",
+        "name": "oxia-client-java",
+        "primary": false
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Coordination & Service Discovery",
+    "date_accepted": "2025-10-06",
+    "homepage_url": "https://oxia-db.github.io",
+    "repo_url": "https://github.com/oxia-db/oxia",
+    "clomonitor_name": "oxia",
+    "dev_stats_url": "https://oxia.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "Xline",
@@ -4500,6 +4560,29 @@
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/carvel_dev"
+  },
+  {
+    "project_name": "Dalec",
+    "display_name": "Dalec",
+    "description": "Dalec provides a declarative format for building system packages and containers from those packages in a secure way for supply chain security.",
+    "repos": [
+      {
+        "owner": "project-dalec",
+        "name": "dalec",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Application Definition & Image Build",
+    "date_accepted": "2025-10-08",
+    "homepage_url": "https://github.com/project-dalec/dalec",
+    "repo_url": "https://github.com/project-dalec/dalec",
+    "clomonitor_name": "dalec",
+    "dev_stats_url": "https://dalec.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "Dapr",
