@@ -135,6 +135,7 @@
     "category": "Provisioning",
     "subcategory": "Automation & Configuration",
     "date_accepted": "2022-06-17",
+    "date_archived": "2025-05-22",
     "homepage_url": "https://www.devstream.io/",
     "repo_url": "https://github.com/devstream-io/devstream",
     "blog_url": "https://blog.devstream.io/",
@@ -763,6 +764,33 @@
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "default_branch": "master"
+  },
+  {
+    "project_name": "Cedar",
+    "display_name": "Cedar",
+    "description": "Cedar is an open source authorization policy language that enables developers to express fine-grained permissions as easy-to-understand policies enforced in their applications, and decouple access control from application logic. Cedar is designed to be ergonomic, fast, safe, and analyzable using automated reasoning. Cedar's simple and intuitive syntax supports common authorization use-cases with readable policies, naturally expressing concepts from role-based, attribute-based, and relation-based access control models. Cedar's policy structure enables authorization requests to be decided quickly. Its policy validator uses optional typing to help policy writers avoid mistakes, but not get in their way. Cedar's design has been finely balanced to allow for a sound, complete, and decidable logical encoding, which enables precise automated analysis of Cedar policies, e.g., to ensure that policy refactoring preserves existing permissions. Cedar's language specification has been formally verified using a theorem prover to satisfy key security properties like \"deny trumps allow,\" and its implementation in Rust undergoes rigorous differential random testing against its formal specification. By combining mathematical rigor with developer-friendly design, Cedar offers a practical approach to secure, maintainable authorization for modern applications.",
+    "repos": [
+      {
+        "owner": "cedar-policy",
+        "name": "cedar",
+        "primary": true
+      },
+      {
+        "owner": "cedar-policy",
+        "name": "cedar-access-control-for-k8s",
+        "primary": false
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Security & Compliance",
+    "date_accepted": "2025-10-08",
+    "homepage_url": "https://cedarpolicy.com",
+    "repo_url": "https://github.com/cedar-policy/cedar",
+    "clomonitor_name": "cedar",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "cert-manager",
@@ -1662,6 +1690,7 @@
     "category": "Provisioning",
     "subcategory": "Key Management",
     "date_accepted": "2022-04-26",
+    "date_archived": "2025-05-20",
     "homepage_url": "https://tlr.dev",
     "repo_url": "https://github.com/tellerops/teller",
     "clomonitor_name": "teller",
@@ -2206,7 +2235,8 @@
     "dev_stats_url": "https://lima.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://x.com/TheLimaProject"
   },
   {
     "project_name": "Podman Container Tools",
@@ -2446,6 +2476,7 @@
     "category": "Runtime",
     "subcategory": "Cloud Native Network",
     "date_accepted": "2020-06-25",
+    "date_archived": "2025-05-22",
     "homepage_url": "https://cnigenie.netlify.app",
     "repo_url": "https://github.com/cni-genie/CNI-Genie",
     "clomonitor_name": "cni-genie",
@@ -2819,10 +2850,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2021-04-28",
+    "date_incubating": "2026-01-08",
     "homepage_url": "https://fluid-cloudnative.github.io/",
     "repo_url": "https://github.com/fluid-cloudnative/fluid",
     "clomonitor_name": "fluid",
@@ -2873,7 +2905,7 @@
     "repo_url": "https://github.com/karmada-io/karmada",
     "clomonitor_name": "karmada",
     "summary_business_use_case": "Managing workloads across diverse enterprise environments is complex. Karmada, a multi-cluster orchestration system, provides a unified  control plane for Kubernetes clusters. It enables seamless workload deployment, scaling, and management across on-premises and multi-cloud  setups, addressing operational challenges, reducing vendor lock-in, and enhancing disaster recovery and infrastructure efficiency.",
-    "summary_integrations": "Grafana, Prometheus, Argo, Flux, Istio, Filebeat, Submariner, Velero, etc.",
+    "summary_integrations": "Volcano, Kubeflow, Kyverno, Pytorch, TensorFlow, Flink, Spark, OpenKruise, Grafana, Prometheus, Argo, Flux, Istio, Filebeat, Submariner, Velero, etc.",
     "summary_personas": "Cloud Architects, Platform Engineers, DevOps Engineer, DevOps practitioners, DevSecOps practitioners",
     "summary_tags": "multi-cloud, hybrid cloud",
     "summary_use_case": "Karmada (Kubernetes Armada) is a Kubernetes management system that enables you to run your cloud-native applications across multiple Kubernetes clusters and clouds, with no changes to your applications. By speaking Kubernetes-native APIs and providing advanced scheduling  capabilities, Karmada enables truly open, multi-cloud Kubernetes. Karmada aims to provide turnkey automation for multi-cluster application management in multi-cloud and hybrid cloud scenarios, with key  features such as centralized multi-cloud management, high availability, failure recovery, and traffic scheduling.",
@@ -3651,6 +3683,7 @@
     "category": "Orchestration & Management",
     "subcategory": "Service Proxy",
     "date_accepted": "2021-11-09",
+    "date_archived": "2025-05-22",
     "homepage_url": "https://openelb.github.io",
     "repo_url": "https://github.com/openelb/openelb",
     "clomonitor_name": "openelb",
@@ -3934,6 +3967,7 @@
     "category": "Orchestration & Management",
     "subcategory": "Service Mesh",
     "date_accepted": "2022-12-14",
+    "date_archived": "2025-05-20",
     "homepage_url": "https://merbridge.io/",
     "repo_url": "https://github.com/merbridge/merbridge",
     "blog_url": "https://merbridge.io/blog/",
@@ -5059,6 +5093,7 @@
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2022-04-26",
+    "date_archived": "2025-05-20",
     "homepage_url": "http://sealer.cool/",
     "repo_url": "https://github.com/sealerio/sealer",
     "clomonitor_name": "sealer",
@@ -5807,6 +5842,53 @@
     "date_archived": "2024-01-31",
     "homepage_url": "https://ingraind.org/",
     "repo_url": "https://github.com/foniod/foniod",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "Headlamp",
+    "display_name": "Headlamp",
+    "description": "Extensible open source multi-cluster Kubernetes user interface",
+    "repos": [
+      {
+        "owner": "kubernetes-sigs",
+        "name": "headlamp",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Observability and Analysis",
+    "subcategory": "Observability",
+    "date_accepted": "2023-05-17",
+    "homepage_url": "https://headlamp.dev",
+    "repo_url": "https://github.com/kubernetes-sigs/headlamp",
+    "blog_url": "https://headlamp.dev/blog",
+    "clomonitor_name": "headlamp",
+    "dev_stats_url": "https://headlamp.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/headlamp_ui"
+  },
+  {
+    "project_name": "HolmesGPT",
+    "display_name": "HolmesGPT",
+    "description": "HolmesGPT is an AI agent that automates cloud-native troubleshooting, bridging knowledge gaps by investigating alerts, executing runbooks, and correlating observability data in cloud-native platforms.",
+    "repos": [
+      {
+        "owner": "HolmesGPT",
+        "name": "holmesgpt",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Observability and Analysis",
+    "subcategory": "Observability",
+    "date_accepted": "2025-10-08",
+    "homepage_url": "https://holmesgpt.dev",
+    "repo_url": "https://github.com/HolmesGPT/holmesgpt",
+    "clomonitor_name": "holmesgpt",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
