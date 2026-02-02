@@ -1,6 +1,6 @@
 {
 
-  "name": "github-repo-supply-chain-datacollector",
+  "name": "supply-chain-security-collector",
   "version": "1.0.0",
   "description": "Generic GraphQL data collection tool with DuckDB storage and Parquet export",
   "scripts": {
@@ -9,7 +9,6 @@
     "landscape": "ts-node src/neo.ts --input input/cncf-full-landscape.json --queries GetRepoDataExtendedInfo --analyze --parallel",
     "test:single": "ts-node src/neo.ts --input input/test-single-project.json --queries GetRepoDataExtendedInfo --analyze --parallel",
     "test:three": "ts-node src/neo.ts --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --analyze --parallel",
-    "test:simple": "ts-node src/neo.ts --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze --parallel",
     "collect": "ts-node src/neo.ts",
     "analyze": "ts-node src/analyze.ts",
     "fetch:landscape": "ts-node scripts/fetch-cncf-landscape.ts",
