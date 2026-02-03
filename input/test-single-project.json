@@ -2,7 +2,6 @@
   {
     "project_name": "Jaeger",
     "display_name": "Jaeger",
-    "description": "Distributed tracing platform for monitoring and troubleshooting microservices-based distributed systems",
     "repos": [
       {
         "owner": "jaegertracing",

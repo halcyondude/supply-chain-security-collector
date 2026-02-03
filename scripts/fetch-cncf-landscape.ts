@@ -7,7 +7,7 @@
 //    - test-single-project.json (quick testing)
 //    - test-three-projects.json (three projects for testing)
 //
-// Run with: npm run fetch-landscape
+// Run with: npm run fetch:landscape
 
 import fetch from 'node-fetch';
 import * as fs from 'fs';
@@ -19,11 +19,11 @@ import * as yaml from 'yaml';
 // ============================================================================
 
 const TEST_PROJECTS = {
-  single: 'Kubernetes',      // Well-known graduated project
+  single: 'Jaeger',      // Well-known graduated project
   triple: [
     'Kubernetes',            // Graduated
     'Harbor',                // Graduated
-    'Atlantis'               // Sandbox, single repo
+    'Jaeger'               // Sandbox, single repo
   ]
 };
 

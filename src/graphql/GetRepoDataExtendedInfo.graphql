@@ -8,6 +8,7 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
     description
     licenseInfo {
       __typename
+      id
       key
       name
       spdxId
@@ -15,9 +16,11 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
     hasVulnerabilityAlertsEnabled
     defaultBranchRef {
       __typename
+      id
       name
       branchProtectionRule {
         __typename
+        id
         allowsDeletions
         allowsForcePushes
         dismissesStaleReviews
@@ -32,6 +35,7 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
     branchProtectionRules(first: 10) {
       nodes {
         __typename
+        id
         allowsDeletions
         allowsForcePushes
         dismissesStaleReviews
