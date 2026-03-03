@@ -34,6 +34,10 @@ output*/
 coverage/
 *.log
 .private-docs/
+clone-sandbox/
+.claude/
+repomix-output.xml
+docs/cc-plan.md
 
 # Downloaded landscape.yml (1MB+, changes frequently)
 scripts/landscape.yml
