@@ -119,7 +119,10 @@ export class SecurityAnalyzer {
         }
 
         console.log(chalk.green.bold('\n✅ Analysis complete!\n'));
-        
+
+        // Export agg_* tables to Parquet alongside base_* files
+        await this.exportAggTablesToParquet();
+
         // Export SBOMs and Attestations to CSV
         console.log(chalk.cyan('📄 Exporting Security Insights to CSV...'));
         const outputDir = path.dirname(this.dbPath);
@@ -358,6 +361,46 @@ export class SecurityAnalyzer {
             void rows; // result not needed, just verifying the query doesn't throw
         } catch {
             console.log(chalk.yellow(`    ⚠ FTS index on base_workflows not available — tool detection may fall back`));
+        }
+    }
+
+    /**
+     * Export all agg_* tables to Parquet files alongside base_* files
+     */
+    private async exportAggTablesToParquet() {
+        const outputDir = path.dirname(this.dbPath);
+        const parquetDir = path.join(outputDir, 'parquet');
+
+        // Ensure parquet directory exists
+        await fs.mkdir(parquetDir, { recursive: true });
+
+        try {
+            const result = await this.con!.run(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'BASE TABLE' AND table_name LIKE 'agg_%' ORDER BY table_name"
+            );
+            const rows = await result.getRows();
+
+            if (rows.length === 0) {
+                console.log(chalk.gray('  No agg_* tables to export'));
+                return;
+            }
+
+            console.log(chalk.cyan('📦 Exporting agg_* tables to Parquet...'));
+            for (const row of rows) {
+                const tableName = String(row[0]);
+                const parquetPath = path.join(parquetDir, `${tableName}.parquet`);
+                try {
+                    await this.con!.run(
+                        `COPY ${tableName} TO '${parquetPath}' (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000)`
+                    );
+                    console.log(chalk.green(`  ✓ Exported ${tableName}.parquet`));
+                } catch (exportErr) {
+                    const msg = exportErr instanceof Error ? exportErr.message : String(exportErr);
+                    console.log(chalk.yellow(`  ⚠ Could not export ${tableName}: ${msg.substring(0, 100)}`));
+                }
+            }
+        } catch {
+            console.log(chalk.yellow('  ⚠ Could not export agg_* tables to Parquet'));
         }
     }
 
