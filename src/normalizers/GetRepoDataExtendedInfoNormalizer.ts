@@ -82,77 +82,7 @@ interface SecurityMarkdown {
 }
 
 
-import { processYaml, processMarkdown, processDockerfile } from '../NormalizerTools.js';
 
-interface RepoFile {
-    id: string;
-    repository_id: string;
-    path: string;
-    type: 'markdown' | 'yml' | 'dockerfile' | 'text';
-    content: string | null;
-    parsed_json?: any;
-    markdown_headings?: string[];
-}
-
-
-const fileConfig = [
-    { path: 'SECURITY.md', type: 'markdown', source: 'securityPolicy' },
-    { path: 'SECURITY-INSIGHTS.yml', type: 'yml', source: 'insightsFileRootUpper' },
-    { path: 'security-insights.yml', type: 'yml', source: 'insightsFileRootLower' },
-    { path: '.github/SECURITY-INSIGHTS.yml', type: 'yml', source: 'insightsFileGithubUpper' },
-    { path: '.github/security-insights.yml', type: 'yml', source: 'insightsFileGithubLower' },
-    { path: '.github/dependabot.yml', type: 'yml', source: 'dependabot' },
-    // Add more config entries as needed
-];
-
-function extractRepoFiles(responses: GetRepoDataExtendedInfoQuery[]): RepoFile[] {
-    const results: RepoFile[] = [];
-    for (const response of responses) {
-        const repo = response.repository;
-        if (!repo) continue;
-
-        for (const cfg of fileConfig) {
-            const fileObj = (repo as any)[cfg.source];
-            if (fileObj && fileObj.__typename === 'Blob' && fileObj.text) {
-                const file: RepoFile = {
-                    id: `${repo.id}:${cfg.path}`,
-                    repository_id: repo.id,
-                    path: cfg.path,
-                    type: cfg.type as 'markdown' | 'yml' | 'dockerfile' | 'text',
-                    content: fileObj.text,
-                };
-                if (cfg.type === 'yml' || cfg.path.endsWith('.yaml')) {
-                    file.parsed_json = processYaml(fileObj.text);
-                }
-                if (cfg.type === 'markdown') {
-                    file.markdown_headings = processMarkdown(fileObj.text).headings;
-                }
-                results.push(file);
-            }
-        }
-        // Workflows (.github/workflows/*.yml or *.yaml)
-        const workflowsObj = repo.workflows;
-        if (workflowsObj && workflowsObj.__typename === 'Tree' && workflowsObj.entries) {
-            for (const entry of workflowsObj.entries as Array<{ name: string; object: any }>) {
-                if (entry.object && entry.object.__typename === 'Blob' && entry.object.text) {
-                    const ext = entry.name.endsWith('.yaml') ? 'yaml' : entry.name.endsWith('.yml') ? 'yml' : null;
-                    const file: RepoFile = {
-                        id: `${repo.id}:.github/workflows/${entry.name}`,
-                        repository_id: repo.id,
-                        path: `.github/workflows/${entry.name}`,
-                        type: (ext === 'yaml' || ext === 'yml' ? 'yml' : 'text') as 'markdown' | 'yml' | 'dockerfile' | 'text',
-                        content: entry.object.text,
-                    };
-                    if (file.type === 'yml') {
-                        file.parsed_json = processYaml(entry.object.text);
-                    }
-                    results.push(file);
-                }
-            }
-        }
-    }
-    return results;
-}
 
 
 /**
@@ -302,17 +232,13 @@ export function normalizeGetRepoDataExtendedInfo(
         }
     }
 
-    // Dummy extractSecurityMarkdown for now (returns empty array)
-    function extractSecurityMarkdown(_responses: GetRepoDataExtendedInfoQuery[]): SecurityMarkdown[] {
-        return [];
-    }
     return {
         base_repositories: repositories,
         base_branch_protection_rules: branch_protection_rules,
         base_releases: releases,
         base_release_assets: release_assets,
         base_workflows: workflows,
-        base_security_md: extractSecurityMarkdown(responses),
+        base_security_md: [],
     };
 }
 

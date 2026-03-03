@@ -121,7 +121,7 @@ async function createNormalizedTables(
         await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir, responseMetadata, persistFiles);
     } else if (queryName === 'GetRepoDataArtifacts') {
         // Legacy query - kept for compatibility
-        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir, responseMetadata);
+        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
     } else {
         console.warn(`  ⚠️  Unknown query type: ${queryName}. Skipping normalization.`);
         console.warn(`  💡 To add support, create a normalizer and add handling here.`);
@@ -140,7 +140,6 @@ async function createTablesForArtifactsQuery(
     con: DuckDBConnection,
     responses: GetRepoDataArtifactsQuery[],
     outputDir: string,
-    _responseMetadata?: Array<{ repo: RepositoryTarget; metadata?: ProjectMetadata }>
 ) {
     const normalized = normalizeGetRepoDataArtifacts(responses);
     console.log(getArtifactsStats(normalized));

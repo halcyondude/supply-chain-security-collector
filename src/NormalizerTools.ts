@@ -6,7 +6,7 @@ import yaml from 'yaml';
 export function processYaml(content: string): any {
     try {
         return yaml.parse(content);
-    } catch (err) {
+    } catch {
         return null;
     }
 }

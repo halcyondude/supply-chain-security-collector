@@ -62,7 +62,7 @@ export class SecurityAnalyzer {
         try {
             await this.con!.run(tableSql);
             await this.getAndLogTableRowCount(tableName);
-        } catch (err) {
+        } catch {
             console.log(chalk.red(`  ✗ ${tableName}: (error creating or counting rows)`));
         }
     }
