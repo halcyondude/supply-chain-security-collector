@@ -1,12 +1,19 @@
 -- ============================================================================
 -- 00_initialize_indexes.sql
--- 
+--
 -- Creates indexes including full-text search indexes for improved query
 -- performance on text-heavy columns.
 --
 -- This should run AFTER base_* tables are created but BEFORE analysis models.
 -- Gracefully handles missing tables via SecurityAnalyzer error handling.
+--
+-- NOTE: FTS PRAGMA statements MUST be run as individual statements, not batched.
+-- SecurityAnalyzer.runModel splits this file on semicolons for model 00.
 -- ============================================================================
+
+-- Ensure FTS extension is available (idempotent)
+INSTALL fts;
+LOAD fts;
 
 -- Full-Text Search Index on workflow content
 -- Enables fast searching of workflow YAML for tool names, commands, etc.
@@ -15,7 +22,7 @@ PRAGMA create_fts_index('base_workflows', 'id', 'content', overwrite=1);
 -- Full-Text Search Index on workflow filenames
 PRAGMA create_fts_index('base_workflows', 'id', 'filename', overwrite=1);
 
--- Full-Text Search Index on repository descriptions  
+-- Full-Text Search Index on repository descriptions
 PRAGMA create_fts_index('base_repositories', 'id', 'description', 'nameWithOwner', overwrite=1);
 
 -- Full-Text Search Index on release names
