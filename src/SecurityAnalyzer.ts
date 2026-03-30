@@ -62,7 +62,7 @@ export class SecurityAnalyzer {
         try {
             await this.con!.run(tableSql);
             await this.getAndLogTableRowCount(tableName);
-        } catch (err) {
+        } catch {
             console.log(chalk.red(`  ✗ ${tableName}: (error creating or counting rows)`));
         }
     }
@@ -119,7 +119,10 @@ export class SecurityAnalyzer {
         }
 
         console.log(chalk.green.bold('\n✅ Analysis complete!\n'));
-        
+
+        // Export agg_* tables to Parquet alongside base_* files
+        await this.exportAggTablesToParquet();
+
         // Export SBOMs and Attestations to CSV
         console.log(chalk.cyan('📄 Exporting Security Insights to CSV...'));
         const outputDir = path.dirname(this.dbPath);
@@ -286,28 +289,118 @@ export class SecurityAnalyzer {
 
     /**
      * Run a single SQL model file
+     *
+     * Model 00 (indexes) is special: FTS PRAGMA statements must be executed
+     * as individual statements, not batched. This method splits model 00
+     * on semicolons and runs each statement separately with graceful error
+     * handling for missing tables.
      */
     private async runModel(filename: string) {
         const modelPath = path.join(__dirname, '../sql/models', filename);
         console.log(chalk.cyan(`  Running ${filename}...`));
-        
+
         try {
             const sql = await fs.readFile(modelPath, 'utf-8');
-            
-            // Just run the entire SQL file - DuckDB handles it
-            await this.con!.run(sql);
-            
-            console.log(chalk.green(`    ✓ Completed`));
+
+            if (filename === '00_initialize_indexes.sql') {
+                // Split into individual statements for FTS PRAGMAs
+                const statements = sql
+                    .split(';')
+                    .map(s => s.replace(/--[^\n]*/g, '').trim())
+                    .filter(s => s.length > 0);
+
+                let succeeded = 0;
+                let skipped = 0;
+                for (const stmt of statements) {
+                    try {
+                        await this.con!.run(stmt);
+                        succeeded++;
+                    } catch (stmtError) {
+                        const msg = stmtError instanceof Error ? stmtError.message : String(stmtError);
+                        if (msg.includes('does not exist') || msg.includes('Catalog Error')) {
+                            skipped++;
+                            console.log(chalk.gray(`    ⓘ Skipped (table not present): ${stmt.substring(0, 80)}...`));
+                        } else {
+                            console.log(chalk.yellow(`    ⚠ Statement warning: ${msg.substring(0, 120)}`));
+                        }
+                    }
+                }
+                console.log(chalk.green(`    ✓ Completed (${succeeded} succeeded, ${skipped} skipped)`));
+
+                // Verify FTS indexes were created
+                await this.verifyFtsIndexes();
+            } else {
+                await this.con!.run(sql);
+                console.log(chalk.green(`    ✓ Completed`));
+            }
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : String(error);
-            
+
             // Only handle missing table errors gracefully
             if (errorMsg.includes('does not exist') || errorMsg.includes('Catalog Error')) {
-                console.log(chalk.gray(`    ⓘ Skipped - required tables not present` + errorMsg));
+                console.log(chalk.gray(`    ⓘ Skipped - required tables not present: ${errorMsg.substring(0, 100)}`));
             } else {
                 // Log other errors but don't abort
                 console.log(chalk.yellow(`    ⚠ Warning: ${errorMsg.substring(0, 200)}`));
             }
+        }
+    }
+
+    /**
+     * Verify that FTS indexes were created successfully by testing a match query.
+     * FTS virtual tables don't appear in information_schema, so we test directly.
+     */
+    private async verifyFtsIndexes() {
+        try {
+            // Test that the FTS index on base_workflows is queryable
+            const result = await this.con!.run(
+                "SELECT COUNT(*) FROM base_workflows WHERE fts_main_base_workflows.match_bm25(id, 'test') IS NOT NULL"
+            );
+            const rows = await result.getRows();
+            console.log(chalk.green(`    ✓ FTS indexes verified (workflow content index active)`));
+            void rows; // result not needed, just verifying the query doesn't throw
+        } catch {
+            console.log(chalk.yellow(`    ⚠ FTS index on base_workflows not available — tool detection may fall back`));
+        }
+    }
+
+    /**
+     * Export all agg_* tables to Parquet files alongside base_* files
+     */
+    private async exportAggTablesToParquet() {
+        const outputDir = path.dirname(this.dbPath);
+        const parquetDir = path.join(outputDir, 'parquet');
+
+        // Ensure parquet directory exists
+        await fs.mkdir(parquetDir, { recursive: true });
+
+        try {
+            const result = await this.con!.run(
+                "SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' AND table_type = 'BASE TABLE' AND table_name LIKE 'agg_%' ORDER BY table_name"
+            );
+            const rows = await result.getRows();
+
+            if (rows.length === 0) {
+                console.log(chalk.gray('  No agg_* tables to export'));
+                return;
+            }
+
+            console.log(chalk.cyan('📦 Exporting agg_* tables to Parquet...'));
+            for (const row of rows) {
+                const tableName = String(row[0]);
+                const parquetPath = path.join(parquetDir, `${tableName}.parquet`);
+                try {
+                    await this.con!.run(
+                        `COPY ${tableName} TO '${parquetPath}' (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000)`
+                    );
+                    console.log(chalk.green(`  ✓ Exported ${tableName}.parquet`));
+                } catch (exportErr) {
+                    const msg = exportErr instanceof Error ? exportErr.message : String(exportErr);
+                    console.log(chalk.yellow(`  ⚠ Could not export ${tableName}: ${msg.substring(0, 100)}`));
+                }
+            }
+        } catch {
+            console.log(chalk.yellow('  ⚠ Could not export agg_* tables to Parquet'));
         }
     }
 
