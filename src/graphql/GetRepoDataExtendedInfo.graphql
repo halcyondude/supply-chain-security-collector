@@ -61,7 +61,7 @@ query GetRepoDataExtendedInfo($owner: String!, $name: String!) {
         text
       }
     }
-    releases(last: 5, orderBy: { field: CREATED_AT, direction: DESC }) {
+    releases(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         __typename
         id
