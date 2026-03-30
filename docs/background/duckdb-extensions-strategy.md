@@ -18,12 +18,13 @@ This document outlines our strategy for leveraging DuckDB extensions to enhance 
 **Use cases:**
 ```sql
 -- Find all workflows mentioning specific tools
-CREATE INDEX idx_workflow_fts ON base_workflows USING FTS(content);
-SELECT * FROM base_workflows WHERE content MATCH 'cosign OR sigstore';
+PRAGMA create_fts_index('base_workflows', 'id', 'content');
+SELECT * FROM base_workflows
+WHERE fts_main_base_workflows.match_bm25(id, 'cosign OR sigstore') IS NOT NULL;
 
 -- Search repository descriptions for supply chain keywords
-SELECT * FROM base_repositories 
-WHERE description MATCH 'supply chain OR sbom OR provenance';
+SELECT * FROM base_repositories
+WHERE fts_main_base_repositories.match_bm25(id, 'supply chain OR sbom OR provenance') IS NOT NULL;
 ```
 
 **Impact:** 🚀 Dramatically improves tool detection and exploration capabilities
@@ -32,18 +33,12 @@ WHERE description MATCH 'supply chain OR sbom OR provenance';
 **Why we need it:**
 - Already handling JSON (GraphQL responses, workflow artifacts)
 - GitHub API returns deeply nested JSON structures
-- `security_features` column stores JSON
 - Future: Parse workflow JSON configs, GitHub Actions metadata
 
 **Use cases:**
 ```sql
--- Extract specific fields from security_features JSON
-SELECT nameWithOwner, 
-       json_extract(security_features, '$.dependabot_enabled') as has_dependabot
-FROM base_repositories;
-
 -- Parse complex workflow definitions
-SELECT workflow_id, json_extract(workflow_data, '$.jobs.*.steps[*].uses') 
+SELECT id, json_extract(content, '$.jobs.*.steps[*].uses')
 FROM base_workflows;
 ```
 
@@ -172,7 +167,7 @@ Leveraging FTS for better tool detection:
 WHERE workflow_content LIKE '%cosign%'
 
 -- After: Full-text search
-WHERE workflow_content MATCH 'cosign OR sigstore OR fulcio'
+WHERE fts_main_base_workflows.match_bm25(id, 'cosign OR sigstore OR fulcio') IS NOT NULL
 ```
 
 ### JSON Processing
@@ -181,9 +176,8 @@ Using JSON functions for cleaner queries:
 ```sql
 -- Before: Parse JSON in TypeScript
 -- After: Query JSON directly in SQL
-SELECT nameWithOwner,
-       json_extract(security_features, '$.dependabot_enabled') as has_dependabot
-FROM base_repositories;
+SELECT id, json_extract(content, '$.jobs.*.steps[*].uses') as actions_used
+FROM base_workflows;
 ```
 
 ## Future Enhancements
