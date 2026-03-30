@@ -184,6 +184,66 @@ CREATE TABLE base_branch_protection_rules (
 
 **Source:** Extracted from `repository.branchProtectionRules.nodes[]` (GetRepoDataExtendedInfo only)
 
+### base_security_md
+
+SECURITY.md file content from repositories.
+
+**Schema:**
+```sql
+CREATE TABLE base_security_md (
+  id TEXT PRIMARY KEY,
+  __typename TEXT,
+  repository_id TEXT NOT NULL,
+  path TEXT,
+  content TEXT,
+  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
+);
+```
+
+**Source:** Extracted from repository tree traversal for `SECURITY.md`
+
+### base_si_documents
+
+Security Insights specification documents fetched from repositories.
+
+**Schema:**
+```sql
+CREATE TABLE base_si_documents (
+  repo_id TEXT NOT NULL,
+  source_url TEXT,
+  schema_version TEXT,
+  document JSON,
+  fetched_at TIMESTAMP,
+  FOREIGN KEY (repo_id) REFERENCES base_repositories(id)
+);
+```
+
+**Source:** Fetched from Security Insights YAML files referenced in repository metadata
+
+### base_si_sboms
+
+SBOM references declared in Security Insights documents.
+
+**Schema:**
+```sql
+CREATE TABLE base_si_sboms (
+  repo_id TEXT NOT NULL,
+  source_url TEXT,
+  fetched_at TIMESTAMP,
+  schema_version TEXT,
+  last_updated TEXT,
+  repository_url TEXT,
+  project_name TEXT,
+  sbom_format TEXT,
+  sbom_url TEXT,
+  sbom_file TEXT,
+  sbom_comment TEXT,
+  FOREIGN KEY (repo_id) REFERENCES base_repositories(id)
+);
+```
+
+**Source:** Extracted from SBOM entries in Security Insights documents
+
 ### base_cncf_projects (optional)
 
 CNCF project metadata when using rich input format.
@@ -462,19 +522,18 @@ ORDER BY rel.createdAt DESC, ra.name;
 All tables are exported to Parquet files with metadata:
 
 ```text
-output/test-run-2025-10-12T19-20-16/
-└── GetRepoDataExtendedInfo/
-    ├── database.db
-    └── parquet/
-        ├── raw_GetRepoDataExtendedInfo.parquet
-        ├── base_repositories.parquet
-        ├── base_releases.parquet
-        ├── base_release_assets.parquet
-        ├── base_workflows.parquet
-        ├── base_branch_protection_rules.parquet
-        ├── agg_artifact_patterns.parquet
-        ├── agg_workflow_tools.parquet
-        └── agg_repo_summary.parquet
+output/<input-name>/
+  <timestamp>/
+    database.db
+    parquet/
+      base_*.parquet
+      agg_*.parquet
+      raw_*.parquet
+    raw-responses.<QueryName>.jsonl
+    security-insights-sboms.csv
+    security-insights-attestations.csv
+    files/
+  current -> <timestamp>/
 ```
 
 These can be queried directly with DuckDB, Python (PyArrow/Pandas), or any Parquet-compatible tool.

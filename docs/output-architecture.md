@@ -2,34 +2,27 @@
 
 ## Overview
 
-This document describes the output file structure and Parquet generation strategy implemented in the GitHub Supply Chain Security Analyzer.
+This document describes the output file structure and Parquet generation strategy implemented in the supply chain security collector.
 
 ## Timestamped Run Directories
 
 ### Structure
 
-Each run creates a timestamped directory:
+Each run creates a timestamped directory under a flat layout named after the input file:
 
 ```text
-output/
-  test-single-project/
-    2025-10-17T14-30-00/          # Timestamped run directory
-      database.db                 # DuckDB database with all tables
-      parquet/                    # Parquet exports of all tables
-        raw_GetRepoDataExtendedInfo.parquet
-        base_repositories.parquet
-        base_releases.parquet
-        base_release_assets.parquet
-        base_workflows.parquet
-        base_branch_protection_rules.parquet
-        agg_artifact_patterns.parquet
-        agg_workflow_tools.parquet
-        agg_repo_summary.parquet
-        (... additional agg_* and CNCF tables if applicable)
-      raw-responses.GetRepoDataExtendedInfo.jsonl  # API audit trail
-      security-insights-sboms.csv
-      security-insights-attestations.csv
-    current -> 2025-10-17T14-30-00   # Symlink to latest run
+output/<input-name>/
+  <timestamp>/
+    database.db                         # DuckDB database with all tables
+    parquet/                            # Parquet exports of all tables
+      base_*.parquet
+      agg_*.parquet
+      raw_*.parquet
+    raw-responses.<QueryName>.jsonl     # API audit trail
+    security-insights-sboms.csv
+    security-insights-attestations.csv
+    files/                              # extracted workflow/insights files
+  current -> <timestamp>/              # symlink to latest
 ```
 
 ### Benefits
@@ -170,226 +163,12 @@ if (runMetadata) {
 
 ---
 
-## File Generation Flow
+## Data Pipeline
 
-```
-1. Fetch data from GitHub API
-   ↓
-2. Save raw responses to raw-responses.jsonl
-   ↓
-3. Analyze and classify artifacts
-   ↓
-4. Generate {dataset}-analyzed.json (domain model)
-   ↓
-5. Flatten to normalized rows
-   ↓
-6. Generate {dataset}.csv (normalized flat)
-   ↓
-7. Generate {dataset}-schema.json (field docs)
-   ↓
-8. Read schema.json + analyzed.json
-   ↓
-9. Convert to {dataset}-analyzed.parquet with embedded metadata
-```
+The output is produced in three stages:
 
----
+1. **Collection** (`neo.ts`): Fetches data from GitHub GraphQL API, passes responses through query-specific normalizers, and writes to DuckDB `base_*` tables and Parquet via `ArtifactWriter`.
 
-## JSONL Long Lines
+2. **Analysis** (`analyze.ts`): Runs `SecurityAnalyzer` with SQL models (`sql/models/*.sql`) to produce `agg_*` tables, then exports them to Parquet.
 
-Lines in `raw-responses.jsonl` can be 10KB-100KB+ (full GraphQL response with 5 releases × N assets).
-
-This is fine because:
-
-- `jq` handles it: `jq -c '.metadata' raw-responses.jsonl`
-- DuckDB handles it: Designed for large JSON records
-- Streaming parsers handle it: Node.js `readline`, Python `ijson`
-- Parquet solves it: Columnar format, no line-length concerns
-
-Mitigation:
-
-- Document in README: "JSONL files have very long lines"
-- Use `.jsonl` extension (not `.json`) to signal format
-- Provide Parquet files for analysis (not JSONL)
-
----
-
-## Querying Parquet Files
-
-### Using DuckDB CLI
-
-Count repos with SBOMs:
-
-```sql
-SELECT 
-  repository_name_with_owner,
-  COUNT(DISTINCT artifact_name) as sbom_count
-FROM 'output/graduated-2025-10-06T22-30-15/graduated-analyzed.parquet'
-WHERE artifact_is_sbom = true
-GROUP BY repository_name_with_owner
-ORDER BY sbom_count DESC;
-```
-
-Check embedded metadata:
-
-```sql
-SELECT * 
-FROM parquet_kv_metadata('output/graduated-2025-10-06T22-30-15/graduated-analyzed.parquet')
-WHERE key LIKE 'field_%'
-LIMIT 10;
-```
-
-### Using Python (PyArrow)
-
-```python
-import pyarrow.parquet as pq
-
-# Read Parquet file
-table = pq.read_table('output/graduated-2025-10-06T22-30-15/graduated-analyzed.parquet')
-
-# Access metadata
-metadata = table.schema.metadata
-print(metadata[b'field_repository_name'].decode())  # "Name of the repository"
-
-# Query with Pandas
-df = table.to_pandas()
-sbom_repos = df[df['artifact_is_sbom'] == True]
-print(sbom_repos['repository_name_with_owner'].unique())
-```
-
----
-
-## Future Enhancements
-
-### Phase 3: Raw Responses to Parquet
-
-Currently, only analyzed JSON is converted to Parquet. Future work will convert raw-responses.jsonl → raw-responses.parquet:
-
-```sql
-COPY (
-  SELECT 
-    metadata.queryType as query_type,
-    metadata.timestamp as timestamp,
-    metadata.owner as owner,
-    metadata.repo as repo,
-    response
-  FROM read_json_auto('raw-responses.jsonl', format='newline_delimited')
-) TO 'raw-responses.parquet' (FORMAT PARQUET, COMPRESSION ZSTD);
-```
-
-Benefits:
-
-- Smaller file size (ZSTD compression)
-- Faster queries (columnar format)
-- Same metadata embedding
-
-### Phase 4: Query-Specific Tables
-
-Split by query type for schema consistency:
-
-```text
-output/
-  graduated-2025-10-06T22-30-15/
-    artifacts-raw.parquet         # GetRepoDataArtifacts responses
-    extended-raw.parquet          # GetRepoDataExtendedInfo responses
-```
-
-Implementation:
-
-```sql
--- Filter by query type
-COPY (
-  SELECT * FROM 'raw-responses.jsonl'
-  WHERE metadata.queryType = 'GetRepoDataArtifacts'
-) TO 'artifacts-raw.parquet';
-```
-
-### Phase 5: DuckDB Query Engine
-
-Add `query` subcommand for SQL over Parquet files:
-
-```bash
-npm start -- query --sql "SELECT COUNT(*) FROM '*/graduated-analyzed.parquet' WHERE artifact_is_sbom"
-```
-
----
-
-## Dependencies
-
-- **duckdb** (^1.1.3) - SQL database for JSON/Parquet conversion
-- **chalk** - Console colors
-- **json-2-csv** - JSON to CSV conversion
-
----
-
-## Testing
-
-Validate Parquet generation:
-
-```bash
-# Run with mock data
-npm start -- --mock --input input/test-single.jsonl
-
-# Check output directory
-ls output/test-single-*/
-
-# Verify Parquet metadata
-npx duckdb -c "SELECT * FROM parquet_kv_metadata('output/test-single-*/test-single-analyzed.parquet')"
-```
-
-Expected output:
-
-- `raw-responses.jsonl` (or skipped in mock mode)
-- `test-single-analyzed.json`
-- `test-single.csv`
-- `test-single-schema.json`
-- `test-single-analyzed.parquet` (with 50+ KV metadata entries)
-
-## Troubleshooting
-
-### "Cannot find module 'duckdb'"
-
-Solution: Install dependencies
-
-```bash
-npm install
-```
-
-### Parquet file not generated
-
-Check:
-
-1. Is `runMetadata` provided to `generateReports()`?
-2. Does `{dataset}-analyzed.json` exist?
-3. Does `{dataset}-schema.json` exist?
-4. Are there compile errors in `parquetWriter.ts`?
-
-Debug:
-
-```typescript
-// In src/report.ts, add logging:
-console.log('Generating Parquet:', basePathForParquet);
-await generateParquetFiles(...);
-console.log('Parquet generation complete');
-```
-
-### DuckDB installation fails (native module)
-
-Issue: DuckDB requires native compilation.
-
-Solution:
-
-- Ensure C++ compiler is installed (Xcode on macOS)
-- Try: `npm install duckdb --build-from-source`
-- Alternative: Use DuckDB CLI externally
-
-## Summary
-
-Implemented: Timestamped run directories prevent file collisions
-
-Implemented: DuckDB Parquet generation with schema metadata embedding
-
-Preserves: All field descriptions from schema.json in Parquet KV_METADATA
-
-Enables: SQL queries over Parquet with full field documentation
-
-Next: Add raw-responses.jsonl → Parquet conversion, query-specific tables
+3. **Reporting** (optional, `report-cli.ts`): Runs `ReportGenerator` to produce a Markdown summary report from the analyzed data.

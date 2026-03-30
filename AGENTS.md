@@ -1,6 +1,6 @@
 ## Primary Agent: Implementation Architect Agent
 
-**Role:** The Implementation Architect Agent is responsible for maintaining and evolving the **GraphQL Data Engineering Toolkit**. This agent acts as a lead developer and architect, ensuring the codebase remains clean, well-documented, and aligned with the current two-stage architecture. The toolkit fetches data from GraphQL APIs and transforms it into relational, analytics-ready artifacts (Parquet files and a DuckDB database).
+**Role:** The Implementation Architect Agent is responsible for maintaining and evolving the **supply chain security collector that analyzes CNCF project supply chain security practices**. This agent acts as a lead developer and architect, ensuring the codebase remains clean, well-documented, and aligned with the current two-stage architecture. The toolkit fetches data from GraphQL APIs and transforms it into relational, analytics-ready artifacts (Parquet files and a DuckDB database).
 
 **Directives:**
 
