@@ -234,15 +234,15 @@ async function createTablesForMetrics(
     }
 }
 
-// Helper function (already exists in ArtifactWriter.ts)
-async function createTableFromArray(
-    con: DuckDBConnection,
-    tableName: string,
-    data: unknown[]
-) {
-    const arrow = tableFromJSON(data);
-    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
-}
+// Helper: write temp JSON, load via read_json(), delete temp file
+// (pattern used throughout ArtifactWriter.ts)
+const tempPath = path.join(outputDir, `temp_base_repositories.json`);
+fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
+await con.run(`
+    CREATE TABLE base_repositories AS
+    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+`);
+fs.unlinkSync(tempPath);
 ```
 
 #### 5c. Export Parquet Files (automatic)
@@ -251,25 +251,25 @@ The `exportTablesToParquet()` function automatically exports all tables in the d
 
 ---
 
-## Data Loading: Arrow IPC (Not Temporary JSON Files)
+## Data Loading: Temp JSON + read_json()
 
-**Important:** The current implementation uses Apache Arrow IPC format for loading data into DuckDB, not temporary JSON files. This is ~10x faster for large datasets.
+Data is loaded into DuckDB by writing normalized arrays to temporary JSON files, then using DuckDB's `read_json()` to ingest them. The temp files are deleted immediately after loading.
 
 **Pattern:**
 ```typescript
-import { tableFromJSON } from 'apache-arrow';
-
-async function createTableFromArray(con: DuckDBConnection, tableName: string, data: unknown[]) {
-    const arrow = tableFromJSON(data);
-    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
-}
+const tempPath = path.join(outputDir, `temp_${tableName}.json`);
+fs.writeFileSync(tempPath, JSON.stringify(data));
+await con.run(`
+    CREATE TABLE ${tableName} AS
+    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+`);
+fs.unlinkSync(tempPath);
 ```
 
-**Why Arrow?**
-- 10x faster than JSON for large datasets
-- Zero-copy data transfer
-- Native DuckDB format
-- No temp file cleanup needed
+**Why this approach:**
+- DuckDB `read_json()` handles schema inference and `union_by_name` for heterogeneous records
+- No external dependencies (no Apache Arrow library needed)
+- Temp files are ephemeral and cleaned up inline
 
 ---
 

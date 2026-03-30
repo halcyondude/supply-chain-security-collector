@@ -487,8 +487,8 @@ fts_main_base_release_assets.match_bm25(ra.id, 'license OR copying OR notice') I
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Syft references
-REGEXP_MATCHES(w.content, '(?i)\bsyft\b')
+-- FTS-based detection for Syft in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'syft') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -516,8 +516,8 @@ REGEXP_MATCHES(w.content, '(?i)\bsyft\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Trivy references
-REGEXP_MATCHES(w.content, '(?i)\btrivy\b')
+-- FTS-based detection for Trivy in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -545,8 +545,8 @@ REGEXP_MATCHES(w.content, '(?i)\btrivy\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains CycloneDX generator references
-REGEXP_MATCHES(w.content, '(?i)\bcdxgen\b')
+-- FTS-based detection for cdxgen in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'cdxgen') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -571,8 +571,8 @@ REGEXP_MATCHES(w.content, '(?i)\bcdxgen\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains SPDX SBOM generator references
-REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b')
+-- FTS-based detection for spdx-sbom-generator in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'spdx-sbom-generator') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -596,8 +596,8 @@ REGEXP_MATCHES(w.content, '(?i)\bspdx-sbom-generator\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Tern references
-REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') as uses_tern
+-- FTS-based detection for Tern in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'tern') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -623,8 +623,8 @@ REGEXP_MATCHES(w.content, '(?i)\b(tern-tools/tern|tern.*sbom)\b') as uses_tern
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains Bomber references
-REGEXP_MATCHES(w.content, '(?i)\bdevops-kung-fu/bomber\b') as uses_bomber
+-- Proposed FTS-based detection for Bomber in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'devops-kung-fu bomber') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -651,8 +651,8 @@ REGEXP_MATCHES(w.content, '(?i)\bdevops-kung-fu/bomber\b') as uses_bomber
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains ORT references  
-REGEXP_MATCHES(w.content, '(?i)\boss-review-toolkit|ort-project\b') as uses_ort
+-- Proposed FTS-based detection for ORT in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'oss-review-toolkit OR ort-project') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -680,8 +680,8 @@ REGEXP_MATCHES(w.content, '(?i)\boss-review-toolkit|ort-project\b') as uses_ort
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Cosign references
-REGEXP_MATCHES(w.content, '(?i)\bcosign\b')
+-- FTS-based detection for Cosign in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'cosign') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -708,8 +708,8 @@ REGEXP_MATCHES(w.content, '(?i)\bcosign\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Sigstore references
-REGEXP_MATCHES(w.content, '(?i)\bsigstore\b')
+-- FTS-based detection for Sigstore in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'sigstore') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -735,8 +735,8 @@ REGEXP_MATCHES(w.content, '(?i)\bsigstore\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains SLSA GitHub Generator references
-REGEXP_MATCHES(w.content, '(?i)\bslsa-github-generator\b')
+-- FTS-based detection for SLSA GitHub Generator in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'slsa-github-generator') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -762,8 +762,8 @@ REGEXP_MATCHES(w.content, '(?i)\bslsa-github-generator\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Notation references
-REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') as uses_notation
+-- FTS-based detection for Notation in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'notation OR notaryproject') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -789,8 +789,8 @@ REGEXP_MATCHES(w.content, '(?i)\b(notation|notaryproject)\b') as uses_notation
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains Witness references
-REGEXP_MATCHES(w.content, '(?i)\btestifysec/witness\b') as uses_witness
+-- Proposed FTS-based detection for Witness in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'testifysec witness') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -816,8 +816,8 @@ REGEXP_MATCHES(w.content, '(?i)\btestifysec/witness\b') as uses_witness
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains Kyverno references
-REGEXP_MATCHES(w.content, '(?i)\bkyverno\b') as uses_kyverno
+-- Proposed FTS-based detection for Kyverno in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'kyverno') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -845,8 +845,8 @@ REGEXP_MATCHES(w.content, '(?i)\bkyverno\b') as uses_kyverno
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Snyk references
-REGEXP_MATCHES(w.content, '(?i)\bsnyk\b')
+-- FTS-based detection for Snyk in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'snyk') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -872,8 +872,10 @@ REGEXP_MATCHES(w.content, '(?i)\bsnyk\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Anchore or Grype references
-REGEXP_MATCHES(w.content, '(?i)\b(anchore|grype)\b')
+-- FTS-based detection for Anchore/Grype in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'anchore') IS NOT NULL
+-- or for Grype specifically:
+fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -898,8 +900,8 @@ REGEXP_MATCHES(w.content, '(?i)\b(anchore|grype)\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Trivy references (same as SBOM generator)
-REGEXP_MATCHES(w.content, '(?i)\btrivy\b')
+-- FTS-based detection for Trivy in workflow content (same as SBOM generator)
+fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -928,8 +930,8 @@ REGEXP_MATCHES(w.content, '(?i)\btrivy\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Clair references
-REGEXP_MATCHES(w.content, '(?i)\bclair\b')
+-- FTS-based detection for Clair in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'clair') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -955,8 +957,8 @@ REGEXP_MATCHES(w.content, '(?i)\bclair\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Docker Scout references
-REGEXP_MATCHES(w.content, '(?i)\bdocker.*scout\b') as uses_docker_scout
+-- FTS-based detection for Docker Scout in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'docker-scout') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -982,8 +984,8 @@ REGEXP_MATCHES(w.content, '(?i)\bdocker.*scout\b') as uses_docker_scout
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Twistlock references
-REGEXP_MATCHES(w.content, '(?i)\btwistlock\b')
+-- FTS-based detection for Twistlock in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'twistlock') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1003,8 +1005,8 @@ REGEXP_MATCHES(w.content, '(?i)\btwistlock\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Aqua references
-REGEXP_MATCHES(w.content, '(?i)\baqua\b')
+-- FTS-based detection for Aqua in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'aqua') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1026,8 +1028,8 @@ REGEXP_MATCHES(w.content, '(?i)\baqua\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Dependabot references
-REGEXP_MATCHES(w.content, '(?i)\bdependabot\b')
+-- FTS-based detection for Dependabot in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'dependabot') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1058,8 +1060,8 @@ updates:
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Renovate references
-REGEXP_MATCHES(w.content, '(?i)\brenovate\b')
+-- FTS-based detection for Renovate in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'renovate') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1085,8 +1087,8 @@ REGEXP_MATCHES(w.content, '(?i)\brenovate\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains WhiteSource references
-REGEXP_MATCHES(w.content, '(?i)\bwhitesource\b')
+-- FTS-based detection for WhiteSource in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'whitesource') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1106,8 +1108,8 @@ REGEXP_MATCHES(w.content, '(?i)\bwhitesource\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains FOSSA references  
-REGEXP_MATCHES(w.content, '(?i)\bfossa\b')
+-- FTS-based detection for FOSSA in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'fossa') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1135,8 +1137,8 @@ REGEXP_MATCHES(w.content, '(?i)\bfossa\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains CodeQL references
-REGEXP_MATCHES(w.content, '(?i)\bcodeql\b')
+-- FTS-based detection for CodeQL in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'codeql') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1164,8 +1166,8 @@ REGEXP_MATCHES(w.content, '(?i)\bcodeql\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Semgrep references
-REGEXP_MATCHES(w.content, '(?i)\bsemgrep\b')
+-- FTS-based detection for Semgrep in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'semgrep') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1191,8 +1193,8 @@ REGEXP_MATCHES(w.content, '(?i)\bsemgrep\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains Bandit references
-REGEXP_MATCHES(w.content, '(?i)\bbandit\b')
+-- FTS-based detection for Bandit in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'bandit') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1218,8 +1220,8 @@ REGEXP_MATCHES(w.content, '(?i)\bbandit\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains ESLint security references
-REGEXP_MATCHES(w.content, '(?i)\beslint-security\b')
+-- FTS-based detection for ESLint security in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'eslint-security') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1241,8 +1243,8 @@ REGEXP_MATCHES(w.content, '(?i)\beslint-security\b')
 
 **Detection Pattern:**
 ```sql
--- Workflow content contains GoReleaser action references
-REGEXP_MATCHES(w.content, '(?i)\bgoreleaser/goreleaser-action\b')
+-- FTS-based detection for GoReleaser in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'goreleaser-action') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1275,8 +1277,8 @@ REGEXP_MATCHES(w.content, '(?i)\bgoreleaser/goreleaser-action\b')
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains ScanCode references
-REGEXP_MATCHES(w.content, '(?i)\bscancode\b') as uses_scancode
+-- Proposed FTS-based detection for ScanCode in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'scancode') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1303,8 +1305,8 @@ REGEXP_MATCHES(w.content, '(?i)\bscancode\b') as uses_scancode
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains Licensee references
-REGEXP_MATCHES(w.content, '(?i)\blicensee\b') as uses_licensee
+-- Proposed FTS-based detection for Licensee in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'licensee') IS NOT NULL
 ```
 
 **Generated Artifacts:**
@@ -1332,8 +1334,8 @@ REGEXP_MATCHES(w.content, '(?i)\blicensee\b') as uses_licensee
 
 **Proposed Detection Pattern:**
 ```sql
--- Workflow content contains OPA references
-REGEXP_MATCHES(w.content, '(?i)\bopen-policy-agent|opa\b') as uses_opa
+-- Proposed FTS-based detection for OPA in workflow content
+fts_main_base_workflows.match_bm25(w.id, 'open-policy-agent OR opa') IS NOT NULL
 ```
 
 **Generated Artifacts:**
