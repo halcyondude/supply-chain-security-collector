@@ -106,9 +106,9 @@ async function main() {
   }
 
   // Validate GitHub token
-  const githubToken = process.env.GITHUB_PAT;
+  const githubToken = process.env.GITHUB_PERSONAL_ACCESS_TOKEN || process.env.GITHUB_PAT;
   if (!githubToken) {
-    throw new Error('GITHUB_PAT environment variable is required');
+    throw new Error('GITHUB_PERSONAL_ACCESS_TOKEN environment variable is required (GITHUB_PAT also accepted)');
   }
 
   // Output directory: output/<InputFileBase>/<timestamp>/

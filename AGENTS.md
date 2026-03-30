@@ -62,7 +62,7 @@ The toolkit supports two input formats (both JSON arrays, not JSONL):
 **Test Files:**
 
 - `input/test-single-project.json`: Single Kubernetes project (1 repo)
-- `input/test-three-projects.json`: Kubernetes, Harbor, Atlantis (3 repos, 3 maturities)
+- `input/test-three-projects.json`: Kubernetes, Harbor, Jaeger (3 repos, 3 maturities)
 - `input/test-simple-format.json`: Simple format (2 repos, no metadata)
 
 **Database Technology:**

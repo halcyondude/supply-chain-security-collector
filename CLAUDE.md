@@ -13,11 +13,14 @@ A GraphQL data engineering toolkit that analyzes GitHub repository supply chain 
 npm install                    # also runs codegen via postinstall
 
 # Run
-npm test                       # 3 CNCF projects (kubernetes, harbor, atlantis)
+npm test                       # 3 CNCF projects (kubernetes, harbor, jaeger)
 npm run test:single            # 1 project (kubernetes)
 npm run test:simple            # simple format (2 repos, no project metadata)
 npm start                      # full CNCF landscape (~230 projects)
 npm run analyze                # run SQL analysis on existing database
+npm run report                 # generate markdown report from database
+npm run graph                  # build LadybugDB property graph
+npm run graph:query            # run Cypher queries against graph
 
 # Code quality
 npm run lint                   # ESLint check
@@ -30,7 +33,7 @@ npm run fetch:landscape        # download latest CNCF landscape data
 npm run clean                  # remove output/, cache, dist
 ```
 
-**Environment:** Requires `GITHUB_PAT` env var (see `.env.template`). Node 18+, Python 3.12 (for notebooks only).
+**Environment:** Requires `GITHUB_PERSONAL_ACCESS_TOKEN` env var (see `.env.template`). `GITHUB_PAT` also accepted for backward compatibility. Node 18+, Python 3.12 (for notebooks only).
 
 ## Architecture
 
@@ -48,6 +51,8 @@ Input JSON → GitHub GraphQL API → query-specific TypeScript normalizers → 
 - `src/api.ts` — GitHub GraphQL client with rate limiting
 - `src/ArtifactWriter.ts` — DuckDB database + Parquet writer
 - `src/SecurityAnalyzer.ts` — SQL model execution engine
+- `src/ReportGenerator.ts` — markdown report generation from agg_* tables
+- `src/graph/` — LadybugDB property graph integration (GraphBuilder, schema, queries)
 - `src/normalizers/` — transform nested GraphQL responses → flat relational arrays (one per query)
 - `src/graphql/` — GraphQL query definitions
 - `src/generated/` — codegen output (do not edit)

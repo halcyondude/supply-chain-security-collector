@@ -11,6 +11,6 @@ fi
 echo "Error: .env file not found."
 echo "Copy the template and add your GitHub token:"
 echo "  cp .env.template .env"
-echo "Set GITHUB_PAT in .env with a Personal Access Token. Create one here:" 
+echo "Set GITHUB_PERSONAL_ACCESS_TOKEN in .env with a Personal Access Token. Create one here:" 
 echo "  https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token"
 exit 1

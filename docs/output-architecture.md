@@ -12,9 +12,8 @@ Each run creates a timestamped directory:
 
 ```text
 output/
-  test-single-2025-10-17T14-30-00/
-    raw-responses.jsonl           # Raw GraphQL API responses (JSONL)
-    GetRepoDataExtendedInfo/      # Query-specific subdirectory
+  test-single-project/
+    2025-10-17T14-30-00/          # Timestamped run directory
       database.db                 # DuckDB database with all tables
       parquet/                    # Parquet exports of all tables
         raw_GetRepoDataExtendedInfo.parquet
@@ -26,7 +25,11 @@ output/
         agg_artifact_patterns.parquet
         agg_workflow_tools.parquet
         agg_repo_summary.parquet
-        (... CNCF tables if applicable)
+        (... additional agg_* and CNCF tables if applicable)
+      raw-responses.GetRepoDataExtendedInfo.jsonl  # API audit trail
+      security-insights-sboms.csv
+      security-insights-attestations.csv
+    current -> 2025-10-17T14-30-00   # Symlink to latest run
 ```
 
 ### Benefits

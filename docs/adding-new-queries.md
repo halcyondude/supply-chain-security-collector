@@ -279,13 +279,13 @@ Once everything is wired up, you can run your query:
 
 ```bash
 # Run just your new query
-npm run collect -- --input input/test-single.jsonl --queries GetRepoDataMetrics
+npm run collect -- --input input/test-single.json --queries GetRepoDataMetrics
 
 # Run multiple queries including yours
-npm run collect -- --input input/repos.jsonl --queries GetRepoDataExtendedInfo GetRepoDataMetrics
+npm run collect -- --input input/repos.json --queries GetRepoDataExtendedInfo GetRepoDataMetrics
 
 # With other options
-npm run collect -- --input input/repos.jsonl --queries GetRepoDataMetrics --parallel --analyze
+npm run collect -- --input input/repos.json --queries GetRepoDataMetrics --parallel --analyze
 ```
 
 ## Output Structure
@@ -312,8 +312,8 @@ output/
 
 1. **Start small:** Test with a single repository first:
    ```bash
-   echo '{"owner":"octocat","name":"Hello-World"}' > test-single.jsonl
-   npm start -- --input test-single.jsonl --queries GetRepoDataMetrics --verbose
+   echo '{"owner":"octocat","name":"Hello-World"}' > test-single.json
+   npm start -- --input test-single.json --queries GetRepoDataMetrics --verbose
    ```
 
 2. **Verify the output:**

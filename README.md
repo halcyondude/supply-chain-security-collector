@@ -1,307 +1,228 @@
-# GitHub Supply Chain Data Collector
+# supply chain security collector
 
-collect data github graphql api → schema/type driven normalization to relational tables → duckdb → analysis
+measure how well open source projects actually ship secure software.
 
-currently configured for github supply chain security analysis with optional cncf project metadata enrichment.
+point it at any set of GitHub repos (or the entire CNCF landscape) and get back:
+- which projects publish SBOMs, signatures, and attestations in their releases
+- which CI pipelines run cosign, syft, trivy, codeql, and 20+ other security tools
+- security posture summaries per repo and per CNCF project, queryable in SQL
 
-## what it does
+the output is a DuckDB database + Parquet files. query it, graph it, or feed it to anything.
 
-1. **collects**: fetches data from graphql api (GitHub presently) with parallel execution & batching
-2. **normalizes**: uses typeded SDK (created via GraphQL codegen) to create normalized tables (base_*)
-3. **stores**: base_* tables (GraphQL responses + CNCF landscape metadata)  → to duckdb database
-4. **analyzes**: runs sql models to build aggregation tables (agg_*) and analyze release artifacts and CI workflows 
 ## quick start
 
 ```bash
-# install
 npm install
-
-# set your github token
-export GITHUB_PAT=ghp_your_token_here
-
-# run a quick test (3 projects)
+export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_your_token_here
 npm test
 ```
 
-**that's it!** test files are included in the repo.
+that's it. runs against 3 CNCF projects (Kubernetes, Harbor, Jaeger), produces a DuckDB database + Parquet files + analysis tables.
 
-### running the full cncf landscape
-
-```bash
-# (optional) fetch and update the CNCF landscape metadata
-npm run fetch:landscape
-
-# then run the full collection (~230 projects)
-npm start
-
-# check the output
-ls output/cncf-full-landscape-*/GetRepoDataExtendedInfo/
-```
-
-### other test options
+then look at what you got:
 
 ```bash
-npm run test:single      # 1 project (kubernetes)
-npm run test:three       # 3 projects (kubernetes, harbor, atlantis) - same as npm test
-npm run test:simple      # simple format (2 repos, no metadata)
+# query the database directly
+duckdb output/test-three-projects/current/database.db \
+  -c "SELECT nameWithOwner, has_sbom_artifact, uses_cosign, uses_codeql FROM agg_repo_summary"
+
+# generate a markdown report
+npm run report -- --database output/test-three-projects/current/database.db
 ```
 
-output structure:
-```text
-output/test-single-project-2025-10-13T06-15-42/
-├── raw-responses.jsonl              # Audit trail of all API calls
-└── GetRepoDataExtendedInfo/
-    ├── database.db                  # DuckDB database with all tables
-    └── parquet/
-        ├── raw_GetRepoDataExtendedInfo.parquet  # Raw GraphQL responses
-        ├── base_repositories.parquet
-        ├── base_branch_protection_rules.parquet
-        ├── base_releases.parquet
-        ├── base_release_assets.parquet
-        ├── base_workflows.parquet
-        ├── base_cncf_projects.parquet        # (if CNCF input format)
-        ├── base_cncf_project_repos.parquet   # (if CNCF input format)
-        ├── agg_artifact_patterns.parquet
-        ├── agg_workflow_tools.parquet
-        ├── agg_repo_summary.parquet
-        └── agg_cncf_project_summary.parquet  # (if CNCF input format)
+### what you get
+
 ```
+output/test-three-projects/current/
+├── database.db                                    # DuckDB database with all tables
+├── parquet/                                       # all tables as Parquet files
+│   ├── base_repositories.parquet                  # normalized entities
+│   ├── base_releases.parquet
+│   ├── base_release_assets.parquet
+│   ├── base_workflows.parquet
+│   ├── agg_repo_summary.parquet                   # analysis results
+│   ├── agg_workflow_tools.parquet
+│   ├── agg_artifact_patterns.parquet
+│   └── ...
+├── raw-responses.GetRepoDataExtendedInfo.jsonl    # API audit trail
+├── security-insights-sboms.csv                    # extracted SBOM declarations
+└── security-insights-attestations.csv             # extracted attestations
+```
+
+### generate a report
+
+```bash
+npm run report -- --database output/test-three-projects/current/database.db
+```
+
+Produces a structured markdown report with executive summary, tool adoption landscape, SBOM/signing coverage, and maturity-based recommendations.
+
+### run the full CNCF landscape
+
+```bash
+npm run fetch:landscape    # download latest CNCF landscape metadata
+npm start                  # collect + analyze ~230 projects
+```
+
+## how it works
+
+```
+GitHub GraphQL API → TypeScript normalizers → DuckDB (base_* tables) → SQL models → analysis (agg_* tables)
+```
+
+**Stage 1 — Collection & Normalization** (`src/neo.ts`): Fetches from GitHub's GraphQL API, transforms nested responses into flat relational `base_*` tables using typed normalizers, writes to DuckDB + Parquet.
+
+**Stage 2 — Analysis** (`src/analyze.ts`): Runs numbered SQL models against `base_*` tables to produce `agg_*` aggregation tables detecting security patterns.
+
+## what it detects
+
+| Category | Examples |
+|----------|----------|
+| SBOM artifacts | SPDX, CycloneDX in release assets |
+| Signing artifacts | `.sig`, `.asc`, cosign signatures |
+| Attestations | SLSA provenance, in-toto, VEX, sigstore bundles |
+| CI/CD security tools | cosign, syft, trivy, codeql, snyk, grype, docker-scout, fossa, dependabot, renovate |
+| Security Insights | SECURITY-INSIGHTS.yml parsing (SBOMs, attestations declared) |
+
+See [`docs/detection-reference.md`](docs/detection-reference.md) for the full pattern catalog.
 
 ## input formats
 
-the toolkit supports two input formats:
+Two formats, auto-detected:
 
-1. **simple format** (backward compatible):
+**Simple** — just repos:
+```json
+[
+  {"owner": "sigstore", "name": "cosign"},
+  {"owner": "anchore", "name": "syft"}
+]
+```
 
-   ```json
-   [
-     {"owner": "kubernetes", "name": "kubernetes"},
-     {"owner": "prometheus", "name": "prometheus"}
-   ]
-   ```
+**Rich** — with CNCF project metadata (generated from landscape.yml):
+```json
+[
+  {
+    "project_name": "Kubernetes",
+    "repos": [{"owner": "kubernetes", "name": "kubernetes", "primary": true}],
+    "maturity": "graduated",
+    "category": "Orchestration & Management",
+    "has_security_audits": true
+  }
+]
+```
 
-1. **rich format** (with cncf project metadata generated from CNCF curated landscape.yml):
+Test files in `input/`:
 
-   ```json
-   [
-     {
-       "project_name": "Kubernetes",
-       "display_name": "Kubernetes",
-       "description": "...",
-       "repos": [
-         {"owner": "kubernetes", "name": "kubernetes", "primary": true}
-       ],
-       "maturity": "graduated",
-       "category": "Orchestration & Management",
-       "has_security_audits": true
-     }
-   ]
-   ```
-
-**test files**:
-
-- `input/test-single-project.json` - kubernetes (1 repo)
-- `input/test-three-projects.json` - kubernetes, harbor, atlantis (3 maturities)
-- `input/test-simple-format.json` - simple format (2 repos, no metadata)
-
-## documentation
-
-- 📚 **[Query Reference](docs/QUERY-REFERENCE.md)** - Available queries and usage
-- 🔧 **[Adding New Queries](docs/adding-new-queries.md)** - Step-by-step guide for experimentation
-- 🔍 **[Detection Reference](docs/detection-reference.md)** - Supply chain security detection catalog
-- 📝 **[Cleanup Summary](docs/CLEANUP-QUERIES.md)** - Recent architecture changes
+| File | Content |
+|------|---------|
+| `test-single-project.json` | Kubernetes (1 repo) |
+| `test-three-projects.json` | Kubernetes, Harbor, Jaeger (3 maturities) |
+| `test-simple-format.json` | cosign, syft (simple format, no metadata) |
+| `cncf-full-landscape.json` | Full CNCF landscape (~230 projects) |
 
 ## table layers
 
-tables are prefixed by layer:
-
-- **base_*** - normalized entities from GraphQL responses (repositories, releases, workflows, etc.)
-- **agg_*** - analysis/aggregation tables (security patterns, tool detection, summary metrics)
-
-**Note:** Raw GraphQL responses are preserved in `raw-responses.jsonl` (JSONL file), not in database tables.
-
-```sql
--- query the normalized data
-SELECT repository_name, total_releases FROM base_repositories;
-
--- query the analysis
-SELECT repository_name, uses_cosign, uses_syft, has_sbom_artifact
-FROM agg_repo_summary 
-ORDER BY repository_name;
-```
+- **`base_*`** — normalized entities from GraphQL (repositories, releases, release_assets, workflows, branch_protection_rules, cncf_projects, cncf_project_repos, security_md, si_documents, si_sboms)
+- **`agg_*`** — analysis output (repo_summary, workflow_tools, artifact_patterns, cncf_project_summary, executive_summary, tool_summary, and more)
+- **`raw_*`** — full GraphQL responses preserved in database
 
 ## analyzing data
 
-use duckdb cli or any tool that reads parquet:
-
 ```bash
-# Query a specific run's database
-duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db
+# DuckDB CLI
+duckdb output/test-three-projects/current/database.db \
+  -c "SELECT nameWithOwner, uses_cosign, uses_codeql, has_sbom_artifact FROM agg_repo_summary"
 
-# Quick queries
-duckdb output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  -c "SELECT * FROM agg_repo_summary"
+# Run analysis on an existing database
+npm run analyze -- --database output/test-three-projects/current/database.db
 
-# Export to CSV
-npm run analyze -- \
-  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  --export-csv summary.csv
+# Generate markdown report
+npm run report -- --database output/test-three-projects/current/database.db
 
-# Run custom queries
-npm run analyze -- \
-  --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db \
-  --query sql/queries/top_tools.sql
+# Build property graph (LadybugDB) for Cypher queries
+npm run graph -- --database output/test-three-projects/current/database.db
+npm run graph:list                 # list available Cypher queries
+npm run graph:query -- graduated-no-signing   # run a specific query
 ```
 
-## adding new queries
+Any tool that reads Parquet works too — the `parquet/` directory has every table.
 
-1. create a new `.graphql` file in `src/graphql/`
-2. run `npm run codegen` to generate types
-3. add to `--queries` parameter: `--queries Query1,Query2`
-4. normalizers auto-create base_* tables from typed responses
+## npm scripts
 
-## adding new analysis
-
-analysis happens in sql models (`sql/models/`):
-
-```sql
--- sql/models/04_my_analysis.sql
-CREATE OR REPLACE TABLE agg_my_analysis AS
-SELECT 
-    repository_id,
-    -- your analysis logic here
-FROM base_repositories r
-JOIN base_releases rel ON r.id = rel.repository_id;
-```
-
-then update `SecurityAnalyzer.ts` to run it.
+| Command | Description |
+|---------|-------------|
+| `npm test` | Quick test (3 CNCF projects) |
+| `npm start` | Full CNCF landscape (~230 projects) |
+| `npm run test:single` | Single project (Kubernetes) |
+| `npm run test:simple` | Simple format (2 repos, no metadata) |
+| `npm run collect` | Custom collection (`ts-node src/neo.ts` with flags) |
+| `npm run analyze` | Run SQL analysis on existing database |
+| `npm run report` | Generate markdown report from database |
+| `npm run graph` | Build LadybugDB property graph |
+| `npm run graph:query` | Run Cypher queries against graph |
+| `npm run fetch:landscape` | Download latest CNCF landscape data |
+| `npm run lint` | ESLint check |
+| `npm run typecheck` | TypeScript type check |
+| `npm run codegen` | Regenerate types from GraphQL schema |
+| `npm run clean` | Remove output/, cache, generated files |
 
 ## advanced usage
 
-for custom input files or options, use the `collect` command:
-
 ```bash
-# Run data collection with custom options
 npm run collect -- \
-  --input your-repos.json \              # required: json file with repos or projects
-  --queries GetRepoDataExtendedInfo \    # required: which graphql queries to run
-  --parallel \                           # optional: fetch repos in parallel
-  --analyze                              # optional: run sql analysis after collection
-
-# Note: 'collect' is an alias for 'ts-node src/neo.ts'
+  --input your-repos.json \
+  --queries GetRepoDataExtendedInfo \
+  --parallel \
+  --analyze
 ```
 
-**examples**:
+CLI flags: `--input <file>`, `--queries <name>`, `--parallel`, `--analyze`, `--maturity <graduated|incubating|sandbox>`, `--repo-scope <primary|all>`
 
-```bash
-# simple format (backward compatible)
-npm run collect -- --input input/test-simple-format.json --queries GetRepoDataExtendedInfo --analyze
+## extending
 
-# parallel execution
-npm run collect -- --input input/test-three-projects.json --queries GetRepoDataExtendedInfo --parallel --analyze
-```
+**New GraphQL query:** Create `.graphql` → `npm run codegen` → write normalizer in `src/normalizers/` → register in `ArtifactWriter.ts`. See [`docs/adding-new-queries.md`](docs/adding-new-queries.md).
 
-## npm scripts reference
+**New analysis:** Add numbered SQL file in `sql/models/` → register in `SecurityAnalyzer.ts`. See [`sql/README.md`](sql/README.md).
 
-**standard commands**:
+**Other GraphQL APIs:** The collection layer is generic. Swap `src/api.ts` endpoint, write new queries and normalizers. Normalizers are hand-written (not auto-generated) — each transforms nested GraphQL responses into flat relational arrays.
 
-- `npm test` - quick test (3 projects)
-- `npm start` - process full cncf landscape (~230 projects)
+## documentation
 
-**testing** (for development):
-
-- `npm run test:single` - test with kubernetes (1 project)
-- `npm run test:three` - test with kubernetes, harbor, atlantis (3 projects, same as npm test)
-- `npm run test:simple` - test with simple format (2 repos, no metadata)
-
-**data operations**:
-
-- `npm run landscape` - alias for npm start (full landscape)
-- `npm run collect` - shorthand for `ts-node src/neo.ts` with custom options
-- `npm run analyze` - run sql analysis on existing database
-- `npm run fetch:landscape` - download cncf landscape and generate input files
-
-**code quality**:
-
-- `npm run lint` - check code style
-- `npm run lint:fix` - auto-fix code style issues
-- `npm run format` - alias for lint:fix
-- `npm run typecheck` - check typescript types
-
-**maintenance**:
-
-- `npm run codegen` - generate typescript types from graphql schema
-- `npm run clean` - remove generated artifacts (output, cache, generated files)
-
-## environment setup
-
-```bash
-cp .env.template .env
-# edit .env and add your GITHUB_PAT
-```
-
-## current analysis (supply chain security)
-
-the included sql models detect:
-
-- sbom formats (spdx, cyclonedx)
-- signature artifacts (.sig, .asc)
-- attestations, vex, slsa provenance
-- ci/cd security tools (cosign, syft, trivy, codeql, etc)
-- security maturity scoring
-
-see `sql/models/` for details.
-
-## extending to other graphql apis
-
-the collection layer is generic and can work with any graphql api. to adapt:
-
-1. update `src/api.ts` with your endpoint and authentication
-2. create `.graphql` query files for your api in `src/graphql/`
-3. run `npm run codegen` to generate typescript types
-4. **write a custom normalizer** in `src/normalizers/YourQueryNormalizer.ts`
-5. register your normalizer in `ArtifactWriter.ts`
-6. write domain-specific sql models in `sql/models/`
-
-**note:** normalizers are not auto-generated. each query requires a hand-written typescript normalizer to transform nested graphql responses into flat relational arrays.
+- [Adding New Queries](docs/adding-new-queries.md) — step-by-step extension guide
+- [Detection Reference](docs/detection-reference.md) — supply chain security pattern catalog
+- [Data Model](docs/data-model.md) — table schemas and relationships
+- [Output Architecture](docs/output-architecture.md) — output format and directory structure
+- [SQL Analysis](sql/README.md) — SQL model architecture
+- [Codegen Guide](docs/codegen-guide.md) — GraphQL code generation
+- [Project Milestones](docs/milestones/README.md) — project history and evolution
 
 ## project structure
 
 ```
 src/
-├── neo.ts                      # main cli entry point
-├── analyze.ts                  # analysis cli
-├── api.ts                      # graphql client
-├── ArtifactWriter.ts           # writes duckdb + parquet
-├── SecurityAnalyzer.ts         # runs sql analysis models
-├── normalizers/                # extract typed entities from responses
-└── graphql/                    # query definitions
+├── neo.ts                  # CLI entry point, collection orchestrator
+├── analyze.ts              # Analysis CLI
+├── api.ts                  # GitHub GraphQL client
+├── ArtifactWriter.ts       # DuckDB + Parquet writer
+├── SecurityAnalyzer.ts     # SQL model execution engine
+├── ReportGenerator.ts      # Markdown report generator
+├── report-cli.ts           # Report CLI
+├── normalizers/            # Query-specific normalizers (hand-written)
+├── graphql/                # GraphQL query definitions
+├── graph/                  # LadybugDB property graph integration
+└── generated/              # GraphQL codegen output (git-ignored)
 
-sql/
-├── models/                     # sql analysis models (run in order)
-└── queries/                    # example queries
-
-input/                          # sample input files
-output/                         # timestamped output directories
-```
-
-## scripts
-
-```bash
-npm start                       # run full landscape collection
-npm test                        # quick test with 3 projects
-npm run analyze                 # run analysis on existing database
-npm run codegen                 # regenerate graphql types
-npm run lint                    # check code style
-npm run typecheck               # check typescript types
+sql/models/                 # Numbered SQL analysis models (00-05)
+input/                      # Test and input data files
+cypher/                     # Standalone Cypher query files
 ```
 
 ## requirements
 
-- node 18+
-- typescript
-- github personal access token (for github api)
+- Node 18+
+- GitHub Personal Access Token (set `GITHUB_PERSONAL_ACCESS_TOKEN`)
+- Python 3.12 (only for Jupyter notebooks)
 
 ## license
 
-Apache 2.0
+MIT
