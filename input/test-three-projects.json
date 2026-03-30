@@ -1,65 +1,181 @@
 [
   {
-    "project_name": "Harbor",
-    "display_name": "Harbor",
+    "project_name": "Helm",
+    "display_name": "Helm",
     "repos": [
       {
-        "owner": "goharbor",
-        "name": "harbor",
+        "owner": "helm",
+        "name": "helm",
         "primary": true
       }
     ],
     "maturity": "graduated",
-    "category": "Provisioning",
-    "subcategory": "Container Registry",
-    "date_accepted": "2018-07-31",
-    "date_incubating": "2018-11-14",
-    "date_graduated": "2020-06-15",
-    "homepage_url": "https://goharbor.io/",
-    "repo_url": "https://github.com/goharbor/harbor",
-    "clomonitor_name": "harbor",
-    "summary_business_use_case": "Self-hosted container registry with multiple integrations for security and validation.",
-    "summary_integrations": "trivy, cosing, notary, github, gce, jfrog, snyk, clair, sysdig, oidc, ldap, ecr, acr, docker, quay, helm",
-    "summary_personas": "SREs, Cloud Architects, Platform Engineers, DevOps Engineer, DevOps practitioners, DevSecOps practitioners",
-    "summary_tags": "registry, images, OCI, container, artefacts, vulnerability scanning, self-hosted, harbor, edge, replication",
-    "summary_use_case": "Harbor is an open source registry that secures artifacts with policies and role-based access control,  ensures images are scanned and free from vulnerabilities, and signs images as trusted. Can be installed on any Kubernetes environment or on a system with Docker support.",
-    "summary_release_rate": "We aim to have 3 big releases per year with many patch releases in between.",
-    "dev_stats_url": "https://harbor.devstats.cncf.io/",
-    "has_security_audits": true,
-    "security_audit_count": 1,
-    "latest_audit_date": "2019-10-01",
-    "latest_audit_vendor": "Cure53",
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/project_harbor"
-  },
-  {
-    "project_name": "Kubernetes",
-    "display_name": "Kubernetes",
-    "description": "Kubernetes is an open-source system for automating deployment, scaling, and management of containerized applications",
-    "repos": [
-      {
-        "owner": "kubernetes",
-        "name": "kubernetes",
-        "primary": true
-      }
-    ],
-    "maturity": "graduated",
-    "category": "Orchestration & Management",
-    "subcategory": "Scheduling & Orchestration",
-    "date_accepted": "2016-03-10",
-    "date_incubating": "2016-03-10",
-    "date_graduated": "2018-03-06",
-    "homepage_url": "https://kubernetes.io/",
-    "repo_url": "https://github.com/kubernetes/kubernetes",
-    "blog_url": "http://blog.kubernetes.io/",
-    "clomonitor_name": "kubernetes",
-    "dev_stats_url": "https://k8s.devstats.cncf.io/",
+    "category": "App Definition and Development",
+    "subcategory": "Application Definition & Image Build",
+    "date_accepted": "2018-06-01",
+    "date_incubating": "2018-06-01",
+    "date_graduated": "2020-05-01",
+    "homepage_url": "https://helm.sh/",
+    "repo_url": "https://github.com/helm/helm",
+    "clomonitor_name": "helm",
+    "dev_stats_url": "https://helm.devstats.cncf.io/",
     "has_security_audits": true,
     "security_audit_count": 2,
-    "latest_audit_date": "2023-04-19",
-    "latest_audit_vendor": "NCC Group",
+    "latest_audit_date": "2023-03-31",
+    "latest_audit_vendor": "Ada Logics",
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/kubernetesio"
+    "twitter": "https://twitter.com/helmpack"
+  },
+  {
+    "project_name": "NATS",
+    "display_name": "NATS",
+    "description": "NATS.io is a connective technology for distributed systems and is a perfect fit to connect devices, edge, cloud or hybrid deployments. True multi-tenancy makes NATS ideal for SaaS and self-healing and scaling technology allows for topology changes anytime with zero downtime.",
+    "repos": [
+      {
+        "owner": "nats-io",
+        "name": "nats-server",
+        "primary": true
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.go",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.js",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.py",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.java",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.net",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.c",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.rs",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.deno",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "k8s",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats-surveyor",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "natscli",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats-architecture-and-design",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats.docs",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nack",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "nats-top",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "terraform-provider-jetstream",
+        "primary": false
+      },
+      {
+        "owner": "nats-io",
+        "name": "jetstream-gh-action",
+        "primary": false
+      }
+    ],
+    "maturity": "incubating",
+    "category": "App Definition and Development",
+    "subcategory": "Streaming & Messaging",
+    "date_accepted": "2018-03-15",
+    "date_incubating": "2018-03-15",
+    "homepage_url": "https://nats.io/",
+    "repo_url": "https://github.com/nats-io/nats-server",
+    "url_for_bestpractices": "https://github.com/nats-io",
+    "clomonitor_name": "nats",
+    "summary_business_use_case": "NATS is used to develop & deploy globally distributed Edge & Multi-cloud applications as part of a digital transformation or modernization initiative. Users may deploy NATS as part of a private cloud, hybrid , or SaaS model. Applications can be developed locally and then be scaled from single node, to clusters, to global superclusters independently of cloud providers, geography or requirements for additional infrastructure such as load balancers, firewalls, etc... All with a zero trust security model and integrated multi-tenant platform capabilities",
+    "summary_integrations": "Docker, Kubernetes, K3S, WASMCloud, CloudEvents, Helm, Argo, DAPR, Prometheus, Benthos",
+    "summary_personas": "Developers, Architects, Engineers, Platform teams, Cloud Architects",
+    "summary_tags": "Edge, Muli-cloud, Messaging, Streaming Data, PubSub, KeyValue, Microservices, Kubernetes",
+    "summary_use_case": "The NATS Server acts as a central nervous system for building distributed applications. Client APIs are provided in over 40 languages and frameworks including Go, Java, JavaScript/TypeScript, Python, C, .Net, and Rust. NATS supports multiple microservices patterns including PubSub, Request-Reply, KeyValue and Object store via a simple API.\n",
+    "dev_stats_url": "https://nats.devstats.cncf.io/",
+    "has_security_audits": true,
+    "security_audit_count": 1,
+    "latest_audit_date": "2019-02-06",
+    "latest_audit_vendor": "Cure53",
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/nats_io"
+  },
+  {
+    "project_name": "KubeVela",
+    "display_name": "KubeVela",
+    "repos": [
+      {
+        "owner": "kubevela",
+        "name": "kubevela",
+        "primary": true
+      }
+    ],
+    "maturity": "incubating",
+    "category": "App Definition and Development",
+    "subcategory": "Application Definition & Image Build",
+    "date_accepted": "2021-06-22",
+    "date_incubating": "2023-02-27",
+    "homepage_url": "https://kubevela.io",
+    "repo_url": "https://github.com/kubevela/kubevela",
+    "blog_url": "https://kubevela.io/blog",
+    "clomonitor_name": "kubevela",
+    "summary_business_use_case": "KubeVela is an application delivery engine built with Kubernetes control plane. KubeVela can orchestrate, deploy, and operate application components and cloud resources with a workflow based application delivery model and technology. For user scenarios, KubeVela is designed to manage applications with multiple target Kubernetes clusters and hybrid-cloud environments as first-class citizens. In the community, we observed most users are adopting KubeVela as their internal \u201cPaaS\u201d, or as part of their CI/CD pipeline, or as an extensible DevOps kernel for building their own IDP.",
+    "summary_integrations": "Helm, FluxCD, DEX, OpenKruise, Crossplane, Prometheus, k3s, KEDA, etc.",
+    "summary_personas": "SREs, DevOps, Platform Engineers, Architects, Developers",
+    "summary_tags": "Kubernetes, Application, Microservices, Serverless, Continuous Delivery, PaaS, CUE, control-plane, Multicloud, OAM, MultiCluster, HybridCloud.",
+    "summary_use_case": "KubeVela is a modern software delivery platform that makes deploying and operating applications across today's hybrid, multi-cloud environments easier, faster and more reliable.",
+    "summary_release_rate": "Every 1-2 weeks",
+    "dev_stats_url": "https://kubevela.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/oam_dev",
+    "annual_review_date": "2022-05-12",
+    "annual_review_url": "https://github.com/cncf/toc/pull/838"
   },
   {
     "project_name": "Jaeger",
@@ -94,5 +210,28 @@
     "latest_audit_vendor": "Cure53",
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/JaegerTracing"
+  },
+  {
+    "project_name": "Inspektor Gadget",
+    "display_name": "Inspektor Gadget",
+    "description": "Open source eBPF debugging and data collection tool for Kubernetes and Linux",
+    "repos": [
+      {
+        "owner": "inspektor-gadget",
+        "name": "inspektor-gadget",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Observability and Analysis",
+    "subcategory": "Observability",
+    "date_accepted": "2023-03-07",
+    "homepage_url": "https://inspektor-gadget.io/",
+    "repo_url": "https://github.com/inspektor-gadget/inspektor-gadget",
+    "clomonitor_name": "inspektor-gadget",
+    "dev_stats_url": "https://inspektorgadget.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   }
 ]
