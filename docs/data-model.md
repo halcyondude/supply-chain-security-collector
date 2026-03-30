@@ -2,549 +2,554 @@
 
 ## Overview
 
-The data model consists of two table layers:
+The data model consists of three table layers:
 
-1. **Base Tables** (`base_*`) - Normalized relational data from GraphQL
-2. **Aggregated Tables** (`agg_*`) - Business insights from SQL models
+1. **Raw Tables** (`raw_*`) — Full GraphQL API responses loaded via `read_json()` for auditability
+2. **Base Tables** (`base_*`) — Normalized relational data from GraphQL responses
+3. **Aggregated Tables** (`agg_*`) — Business insights from SQL models in `sql/models/`
 
-All tables reside in DuckDB databases (one per query type) and are exported to Parquet files for portable analysis.
+All tables reside in a single DuckDB database per query type. Tables are exported to Parquet files in a flat directory alongside the database.
 
-## Raw Data Preservation
+## Data Loading
 
-Raw GraphQL responses are preserved in `raw-responses.jsonl` (JSONL file), NOT in database tables.
+Normalized arrays are written to temporary JSON files, loaded into DuckDB via `read_json()`, then the temp files are deleted.
 
-**Why JSONL instead of database tables?**
-- Append-only for historical tracking
-- One line per API call with metadata
-- Can be versioned in git (line-based diffs)
-- Standard format readable by jq, DuckDB, etc.
+**Pattern (from `ArtifactWriter.ts`):**
+```typescript
+fs.writeFileSync(tempPath, JSON.stringify(data));
+await con.run(`
+    CREATE TABLE ${tableName} AS
+    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+`);
+fs.unlinkSync(tempPath);
+```
 
-**Note:** A `raw_GetRepoDataExtendedInfo` Parquet file IS created during the export phase, but it's derived from the normalized data, not the primary storage method.
+## Output Directory Structure
+
+```text
+output/<run-name>-<timestamp>/
+  database.db
+  raw-responses.jsonl
+  raw_GetRepoDataExtendedInfo.parquet
+  base_repositories.parquet
+  base_releases.parquet
+  base_release_assets.parquet
+  base_workflows.parquet
+  base_branch_protection_rules.parquet
+  base_security_md.parquet
+  base_si_documents.parquet
+  base_si_sboms.parquet
+  base_cncf_projects.parquet
+  base_cncf_project_repos.parquet
+  agg_artifact_patterns.parquet
+  agg_workflow_tools.parquet
+  agg_repo_summary.parquet
+  agg_executive_summary.parquet
+  agg_tool_summary.parquet
+  agg_repo_summary_sorted.parquet
+  agg_sbom_summary.parquet
+  agg_advanced_artifacts.parquet
+  agg_tool_category_summary.parquet
+  agg_repo_detail.parquet
+  agg_si_attestations.parquet
+  agg_cncf_project_summary.parquet
+```
+
+## Raw Tables
+
+### raw_GetRepoDataExtendedInfo
+
+Full GraphQL API responses preserved as-is. Loaded from the temp JSON file via `read_json()` with `maximum_depth=-1` to keep nested structure intact.
+
+**Source:** `ArtifactWriter.ts` — `createRawTable()`
 
 ## Base Tables (Collection Layer)
 
-These tables are produced by the `neo.ts` → `ArtifactWriter.ts` → normalizer pipeline.
+Produced by query-specific TypeScript normalizers in `src/normalizers/`.
 
 ### base_repositories
 
-Core repository metadata from GraphQL.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `Repository` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_repositories (
-  id TEXT PRIMARY KEY,
-  __typename TEXT,
-  name TEXT NOT NULL,
-  nameWithOwner TEXT NOT NULL,
-  url TEXT,
-  description TEXT,
-  hasVulnerabilityAlertsEnabled BOOLEAN,
-  license_key TEXT,
-  license_name TEXT,
-  license_spdxId TEXT,
-  defaultBranch_name TEXT,
-  createdAt TIMESTAMP,
-  updatedAt TIMESTAMP
-);
-```
-
-**Source:** Extracted from `repository` object in GraphQL response
-
-**Example Row:**
-```
-id: R_kgDOHJ8xYw
-name: cosign
-nameWithOwner: sigstore/cosign
-url: https://github.com/sigstore/cosign
-description: Code signing and transparency for containers
-```
+| Column | Type |
+|--------|------|
+| id | TEXT (PK) |
+| __typename | TEXT |
+| name | TEXT |
+| nameWithOwner | TEXT |
+| url | TEXT |
+| description | TEXT (nullable) |
+| hasVulnerabilityAlertsEnabled | BOOLEAN |
+| license_key | TEXT (nullable) |
+| license_name | TEXT (nullable) |
+| license_spdxId | TEXT (nullable) |
+| defaultBranch_name | TEXT (nullable) |
 
 ### base_releases
 
-Release information with foreign key to repository.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `Release` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_releases (
-  id TEXT PRIMARY KEY,
-  repository_id TEXT NOT NULL,
-  tagName TEXT NOT NULL,
-  name TEXT,
-  createdAt TIMESTAMP,
-  publishedAt TIMESTAMP,
-  isPrerelease BOOLEAN,
-  isDraft BOOLEAN,
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Extracted from `repository.releases.nodes[]` in GraphQL response
-
-**Example Row:**
-```
-id: RE_kwDOHJ8xY84Fe7i7
-repository_id: R_kgDOHJ8xYw
-tagName: v2.2.0
-name: v2.2.0
-createdAt: 2023-10-15T10:30:00Z
-isPrerelease: false
-```
+| Column | Type |
+|--------|------|
+| id | TEXT (PK) |
+| __typename | TEXT |
+| repository_id | TEXT (FK -> base_repositories) |
+| name | TEXT (nullable) |
+| tagName | TEXT |
+| url | TEXT |
+| createdAt | TEXT |
 
 ### base_release_assets
 
-Individual release artifacts with foreign keys to release and repository.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `ReleaseAsset` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_release_assets (
-  id TEXT PRIMARY KEY,
-  repository_id TEXT NOT NULL,
-  release_id TEXT NOT NULL,
-  name TEXT NOT NULL,
-  downloadUrl TEXT,
-  size BIGINT,
-  contentType TEXT,
-  createdAt TIMESTAMP,
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id),
-  FOREIGN KEY (release_id) REFERENCES base_releases(id)
-);
-```
-
-**Source:** Extracted from `repository.releases.nodes[].releaseAssets.nodes[]` in GraphQL response
-
-**Example Rows:**
-```
-id: RA_001
-release_id: RE_kwDOHJ8xY84Fe7i7
-name: cosign-linux-amd64
-downloadUrl: https://github.com/sigstore/cosign/releases/download/v2.2.0/cosign-linux-amd64
-
-id: RA_002
-release_id: RE_kwDOHJ8xY84Fe7i7
-name: cosign-linux-amd64.sig
-downloadUrl: https://github.com/sigstore/cosign/releases/download/v2.2.0/cosign-linux-amd64.sig
-```
+| Column | Type |
+|--------|------|
+| id | TEXT (PK) |
+| __typename | TEXT |
+| release_id | TEXT (FK -> base_releases) |
+| name | TEXT |
+| downloadUrl | TEXT |
 
 ### base_workflows
 
-GitHub Actions workflows with foreign key to repository.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `Workflow` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_workflows (
-  id TEXT PRIMARY KEY,
-  repository_id TEXT NOT NULL,
-  filename TEXT NOT NULL,
-  path TEXT NOT NULL,
-  content TEXT,
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Extracted from `repository.object.entries[]` (tree traversal for `.github/workflows/*.yml`)
-
-**Example Row:**
-```
-id: WF_001
-repository_id: R_kgDOHJ8xYw
-filename: release.yaml
-path: .github/workflows/release.yaml
-content: |
-  name: Release
-  on:
-    push:
-      tags: ['v*']
-  jobs:
-    goreleaser:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - uses: goreleaser/goreleaser-action@v4
-```
+| Column | Type |
+|--------|------|
+| id | TEXT (PK, generated: `{repository_id}_{filename}`) |
+| __typename | TEXT |
+| repository_id | TEXT (FK -> base_repositories) |
+| filename | TEXT |
+| content | TEXT (nullable) |
 
 ### base_branch_protection_rules
 
-Branch protection settings with foreign key to repository.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `BranchProtectionRule` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_branch_protection_rules (
-  id TEXT PRIMARY KEY,
-  repository_id TEXT NOT NULL,
-  pattern TEXT NOT NULL,
-  requiresApprovingReviews BOOLEAN,
-  requiredApprovingReviewCount INTEGER,
-  requiresCodeOwnerReviews BOOLEAN,
-  requiresCommitSignatures BOOLEAN,
-  requiresLinearHistory BOOLEAN,
-  requiresStatusChecks BOOLEAN,
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Extracted from `repository.branchProtectionRules.nodes[]` (GetRepoDataExtendedInfo only)
+| Column | Type |
+|--------|------|
+| id | TEXT (PK, generated: `{repository_id}_default` or `{repository_id}_rule_{idx}`) |
+| __typename | TEXT |
+| repository_id | TEXT (FK -> base_repositories) |
+| allowsDeletions | BOOLEAN |
+| allowsForcePushes | BOOLEAN |
+| dismissesStaleReviews | BOOLEAN |
+| isAdminEnforced | BOOLEAN |
+| requiresStatusChecks | BOOLEAN |
+| requiresStrictStatusChecks | BOOLEAN |
+| requiresCodeOwnerReviews | BOOLEAN |
+| requiredApprovingReviewCount | INTEGER (nullable) |
+| pattern | TEXT |
+| isDefaultBranch | BOOLEAN |
 
 ### base_security_md
 
-SECURITY.md file content from repositories.
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `SecurityMarkdown` interface
 
-**Schema:**
-```sql
-CREATE TABLE base_security_md (
-  id TEXT PRIMARY KEY,
-  __typename TEXT,
-  repository_id TEXT NOT NULL,
-  path TEXT,
-  content TEXT,
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Extracted from repository tree traversal for `SECURITY.md`
+| Column | Type |
+|--------|------|
+| id | TEXT (PK, generated: `{repository_id}_{path}`) |
+| __typename | TEXT |
+| repository_id | TEXT (FK -> base_repositories) |
+| content | TEXT (nullable) |
+| path | TEXT |
 
 ### base_si_documents
 
-Security Insights specification documents fetched from repositories.
+**Source:** `ArtifactWriter.ts` — inline schema, populated from `security-insights.yml` files
 
-**Schema:**
-```sql
-CREATE TABLE base_si_documents (
-  repo_id TEXT NOT NULL,
-  source_url TEXT,
-  schema_version TEXT,
-  document JSON,
-  fetched_at TIMESTAMP,
-  FOREIGN KEY (repo_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Fetched from Security Insights YAML files referenced in repository metadata
+| Column | Type |
+|--------|------|
+| repo_id | TEXT (PK composite) |
+| source_url | TEXT (PK composite) |
+| schema_version | TEXT |
+| document | JSON |
+| fetched_at | TIMESTAMP |
 
 ### base_si_sboms
 
-SBOM references declared in Security Insights documents.
+**Source:** `sql/models/01a_security_insights_flattener.sql` — flattened from `base_si_documents`
 
-**Schema:**
-```sql
-CREATE TABLE base_si_sboms (
-  repo_id TEXT NOT NULL,
-  source_url TEXT,
-  fetched_at TIMESTAMP,
-  schema_version TEXT,
-  last_updated TEXT,
-  repository_url TEXT,
-  project_name TEXT,
-  sbom_format TEXT,
-  sbom_url TEXT,
-  sbom_file TEXT,
-  sbom_comment TEXT,
-  FOREIGN KEY (repo_id) REFERENCES base_repositories(id)
-);
-```
+| Column | Type |
+|--------|------|
+| repo_id | TEXT |
+| source_url | TEXT |
+| fetched_at | TIMESTAMP |
+| schema_version | TEXT |
+| last_updated | DATE |
+| repository_url | TEXT |
+| project_name | TEXT |
+| sbom_format | TEXT |
+| sbom_url | TEXT |
+| sbom_file | TEXT |
+| sbom_comment | TEXT |
 
-**Source:** Extracted from SBOM entries in Security Insights documents
+### base_cncf_projects
 
-### base_cncf_projects (optional)
+**Source:** `ArtifactWriter.ts` — `createCNCFTables()`, only present with rich-format input
 
-CNCF project metadata when using rich input format.
+| Column | Type |
+|--------|------|
+| project_name | TEXT (PK) |
+| display_name | TEXT |
+| description | TEXT |
+| maturity | TEXT |
+| category | TEXT |
+| subcategory | TEXT |
+| date_accepted | TEXT |
+| date_incubating | TEXT |
+| date_graduated | TEXT |
+| date_archived | TEXT |
+| homepage_url | TEXT |
+| repo_url | TEXT |
+| package_manager_url | TEXT |
+| docker_url | TEXT |
+| documentation_url | TEXT |
+| blog_url | TEXT |
+| url_for_bestpractices | TEXT |
+| clomonitor_name | TEXT |
+| summary_business_use_case | TEXT |
+| summary_integrations | TEXT |
+| summary_personas | TEXT |
+| summary_tags | TEXT |
+| summary_use_case | TEXT |
+| summary_release_rate | TEXT |
+| dev_stats_url | TEXT |
+| has_security_audits | BOOLEAN |
+| security_audit_count | INTEGER |
+| latest_audit_date | TEXT |
+| latest_audit_vendor | TEXT |
+| crunchbase | TEXT |
+| twitter | TEXT |
+| parent_project | TEXT |
+| tag_associations | TEXT |
+| annual_review_date | TEXT |
+| annual_review_url | TEXT |
+| license | TEXT |
+| default_branch | TEXT |
 
-**Schema:**
-```sql
-CREATE TABLE base_cncf_projects (
-  project_name TEXT PRIMARY KEY,
-  display_name TEXT NOT NULL,
-  description TEXT,
-  maturity TEXT,
-  category TEXT,
-  subcategory TEXT,
-  date_accepted DATE,
-  date_graduated DATE,
-  homepage_url TEXT,
-  has_security_audits BOOLEAN,
-  security_audit_count INTEGER
-);
-```
+### base_cncf_project_repos
 
-**Source:** Extracted from rich format input JSON (not from GraphQL)
+**Source:** `ArtifactWriter.ts` — `createCNCFTables()`, junction table linking projects to repos
 
-**Note:** Only exists when using rich format input with CNCF project metadata.
-
-### base_cncf_project_repos (optional)
-
-Junction table linking CNCF projects to repositories.
-
-**Schema:**
-```sql
-CREATE TABLE base_cncf_project_repos (
-  id TEXT PRIMARY KEY,
-  project_name TEXT NOT NULL,
-  repository_id TEXT NOT NULL,
-  is_primary BOOLEAN,
-  FOREIGN KEY (project_name) REFERENCES base_cncf_projects(project_name),
-  FOREIGN KEY (repository_id) REFERENCES base_repositories(id)
-);
-```
-
-**Source:** Extracted from `repos[]` array in rich format input JSON
+| Column | Type |
+|--------|------|
+| project_name | TEXT (FK -> base_cncf_projects) |
+| owner | TEXT |
+| name | TEXT |
+| primary | BOOLEAN |
+| branch | TEXT |
 
 ## Aggregated Tables (Analysis Layer)
 
-These tables are produced by the `analyze.ts` → `SecurityAnalyzer.ts` → SQL models pipeline.
+Produced by SQL models in `sql/models/` executed in numbered order by `SecurityAnalyzer.ts`.
 
 ### agg_artifact_patterns
 
-Classifies release artifacts by security artifact type.
+**Source:** `sql/models/01_artifact_analysis.sql`
 
-**Schema:**
-```sql
-CREATE TABLE agg_artifact_patterns AS
-SELECT 
-  ra.id as artifact_id,
-  ra.repository_id,
-  ra.release_id,
-  ra.name AS artifact_name,
-  -- Pattern detection flags
-  REGEXP_MATCHES(ra.name, '\.(sbom|spdx|cyclonedx)\.(json|xml)$', 'i') AS is_sbom,
-  REGEXP_MATCHES(ra.name, '\.(sig|asc|signature)$', 'i') AS is_signature,
-  REGEXP_MATCHES(ra.name, 'attestation', 'i') AS is_attestation,
-  REGEXP_MATCHES(ra.name, 'provenance', 'i') AS is_provenance,
-  ra.downloadUrl as download_url
-FROM base_release_assets ra
-JOIN base_releases r ON ra.release_id = r.id
-WHERE ra.name IS NOT NULL;
-```
+Classifies release assets by supply chain artifact type using FTS and regex.
 
-**Purpose:** Detect presence of SBOMs, signatures, attestations, and provenance files
-
-**Example Rows:**
-```
-artifact_name: cosign-linux-amd64.sig
-is_sbom: false
-is_signature: true
-is_attestation: false
-
-artifact_name: cosign-sbom.spdx.json
-is_sbom: true
-is_signature: false
-is_attestation: false
-```
+| Column | Type |
+|--------|------|
+| asset_id | TEXT |
+| release_id | TEXT |
+| repository_id | TEXT |
+| owner | TEXT |
+| repo | TEXT |
+| nameWithOwner | TEXT |
+| asset_name | TEXT |
+| download_url | TEXT |
+| is_sbom | BOOLEAN |
+| sbom_format | TEXT (spdx, cyclonedx, unknown, NULL) |
+| is_signature | BOOLEAN |
+| is_attestation | BOOLEAN |
+| is_vex | BOOLEAN |
+| is_slsa_provenance | BOOLEAN |
+| is_in_toto_link | BOOLEAN |
+| is_in_toto_layout | BOOLEAN |
+| is_sigstore_bundle | BOOLEAN |
+| is_swid_tag | BOOLEAN |
+| is_container_attestation | BOOLEAN |
+| is_license_file | BOOLEAN |
 
 ### agg_workflow_tools
 
-Detects CI/CD security tools used in GitHub Actions workflows.
+**Source:** `sql/models/02_workflow_tool_detection.sql`
 
-**Schema:**
-```sql
-CREATE TABLE agg_workflow_tools AS
-SELECT 
-  w.id as workflow_id,
-  w.repository_id,
-  SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-  repo.name as repo,
-  repo.nameWithOwner,
-  w.filename as workflow_name,
-  'sbom-generator' as tool_category,
-  'syft' as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'syft') IS NOT NULL
-UNION ALL
--- ... more tool detections
-```
+Detects CI/CD security tools in GitHub Actions workflows using FTS (`match_bm25()`).
 
-**Purpose:** Identify which security tools are integrated into CI/CD pipelines using Full-Text Search
-
-**Example Row:**
-```
-workflow_id: WF_001
-repository_id: R_kgDOHJ8xYw
-workflow_name: release.yaml
-tool_category: signing
-tool_name: cosign
-```
+| Column | Type |
+|--------|------|
+| workflow_id | TEXT |
+| repository_id | TEXT |
+| owner | TEXT |
+| repo | TEXT |
+| nameWithOwner | TEXT |
+| workflow_name | TEXT |
+| tool_category | TEXT (sbom-generator, signer, goreleaser, vulnerability-scanner, dependency-scanner, code-scanner, container-scanner) |
+| tool_name | TEXT |
 
 ### agg_repo_summary
 
-Repository-level rollup statistics.
+**Source:** `sql/models/03_repository_security_summary.sql`
 
-**Schema:**
-```sql
-CREATE TABLE agg_repo_summary AS
-SELECT 
-  r.id AS repository_id,
-  r.name,
-  r.nameWithOwner,
-  COUNT(DISTINCT rel.id) AS total_releases,
-  COUNT(DISTINCT ra.id) AS total_artifacts,
-  BOOL_OR(ap.is_sbom) AS has_sbom_artifact,
-  BOOL_OR(ap.is_signature) AS has_signature_artifact,
-  BOOL_OR(ap.is_attestation) AS has_attestation_artifact,
-  BOOL_OR(wt.tool_name = 'syft' OR wt.tool_name = 'trivy') AS uses_sbom_ci_tool,
-  BOOL_OR(wt.tool_name = 'cosign') AS uses_cosign,
-  BOOL_OR(wt.tool_name = 'goreleaser') AS uses_goreleaser
-FROM base_repositories r
-LEFT JOIN base_releases rel ON r.id = rel.repository_id
-LEFT JOIN base_release_assets ra ON rel.id = ra.release_id
-LEFT JOIN agg_artifact_patterns ap ON ra.id = ap.artifact_id
-LEFT JOIN agg_workflow_tools wt ON r.id = wt.repository_id
-GROUP BY r.id, r.name, r.nameWithOwner;
-```
+Repository-level rollup of all security signals.
 
-**Purpose:** High-level security posture summary for each repository
+| Column | Type |
+|--------|------|
+| repository_id | TEXT |
+| owner | TEXT |
+| repo | TEXT |
+| nameWithOwner | TEXT |
+| description | TEXT |
+| url | TEXT |
+| total_releases | INTEGER |
+| total_assets | INTEGER |
+| total_workflows | INTEGER |
+| has_spdx_sbom | BOOLEAN |
+| has_cyclonedx_sbom | BOOLEAN |
+| has_unknown_sbom_format | BOOLEAN |
+| has_sbom_artifact | BOOLEAN |
+| sbom_artifact_count | INTEGER |
+| has_signature_artifact | BOOLEAN |
+| has_attestation_artifact | BOOLEAN |
+| has_vex_document | BOOLEAN |
+| has_slsa_provenance | BOOLEAN |
+| has_in_toto_attestation | BOOLEAN |
+| has_container_attestation | BOOLEAN |
+| has_license_file | BOOLEAN |
+| signature_artifact_count | INTEGER |
+| uses_sbom_generator | BOOLEAN |
+| uses_signer | BOOLEAN |
+| uses_goreleaser | BOOLEAN |
+| uses_vulnerability_scanner | BOOLEAN |
+| uses_dependency_scanner | BOOLEAN |
+| uses_code_scanner | BOOLEAN |
+| uses_container_scanner | BOOLEAN |
+| uses_syft | BOOLEAN |
+| uses_trivy | BOOLEAN |
+| uses_cdxgen | BOOLEAN |
+| uses_cosign | BOOLEAN |
+| uses_sigstore | BOOLEAN |
+| uses_slsa_github_generator | BOOLEAN |
+| uses_snyk | BOOLEAN |
+| uses_dependabot | BOOLEAN |
+| uses_renovate | BOOLEAN |
+| uses_codeql | BOOLEAN |
+| uses_grype | BOOLEAN |
+| sbom_generator_count | INTEGER |
+| signer_count | INTEGER |
+| scanner_count | INTEGER |
+| releases_with_sbom_count | INTEGER |
+| releases_with_signatures_count | INTEGER |
+| sbom_adoption_rate | DECIMAL |
+| first_release_with_sbom | TEXT |
+| first_sbom_date | TEXT |
 
-**Example Row:**
-```
-repository_id: R_kgDOHJ8xYw
-name: cosign
-nameWithOwner: sigstore/cosign
-total_releases: 42
-total_artifacts: 420
-has_sbom_artifact: true
-has_signature_artifact: true
-has_attestation_artifact: true
-uses_sbom_ci_tool: true
-uses_cosign: true
-uses_goreleaser: true
-```
+### agg_executive_summary
 
-### agg_cncf_project_summary (optional)
+**Source:** `sql/models/04_summary_views.sql`
 
-CNCF project-level aggregations when using rich format input.
+Single-row table with overall statistics.
 
-**Schema:**
-```sql
-CREATE TABLE agg_cncf_project_summary AS
-SELECT 
-  cp.project_name,
-  cp.display_name,
-  cp.maturity,
-  cp.category,
-  COUNT(DISTINCT cpr.repository_id) as total_repos,
-  COUNT(DISTINCT CASE WHEN rs.has_sbom_artifact THEN cpr.repository_id END) as repos_with_sbom,
-  ROUND(AVG(CASE WHEN rs.has_sbom_artifact THEN 1.0 ELSE 0.0 END), 2) as sbom_adoption_rate
-FROM base_cncf_projects cp
-JOIN base_cncf_project_repos cpr ON cp.project_name = cpr.project_name
-LEFT JOIN agg_repo_summary rs ON cpr.repository_id = rs.repository_id
-GROUP BY cp.project_name, cp.display_name, cp.maturity, cp.category;
-```
+| Column | Type |
+|--------|------|
+| total_repos | INTEGER |
+| repos_with_sbom | INTEGER |
+| repos_with_signatures | INTEGER |
+| repos_with_attestations | INTEGER |
+| sbom_percentage | DECIMAL |
+| signature_percentage | DECIMAL |
+| attestation_percentage | DECIMAL |
+| total_releases | INTEGER |
+| total_assets | INTEGER |
+| total_workflows | INTEGER |
+| repos_using_sbom_generators | INTEGER |
+| repos_using_signers | INTEGER |
+| repos_using_vuln_scanners | INTEGER |
+| repos_using_dep_scanners | INTEGER |
+| repos_using_code_scanners | INTEGER |
+| repos_using_container_scanners | INTEGER |
 
-**Purpose:** Project-level security metrics across all repos in a CNCF project
+### agg_tool_summary
 
-**Note:** Only exists when using rich format input with CNCF metadata.
+**Source:** `sql/models/04_summary_views.sql`
 
-## Transformation Pipeline
+One row per detected tool with adoption statistics.
 
-The normalization process transforms nested GraphQL responses into flat relational arrays:
+| Column | Type |
+|--------|------|
+| tool_name | TEXT |
+| tool_category | TEXT |
+| repo_count | INTEGER |
+| workflow_count | INTEGER |
+| adoption_percentage | DECIMAL |
 
-**Input (GraphQL Response):**
-```json
-{
-  "repository": {
-    "id": "R_abc",
-    "name": "cosign",
-    "owner": { "login": "sigstore" },
-    "releases": {
-      "nodes": [
-        {
-          "id": "REL_001",
-          "tagName": "v2.2.0",
-          "releaseAssets": {
-            "nodes": [
-              { "id": "RA_001", "name": "cosign.sig" }
-            ]
-          }
-        }
-      ]
-    }
-  }
-}
-```
+### agg_repo_summary_sorted
 
-**Output (Relational Arrays):**
-```typescript
-{
-  repositories: [
-    { id: "R_abc", name: "cosign", nameWithOwner: "sigstore/cosign", ... }
-  ],
-  releases: [
-    { id: "REL_001", repository_id: "R_abc", tagName: "v2.2.0", ... }
-  ],
-  releaseAssets: [
-    { id: "RA_001", repository_id: "R_abc", release_id: "REL_001", name: "cosign.sig", ... }
-  ]
-}
-```
+**Source:** `sql/models/04_summary_views.sql`
 
-These arrays are then inserted into DuckDB using Apache Arrow IPC for performance.
+Pre-sorted repository list for reports.
 
-## Querying the Data
+| Column | Type |
+|--------|------|
+| nameWithOwner | TEXT |
+| total_releases | INTEGER |
+| has_sbom_artifact | BOOLEAN |
+| has_signature_artifact | BOOLEAN |
+| has_attestation_artifact | BOOLEAN |
+| uses_sbom_generator | BOOLEAN |
+| uses_signer | BOOLEAN |
+| uses_code_scanner | BOOLEAN |
 
-### Example Queries
+### agg_sbom_summary
 
-**Find all repositories with SBOM artifacts:**
-```sql
-SELECT r.nameWithOwner, COUNT(*) AS sbom_count
-FROM base_repositories r
-JOIN agg_artifact_patterns ap ON r.id = ap.repository_id
-WHERE ap.is_sbom = true
-GROUP BY r.nameWithOwner
-ORDER BY sbom_count DESC;
-```
+**Source:** `sql/models/04_summary_views.sql`
 
-**Find repositories using both Syft and Cosign in CI:**
-```sql
-SELECT DISTINCT r.nameWithOwner
-FROM base_repositories r
-JOIN agg_workflow_tools wt ON r.id = wt.repository_id
-WHERE wt.tool_name IN ('syft', 'cosign')
-GROUP BY r.nameWithOwner
-HAVING COUNT(DISTINCT wt.tool_name) = 2;
-```
+SBOM format and adoption statistics (repos with SBOMs only).
 
-**Get detailed artifact breakdown for a specific repository:**
-```sql
-SELECT 
-  rel.tagName,
-  ra.name,
-  ap.is_sbom,
-  ap.is_signature,
-  ap.is_attestation
-FROM base_repositories r
-JOIN base_releases rel ON r.id = rel.repository_id
-JOIN base_release_assets ra ON rel.id = ra.release_id
-JOIN agg_artifact_patterns ap ON ra.id = ap.artifact_id
-WHERE r.nameWithOwner = 'sigstore/cosign'
-ORDER BY rel.createdAt DESC, ra.name;
-```
+| Column | Type |
+|--------|------|
+| total_repos | INTEGER |
+| spdx_count | INTEGER |
+| cyclonedx_count | INTEGER |
+| unknown_count | INTEGER |
+| partial_adoption | INTEGER |
+| full_adoption | INTEGER |
 
-## Parquet Export
+### agg_advanced_artifacts
 
-All tables are exported to Parquet files with metadata:
+**Source:** `sql/models/04_summary_views.sql`
 
-```text
-output/<input-name>/
-  <timestamp>/
-    database.db
-    parquet/
-      base_*.parquet
-      agg_*.parquet
-      raw_*.parquet
-    raw-responses.<QueryName>.jsonl
-    security-insights-sboms.csv
-    security-insights-attestations.csv
-    files/
-  current -> <timestamp>/
-```
+Advanced supply chain artifact detection counts.
 
-These can be queried directly with DuckDB, Python (PyArrow/Pandas), or any Parquet-compatible tool.
+| Column | Type |
+|--------|------|
+| repos_with_advanced_artifacts | INTEGER |
+| vex_count | INTEGER |
+| slsa_count | INTEGER |
+| intoto_link_count | INTEGER |
+| intoto_layout_count | INTEGER |
+| sigstore_bundle_count | INTEGER |
+| swid_tag_count | INTEGER |
+| container_attestation_count | INTEGER |
+| license_file_count | INTEGER |
+| generic_attestation_count | INTEGER |
+
+### agg_tool_category_summary
+
+**Source:** `sql/models/04_summary_views.sql`
+
+Tools grouped by category with repo and workflow counts.
+
+| Column | Type |
+|--------|------|
+| tool_category | TEXT |
+| tool_name | TEXT |
+| repo_count | INTEGER |
+| workflow_count | INTEGER |
+
+### agg_repo_detail
+
+**Source:** `sql/models/04_summary_views.sql`
+
+Pre-sorted repository details with all metrics.
+
+| Column | Type |
+|--------|------|
+| nameWithOwner | TEXT |
+| total_releases | INTEGER |
+| total_assets | INTEGER |
+| sbom_artifact_count | INTEGER |
+| signature_artifact_count | INTEGER |
+| uses_sbom_generator | BOOLEAN |
+| uses_signer | BOOLEAN |
+| uses_vulnerability_scanner | BOOLEAN |
+| uses_code_scanner | BOOLEAN |
+
+### agg_si_attestations
+
+**Source:** `sql/models/01a_security_insights_flattener.sql`
+
+Flattened attestations from Security Insights YAML documents. Extracts from multiple paths: `repository.release.attestations[]`, `repository.security.tools[].results.*`, top-level `attestations[]`, and `security-artifacts.attestations[]`.
+
+| Column | Type |
+|--------|------|
+| repo_id | TEXT |
+| source_url | TEXT |
+| fetched_at | TIMESTAMP |
+| schema_version | TEXT |
+| last_updated | DATE |
+| repository_url | TEXT |
+| project_name | TEXT |
+| attestation_source | TEXT (release, tool_adhoc, tool_ci, tool_release, top_level, security_artifacts) |
+| attestation_name | TEXT |
+| attestation_location | TEXT |
+| attestation_predicate_uri | TEXT |
+| attestation_comment | TEXT |
+
+### agg_cncf_project_summary
+
+**Source:** `sql/models/05_cncf_project_analysis.sql` — only present with rich-format input
+
+| Column | Type |
+|--------|------|
+| project_name | TEXT |
+| display_name | TEXT |
+| description | TEXT |
+| maturity | TEXT |
+| category | TEXT |
+| subcategory | TEXT |
+| total_repos | INTEGER |
+| primary_repos | INTEGER |
+| total_releases | INTEGER |
+| total_release_assets | INTEGER |
+| total_workflows | INTEGER |
+| repos_with_sbom | INTEGER |
+| total_sbom_artifacts | INTEGER |
+| repos_with_spdx | INTEGER |
+| repos_with_cyclonedx | INTEGER |
+| sbom_adoption_rate | DECIMAL |
+| earliest_sbom_date | TEXT |
+| earliest_release_with_sbom | TEXT |
+| repos_with_signatures | INTEGER |
+| repos_with_attestations | INTEGER |
+| repos_with_slsa_provenance | INTEGER |
+| repos_with_in_toto | INTEGER |
+| repos_using_syft | INTEGER |
+| repos_using_trivy | INTEGER |
+| repos_using_cosign | INTEGER |
+| repos_using_sigstore | INTEGER |
+| repos_using_slsa_generator | INTEGER |
+| repos_using_cdxgen | INTEGER |
+| repos_using_grype | INTEGER |
+| repos_using_goreleaser | INTEGER |
+| repos_using_codeql | INTEGER |
+| repos_using_snyk | INTEGER |
+| repos_using_vuln_scanner | INTEGER |
+| repos_using_container_scanner | INTEGER |
+| repos_using_dependabot | INTEGER |
+| repos_using_renovate | INTEGER |
+| date_accepted | TEXT |
+| date_incubating | TEXT |
+| date_graduated | TEXT |
+| has_security_audits | BOOLEAN |
+| security_audit_count | INTEGER |
+| latest_audit_date | TEXT |
+| latest_audit_vendor | TEXT |
+| homepage_url | TEXT |
+| repo_url | TEXT |
+| clomonitor_name | TEXT |
+| dev_stats_url | TEXT |
+| blog_url | TEXT |
+| crunchbase | TEXT |
+| twitter | TEXT |
 
 ## Schema Evolution
 
-As the data model evolves:
-
 1. **Normalizers change**: Update the TypeScript normalizer to add/remove fields
-2. **Base tables change**: DuckDB automatically infers schema from the arrays
+2. **Base tables change**: DuckDB automatically infers schema from the JSON arrays
 3. **SQL models change**: Update `sql/models/*.sql` to use new fields
 4. **Parquet regenerated**: Next run produces new Parquet files with updated schema
-
-The beauty of this architecture is that schema changes are localized to the normalizer and SQL model files - no manual schema management required.
