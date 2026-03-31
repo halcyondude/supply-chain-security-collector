@@ -1,0 +1,114 @@
+{
+  "tables": [
+    {
+      "name": "base_repositories",
+      "file": "base_repositories.parquet",
+      "rows": 236
+    },
+    {
+      "name": "base_releases",
+      "file": "base_releases.parquet",
+      "rows": 4169
+    },
+    {
+      "name": "base_release_assets",
+      "file": "base_release_assets.parquet",
+      "rows": 39304
+    },
+    {
+      "name": "base_workflows",
+      "file": "base_workflows.parquet",
+      "rows": 2784
+    },
+    {
+      "name": "base_cncf_projects",
+      "file": "base_cncf_projects.parquet",
+      "rows": 236
+    },
+    {
+      "name": "base_cncf_project_repos",
+      "file": "base_cncf_project_repos.parquet",
+      "rows": 272
+    },
+    {
+      "name": "base_si_documents",
+      "file": "base_si_documents.parquet",
+      "rows": 27
+    },
+    {
+      "name": "base_si_sboms",
+      "file": "base_si_sboms.parquet",
+      "rows": 7
+    },
+    {
+      "name": "base_branch_protection_rules",
+      "file": "base_branch_protection_rules.parquet",
+      "rows": 0
+    },
+    {
+      "name": "base_security_md",
+      "file": "base_security_md.parquet",
+      "rows": 0
+    },
+    {
+      "name": "agg_artifact_patterns",
+      "file": "agg_artifact_patterns.parquet",
+      "rows": 39304
+    },
+    {
+      "name": "agg_workflow_tools",
+      "file": "agg_workflow_tools.parquet",
+      "rows": 297
+    },
+    {
+      "name": "agg_repo_summary",
+      "file": "agg_repo_summary.parquet",
+      "rows": 236
+    },
+    {
+      "name": "agg_repo_summary_sorted",
+      "file": "agg_repo_summary_sorted.parquet",
+      "rows": 236
+    },
+    {
+      "name": "agg_repo_detail",
+      "file": "agg_repo_detail.parquet",
+      "rows": 236
+    },
+    {
+      "name": "agg_cncf_project_summary",
+      "file": "agg_cncf_project_summary.parquet",
+      "rows": 236
+    },
+    {
+      "name": "agg_executive_summary",
+      "file": "agg_executive_summary.parquet",
+      "rows": 1
+    },
+    {
+      "name": "agg_tool_summary",
+      "file": "agg_tool_summary.parquet",
+      "rows": 17
+    },
+    {
+      "name": "agg_tool_category_summary",
+      "file": "agg_tool_category_summary.parquet",
+      "rows": 17
+    },
+    {
+      "name": "agg_sbom_summary",
+      "file": "agg_sbom_summary.parquet",
+      "rows": 1
+    },
+    {
+      "name": "agg_advanced_artifacts",
+      "file": "agg_advanced_artifacts.parquet",
+      "rows": 1
+    },
+    {
+      "name": "agg_si_attestations",
+      "file": "agg_si_attestations.parquet",
+      "rows": 4
+    }
+  ]
+}

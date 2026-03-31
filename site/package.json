@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "export-db": "cd .. && npx ts-node --esm site/scripts/export-base-db.ts"
+    "export-db": "cd .. && npx ts-node site/scripts/export-base-db.ts"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.32.0",
