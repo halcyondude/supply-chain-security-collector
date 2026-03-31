@@ -5,7 +5,7 @@ import * as yaml from 'yaml';
 import chalk from 'chalk';
 
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
-import type { ProjectMetadata, RepositoryTarget } from './config';
+import type { OrgRepo, ProjectMetadata, RepositoryTarget } from './config';
 import { installAndLoadExtensions } from './duckdb-extensions';
 import { 
     normalizeGetRepoDataArtifacts, 
@@ -598,6 +598,77 @@ async function createCNCFTables(
     `);
     fs.unlinkSync(tempReposPath);
     console.log(`  ✅ Created table: base_cncf_project_repos (${projectRepoRecords.length} rows)`);
+}
+
+/**
+ * Write normalized OrgRepo records into the existing DuckDB database as base_org_repos.
+ *
+ * Follows the same temp-JSON + read_json() pattern used for base_repositories.
+ * Opens the existing database so the table lands alongside all other base_* tables
+ * written by writeArtifacts().
+ *
+ * @param orgRepos - Flat array of normalized OrgRepo records.
+ * @param outputDir - The timestamped output directory containing database.db.
+ */
+export async function writeOrgRepoArtifacts(
+    orgRepos: OrgRepo[],
+    outputDir: string
+): Promise<void> {
+    const dbPath = path.join(outputDir, 'database.db');
+    const db = await DuckDBInstance.create(dbPath);
+    const con = await db.connect();
+
+    try {
+        // Install and load required extensions (idempotent)
+        await installAndLoadExtensions(con);
+
+        const tempPath = path.join(outputDir, 'temp_org_repos.json');
+
+        if (orgRepos.length > 0) {
+            fs.writeFileSync(tempPath, JSON.stringify(orgRepos));
+            await con.run(`
+                CREATE TABLE base_org_repos AS
+                SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+            `);
+            fs.unlinkSync(tempPath);
+        } else {
+            // Create empty table with explicit schema so downstream SQL models don't fail
+            await con.run(`
+                CREATE TABLE base_org_repos (
+                    id TEXT,
+                    org TEXT,
+                    name TEXT,
+                    nameWithOwner TEXT,
+                    url TEXT,
+                    description TEXT,
+                    isArchived BOOLEAN,
+                    isFork BOOLEAN,
+                    defaultBranch TEXT,
+                    primaryLanguage TEXT,
+                    cncf_project_name TEXT
+                )
+            `);
+        }
+        console.log(`  ✅ Created table: base_org_repos (${orgRepos.length} rows)`);
+
+        // Export the new table to Parquet
+        const parquetDir = path.join(outputDir, 'parquet');
+        fs.mkdirSync(parquetDir, { recursive: true });
+        const parquetPath = path.join(parquetDir, 'base_org_repos.parquet');
+        await con.run(`
+            COPY base_org_repos TO '${parquetPath}'
+            (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000)
+        `);
+        console.log('✅ Exported base_org_repos to Parquet');
+
+        await con.run('CHECKPOINT');
+    } finally {
+        try {
+            con.closeSync();
+        } catch (error) {
+            console.warn('Warning: Could not properly close database connection:', error);
+        }
+    }
 }
 
 async function exportTablesToParquet(con: DuckDBConnection, parquetDir: string) {
