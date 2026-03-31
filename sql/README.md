@@ -49,7 +49,7 @@ Scans GitHub Actions workflow files for security tools using **Full-Text Search 
 - **Scanners**: Snyk, CodeQL, Grype, Anchore
 - **Dependency tools**: Dependabot, Renovate
 
-**Detection Method:** Uses DuckDB's FTS indexes with BM25 ranking for fast keyword-based detection. See `docs/workflow-json-strategy.md` for plans to enhance with JSON-based structured extraction.
+**Detection Method:** Uses DuckDB's FTS indexes with BM25 ranking for fast keyword-based detection.
 
 **Output**: `agg_workflow_tools` table with one row per tool detection
 
@@ -82,7 +82,7 @@ Aggregates security metrics at the CNCF project level:
 
 ### Run analysis on collected data:
 ```bash
-npm run analyze -- --database output/test-single-TIMESTAMP/GetRepoDataExtendedInfo/database.db
+npm run analyze -- --database output/test-single-project/current/database.db
 ```
 
 ### Collect data AND analyze:
@@ -152,7 +152,7 @@ SELECT
   latest_audit_vendor
 FROM agg_cncf_project_summary
 WHERE has_security_audits = TRUE
-ORDER BY maturity, display_name;
+ORDER BY maturity, display_name
 LIMIT 20;
 
 -- Projects missing SBOMs
@@ -216,6 +216,7 @@ sql/
 ├── models/                  # Analysis SQL models (run in order)
 │   ├── 00_initialize_indexes.sql
 │   ├── 01_artifact_analysis.sql
+│   ├── 01a_security_insights_flattener.sql
 │   ├── 02_workflow_tool_detection.sql
 │   ├── 03_repository_security_summary.sql
 │   ├── 04_summary_views.sql

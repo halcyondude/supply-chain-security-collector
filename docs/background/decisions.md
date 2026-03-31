@@ -61,7 +61,7 @@ Targeting community demo for TAG-SC on 10/22.
 - `GetRepoDataArtifacts`: Release artifacts only (default)
 - `GetRepoDataExtendedInfo`: Adds workflows, security policies, etc.
 
-See `docs/QUERY-ARCHITECTURE.md` for details.
+See the query-specific normalizers in `src/normalizers/` for details.
 
 ### No Union Types
 
@@ -103,15 +103,9 @@ type RepoData = ArtifactsQuery | ExtendedQuery  // Requires runtime type guards
 
 ### Workflow Analysis
 
-**Decision**: Not implemented yet, but query is ready.
+**Decision**: Implemented via FTS-based tool detection in SQL models.
 
-**Rationale**:
-
-- Fetching workflow YAML is expensive (rate limits).
-- Most use cases only need artifact presence.
-- Query exists in `GetRepoDataExtendedInfo` for when we need it.
-
-**Future**: Add `--extended` flag to main.ts to enable workflow analysis.
+**Implementation**: `sql/models/02_workflow_tool_detection.sql` scans GitHub Actions workflow YAML content using DuckDB full-text search indexes to detect security tools (Cosign, Syft, Trivy, etc.). Results are stored in `agg_workflow_tools`.
 
 ## Data Strategy
 
@@ -126,7 +120,7 @@ type RepoData = ArtifactsQuery | ExtendedQuery  // Requires runtime type guards
 - Parquet files with embedded schema metadata for efficient querying and long-term archival.
 - Schema metadata embedded as key-value pairs enables self-documenting datasets.
 
-**Parquet Generation**: Implemented using DuckDB for JSON-to-Parquet conversion with schema metadata embedding. See [Viewing Parquet Data](./viewing-parquet-data.md) for exploration tools and techniques.
+**Parquet Generation**: Implemented using DuckDB for JSON-to-Parquet conversion with schema metadata embedding.
 
 ### Normalized CSV Structure
 
@@ -150,7 +144,7 @@ type RepoData = ArtifactsQuery | ExtendedQuery  // Requires runtime type guards
 - Validates that output matches expectations.
 - Self-documenting based on real data.
 
-**Tools**: `scripts/generate-schema-docs.ts` reads JSON output and generates `docs/schema.md`.
+**Tools**: Schema documentation is generated from actual output files during the export phase.
 
 ### Mock Data Strategy
 

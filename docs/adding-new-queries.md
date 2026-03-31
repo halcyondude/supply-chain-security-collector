@@ -234,15 +234,15 @@ async function createTablesForMetrics(
     }
 }
 
-// Helper function (already exists in ArtifactWriter.ts)
-async function createTableFromArray(
-    con: DuckDBConnection,
-    tableName: string,
-    data: unknown[]
-) {
-    const arrow = tableFromJSON(data);
-    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
-}
+// Helper: write temp JSON, load via read_json(), delete temp file
+// (pattern used throughout ArtifactWriter.ts)
+const tempPath = path.join(outputDir, `temp_base_repositories.json`);
+fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
+await con.run(`
+    CREATE TABLE base_repositories AS
+    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+`);
+fs.unlinkSync(tempPath);
 ```
 
 #### 5c. Export Parquet Files (automatic)
@@ -251,25 +251,25 @@ The `exportTablesToParquet()` function automatically exports all tables in the d
 
 ---
 
-## Data Loading: Arrow IPC (Not Temporary JSON Files)
+## Data Loading: Temp JSON + read_json()
 
-**Important:** The current implementation uses Apache Arrow IPC format for loading data into DuckDB, not temporary JSON files. This is ~10x faster for large datasets.
+Data is loaded into DuckDB by writing normalized arrays to temporary JSON files, then using DuckDB's `read_json()` to ingest them. The temp files are deleted immediately after loading.
 
 **Pattern:**
 ```typescript
-import { tableFromJSON } from 'apache-arrow';
-
-async function createTableFromArray(con: DuckDBConnection, tableName: string, data: unknown[]) {
-    const arrow = tableFromJSON(data);
-    await con.insertArrowFromIPCStream(arrow, { name: tableName, create: true });
-}
+const tempPath = path.join(outputDir, `temp_${tableName}.json`);
+fs.writeFileSync(tempPath, JSON.stringify(data));
+await con.run(`
+    CREATE TABLE ${tableName} AS
+    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+`);
+fs.unlinkSync(tempPath);
 ```
 
-**Why Arrow?**
-- 10x faster than JSON for large datasets
-- Zero-copy data transfer
-- Native DuckDB format
-- No temp file cleanup needed
+**Why this approach:**
+- DuckDB `read_json()` handles schema inference and `union_by_name` for heterogeneous records
+- No external dependencies (no Apache Arrow library needed)
+- Temp files are ephemeral and cleaned up inline
 
 ---
 
@@ -279,7 +279,7 @@ Once everything is wired up, you can run your query:
 
 ```bash
 # Run just your new query
-npm run collect -- --input input/test-single.json --queries GetRepoDataMetrics
+npm run collect -- --input input/test-single-project.json --queries GetRepoDataMetrics
 
 # Run multiple queries including yours
 npm run collect -- --input input/repos.json --queries GetRepoDataExtendedInfo GetRepoDataMetrics
@@ -290,22 +290,18 @@ npm run collect -- --input input/repos.json --queries GetRepoDataMetrics --paral
 
 ## Output Structure
 
-Each query produces its own isolated output:
+Each run produces a flat output directory named after the input file:
 
 ```text
-output/
-└── repos-2025-01-15T10-30-00/
-    ├── raw-responses.jsonl          # Audit trail for all queries
-    ├── GetRepoDataMetrics/
-    │   ├── database.db               # DuckDB database with all tables
-    │   └── parquet/
-    │       ├── raw_GetRepoDataMetrics.parquet
-    │       └── base_repositories.parquet
-    └── GetRepoDataExtendedInfo/
-        ├── database.db
-        └── parquet/
-            ├── raw_GetRepoDataExtendedInfo.parquet
-            └── ... (other tables)
+output/<input-name>/
+  <timestamp>/
+    database.db                         # DuckDB database with all tables
+    parquet/                            # Parquet exports of all tables
+      base_*.parquet
+      agg_*.parquet
+      raw_*.parquet
+    raw-responses.<QueryName>.jsonl     # API audit trail
+  current -> <timestamp>/              # symlink to latest
 ```
 
 ## Testing Your Query
@@ -319,8 +315,8 @@ output/
 2. **Verify the output:**
    ```bash
    # Check the database
-   duckdb output/test-single-*/GetRepoDataMetrics/database.db
-   
+   duckdb output/test-single-project/current/database.db
+
    D SHOW TABLES;
    D SELECT * FROM base_repositories;
    D .exit
@@ -328,7 +324,7 @@ output/
 
 3. **Inspect Parquet files:**
    ```bash
-   npm run view-parquet -- output/test-single-*/GetRepoDataMetrics/parquet/base_repositories.parquet
+   duckdb -c "SELECT * FROM 'output/test-single-project/current/parquet/base_repositories.parquet' LIMIT 10"
    ```
 
 ## Query Name Validation

@@ -334,5 +334,3 @@ await createTableFromArray(con, 'base_repositories', normalized.base_repositorie
 ```
 
 This pattern ensures type safety from GraphQL query → API call → normalization → database, catching errors at compile time rather than runtime.
-
-````

@@ -30,7 +30,7 @@ npm run codegen                # regenerate TypeScript types from GraphQL schema
 
 # Utilities
 npm run fetch:landscape        # download latest CNCF landscape data
-npm run clean                  # remove output/, cache, dist
+npm run clean                  # remove output, .cache, src/generated, .virtual-documents, .ipynb_checkpoints
 ```
 
 **Environment:** Requires `GITHUB_PERSONAL_ACCESS_TOKEN` env var (see `.env.template`). `GITHUB_PAT` also accepted for backward compatibility. Node 18+, Python 3.12 (for notebooks only).
@@ -74,7 +74,7 @@ Input JSON → GitHub GraphQL API → query-specific TypeScript normalizers → 
 
 ### CLI flags
 
-`--input <file>`, `--maturity <graduated|incubating|sandbox>`, `--repo-scope <primary|all>`, `--queries <queryName>`
+`--input <file>` (required), `--output <dir>`, `--queries <names...>`, `--maturity <levels...>`, `--repo-scope <primary|all>`, `--parallel`, `--analyze`, `--persist-files`, `--verbose`
 
 ## Conventions
 
