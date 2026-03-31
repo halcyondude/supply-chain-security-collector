@@ -2,6 +2,7 @@ import { useEffect } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { initDB, runQuery } from './db/engine';
 import { queryLibrary, categories, type CatalogQuery } from './db/queries';
+import { QueryEditor } from './components/QueryEditor';
 
 type Status = 'loading' | 'ready' | 'error' | 'no-data';
 
@@ -11,6 +12,9 @@ const repoCount = signal<number | null>(null);
 const queryResult = signal<{ columns: string[]; rows: any[][] } | null>(null);
 const activeQuery = signal<CatalogQuery | null>(null);
 const errorMessage = signal<string | null>(null);
+const isRunning = signal(false);
+// SQL text currently loaded in the editor (drives initialSQL prop re-render).
+const editorSQL = signal<string | undefined>(undefined);
 
 export function App() {
   useEffect(() => {
@@ -40,14 +44,24 @@ export function App() {
     })();
   }, []);
 
-  const handleQueryClick = async (query: CatalogQuery) => {
+  // Selecting a query from the library populates the editor; execution is
+  // triggered explicitly by the user via the Run button or Ctrl+Enter.
+  const handleQueryClick = (query: CatalogQuery) => {
     activeQuery.value = query;
+    editorSQL.value = query.sql;
+    errorMessage.value = null;
+  };
+
+  const handleExecute = async (sql: string) => {
+    isRunning.value = true;
     errorMessage.value = null;
     try {
-      queryResult.value = await runQuery(query.sql);
+      queryResult.value = await runQuery(sql);
     } catch (err) {
       errorMessage.value = String(err);
       queryResult.value = null;
+    } finally {
+      isRunning.value = false;
     }
   };
 
@@ -70,27 +84,24 @@ export function App() {
           </aside>
           <main style={{ flex: 1, minWidth: 0 }}>
             {activeQuery.value && (
-              <div style={{ marginBottom: '1rem' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
                 <h2 style={{ fontSize: '1.25rem' }}>
                   {activeQuery.value.name}
                 </h2>
-                <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>
                   {activeQuery.value.description}
                 </p>
-                <pre
-                  style={{
-                    background: '#1e293b',
-                    padding: '0.75rem',
-                    borderRadius: '0.375rem',
-                    fontSize: '0.8rem',
-                    overflowX: 'auto',
-                    marginTop: '0.5rem',
-                  }}
-                >
-                  {activeQuery.value.sql}
-                </pre>
               </div>
             )}
+
+            <div style={{ marginBottom: '1rem' }}>
+              <QueryEditor
+                onExecute={handleExecute}
+                initialSQL={editorSQL.value}
+                isLoading={isRunning.value}
+              />
+            </div>
+
             {errorMessage.value && (
               <div
                 style={{
