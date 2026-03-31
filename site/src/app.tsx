@@ -5,6 +5,8 @@ import { queryLibrary, categories, type CatalogQuery } from './db/queries';
 import { QueryEditor } from './components/QueryEditor';
 import { QueryLibrary } from './components/QueryLibrary';
 import { FindingsOverview } from './components/FindingsOverview';
+import { ResultTable } from './components/ResultTable';
+import { ResultChart, isChartable } from './components/ResultChart';
 
 type Status = 'loading' | 'ready' | 'error' | 'no-data';
 
@@ -17,6 +19,8 @@ const errorMessage = signal<string | null>(null);
 const isRunning = signal(false);
 // SQL text currently loaded in the editor (drives initialSQL prop re-render).
 const editorSQL = signal<string | undefined>(undefined);
+// Whether the chart view is active (only visible when result is chartable).
+const showChart = signal(false);
 
 export function App() {
   useEffect(() => {
@@ -57,6 +61,7 @@ export function App() {
   const handleExecute = async (sql: string) => {
     isRunning.value = true;
     errorMessage.value = null;
+    showChart.value = false;
     try {
       queryResult.value = await runQuery(sql);
     } catch (err) {
@@ -135,11 +140,83 @@ export function App() {
                 {errorMessage.value}
               </div>
             )}
-            {queryResult.value && <ResultTable result={queryResult.value} />}
+
+            {queryResult.value && (
+              <ResultArea result={queryResult.value} />
+            )}
           </main>
         </div>
       )}
     </div>
+  );
+}
+
+function ResultArea({
+  result,
+}: {
+  result: { columns: string[]; rows: any[][] };
+}) {
+  const chartable = isChartable(result);
+
+  return (
+    <div>
+      {chartable && (
+        <div
+          style={{
+            display: 'flex',
+            gap: '0.5rem',
+            marginBottom: '0.75rem',
+          }}
+        >
+          <ViewToggleButton
+            label="Table"
+            active={!showChart.value}
+            onClick={() => { showChart.value = false; }}
+          />
+          <ViewToggleButton
+            label="Chart"
+            active={showChart.value}
+            onClick={() => { showChart.value = true; }}
+          />
+        </div>
+      )}
+
+      {showChart.value && chartable ? (
+        <ResultChart result={result} enabled={true} />
+      ) : (
+        <ResultTable result={result} />
+      )}
+    </div>
+  );
+}
+
+function ViewToggleButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '0.25rem 0.75rem',
+        borderRadius: '0.25rem',
+        border: '1px solid',
+        borderColor: active ? '#14b8a6' : '#334155',
+        background: active ? '#134e4a' : 'transparent',
+        color: active ? '#5eead4' : '#94a3b8',
+        fontSize: '0.8rem',
+        cursor: 'pointer',
+        fontWeight: active ? 600 : 400,
+        transition: 'all 0.1s',
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -178,64 +255,5 @@ function StatusBadge() {
         </span>
       )}
     </span>
-  );
-}
-
-
-function ResultTable({ result }: { result: { columns: string[]; rows: any[][] } }) {
-  return (
-    <div style={{ overflowX: 'auto' }}>
-      <table
-        style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontSize: '0.875rem',
-        }}
-      >
-        <thead>
-          <tr>
-            {result.columns.map((col) => (
-              <th
-                key={col}
-                style={{
-                  textAlign: 'left',
-                  padding: '0.5rem',
-                  borderBottom: '1px solid #334155',
-                  color: '#94a3b8',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {result.rows.map((row, i) => (
-            <tr key={i}>
-              {row.map((cell, j) => (
-                <td
-                  key={j}
-                  style={{
-                    padding: '0.5rem',
-                    borderBottom: '1px solid #1e293b',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {cell === null || cell === undefined
-                    ? ''
-                    : typeof cell === 'boolean'
-                      ? cell ? 'true' : 'false'
-                      : String(cell)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.5rem' }}>
-        {result.rows.length} rows
-      </div>
-    </div>
   );
 }
