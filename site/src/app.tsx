@@ -3,6 +3,8 @@ import { signal } from '@preact/signals';
 import { initDB, runQuery } from './db/engine';
 import { queryLibrary, categories, type CatalogQuery } from './db/queries';
 import { QueryEditor } from './components/QueryEditor';
+import { QueryLibrary } from './components/QueryLibrary';
+import { FindingsOverview } from './components/FindingsOverview';
 
 type Status = 'loading' | 'ready' | 'error' | 'no-data';
 
@@ -79,10 +81,29 @@ export function App() {
 
       {status.value === 'ready' && (
         <div style={{ display: 'flex', gap: '2rem' }}>
-          <aside style={{ width: '280px', flexShrink: 0 }}>
-            <QueryLibraryPanel onSelect={handleQueryClick} />
+          <aside
+            style={{
+              width: '260px',
+              flexShrink: 0,
+              borderRight: '1px solid #1e293b',
+              paddingRight: '1.5rem',
+            }}
+          >
+            <QueryLibrary
+              queries={queryLibrary}
+              categories={categories}
+              onSelect={handleQueryClick}
+              selectedId={activeQuery.value?.id}
+            />
           </aside>
           <main style={{ flex: 1, minWidth: 0 }}>
+            {/* Show findings overview until the user picks a query */}
+            {!activeQuery.value && (
+              <div style={{ marginBottom: '2rem' }}>
+                <FindingsOverview runQuery={runQuery} />
+              </div>
+            )}
+
             {activeQuery.value && (
               <div style={{ marginBottom: '0.75rem' }}>
                 <h2 style={{ fontSize: '1.25rem' }}>
@@ -160,60 +181,6 @@ function StatusBadge() {
   );
 }
 
-function QueryLibraryPanel({
-  onSelect,
-}: {
-  onSelect: (q: CatalogQuery) => void;
-}) {
-  return (
-    <div>
-      <h3 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '0.75rem' }}>
-        QUERY LIBRARY
-      </h3>
-      {categories.map((cat) => {
-        const queries = queryLibrary.filter((q) => q.category === cat.id);
-        if (queries.length === 0) return null;
-        return (
-          <div key={cat.id} style={{ marginBottom: '1rem' }}>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                color: '#64748b',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                marginBottom: '0.25rem',
-              }}
-            >
-              {cat.name}
-            </div>
-            {queries.map((q) => (
-              <button
-                key={q.id}
-                onClick={() => onSelect(q)}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'left',
-                  background:
-                    activeQuery.value?.id === q.id ? '#1e293b' : 'transparent',
-                  border: 'none',
-                  color: '#e2e8f0',
-                  padding: '0.375rem 0.5rem',
-                  borderRadius: '0.25rem',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  marginBottom: '2px',
-                }}
-              >
-                {q.name}
-              </button>
-            ))}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 function ResultTable({ result }: { result: { columns: string[]; rows: any[][] } }) {
   return (
