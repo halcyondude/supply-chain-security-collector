@@ -105,7 +105,8 @@ export class SecurityAnalyzer {
             '02_workflow_tool_detection.sql',
             '03_repository_security_summary.sql',
             '04_summary_views.sql',
-            '05_cncf_project_analysis.sql'
+            '05_cncf_project_analysis.sql',
+            '06_org_ci_visibility.sql'
         ];
 
         for (const model of models) {
