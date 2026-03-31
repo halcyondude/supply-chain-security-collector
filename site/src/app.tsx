@@ -2,11 +2,13 @@ import { useEffect } from 'preact/hooks';
 import { signal } from '@preact/signals';
 import { initDB, runQuery } from './db/engine';
 import { queryLibrary, categories, type CatalogQuery } from './db/queries';
+import { saveEntry } from './db/journal';
 import { QueryEditor } from './components/QueryEditor';
 import { QueryLibrary } from './components/QueryLibrary';
 import { FindingsOverview } from './components/FindingsOverview';
 import { ResultTable } from './components/ResultTable';
 import { ResultChart, isChartable } from './components/ResultChart';
+import { JournalPanel } from './components/JournalPanel';
 
 type Status = 'loading' | 'ready' | 'error' | 'no-data';
 
@@ -21,6 +23,8 @@ const isRunning = signal(false);
 const editorSQL = signal<string | undefined>(undefined);
 // Whether the chart view is active (only visible when result is chartable).
 const showChart = signal(false);
+// Incremented after each successful query to trigger JournalPanel refresh.
+const journalRefreshToken = signal(0);
 
 export function App() {
   useEffect(() => {
@@ -62,8 +66,18 @@ export function App() {
     isRunning.value = true;
     errorMessage.value = null;
     showChart.value = false;
+    const startMs = performance.now();
     try {
-      queryResult.value = await runQuery(sql);
+      const result = await runQuery(sql);
+      const executionTimeMs = Math.round(performance.now() - startMs);
+      queryResult.value = result;
+      saveEntry({
+        timestamp: new Date().toISOString(),
+        sql,
+        rowCount: result.rows.length,
+        executionTimeMs,
+      });
+      journalRefreshToken.value += 1;
     } catch (err) {
       errorMessage.value = String(err);
       queryResult.value = null;
@@ -85,67 +99,74 @@ export function App() {
       </header>
 
       {status.value === 'ready' && (
-        <div style={{ display: 'flex', gap: '2rem' }}>
-          <aside
-            style={{
-              width: '260px',
-              flexShrink: 0,
-              borderRight: '1px solid #1e293b',
-              paddingRight: '1.5rem',
-            }}
-          >
-            <QueryLibrary
-              queries={queryLibrary}
-              categories={categories}
-              onSelect={handleQueryClick}
-              selectedId={activeQuery.value?.id}
-            />
-          </aside>
-          <main style={{ flex: 1, minWidth: 0 }}>
-            {/* Show findings overview until the user picks a query */}
-            {!activeQuery.value && (
-              <div style={{ marginBottom: '2rem' }}>
-                <FindingsOverview runQuery={runQuery} />
-              </div>
-            )}
-
-            {activeQuery.value && (
-              <div style={{ marginBottom: '0.75rem' }}>
-                <h2 style={{ fontSize: '1.25rem' }}>
-                  {activeQuery.value.name}
-                </h2>
-                <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                  {activeQuery.value.description}
-                </p>
-              </div>
-            )}
-
-            <div style={{ marginBottom: '1rem' }}>
-              <QueryEditor
-                onExecute={handleExecute}
-                initialSQL={editorSQL.value}
-                isLoading={isRunning.value}
+        <>
+          <div style={{ display: 'flex', gap: '2rem' }}>
+            <aside
+              style={{
+                width: '260px',
+                flexShrink: 0,
+                borderRight: '1px solid #1e293b',
+                paddingRight: '1.5rem',
+              }}
+            >
+              <QueryLibrary
+                queries={queryLibrary}
+                categories={categories}
+                onSelect={handleQueryClick}
+                selectedId={activeQuery.value?.id}
               />
-            </div>
+            </aside>
+            <main style={{ flex: 1, minWidth: 0 }}>
+              {/* Show findings overview until the user picks a query */}
+              {!activeQuery.value && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <FindingsOverview runQuery={runQuery} />
+                </div>
+              )}
 
-            {errorMessage.value && (
-              <div
-                style={{
-                  background: '#7f1d1d',
-                  padding: '0.75rem',
-                  borderRadius: '0.375rem',
-                  marginBottom: '1rem',
-                }}
-              >
-                {errorMessage.value}
+              {activeQuery.value && (
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <h2 style={{ fontSize: '1.25rem' }}>
+                    {activeQuery.value.name}
+                  </h2>
+                  <p style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                    {activeQuery.value.description}
+                  </p>
+                </div>
+              )}
+
+              <div style={{ marginBottom: '1rem' }}>
+                <QueryEditor
+                  onExecute={handleExecute}
+                  initialSQL={editorSQL.value}
+                  isLoading={isRunning.value}
+                />
               </div>
-            )}
 
-            {queryResult.value && (
-              <ResultArea result={queryResult.value} />
-            )}
-          </main>
-        </div>
+              {errorMessage.value && (
+                <div
+                  style={{
+                    background: '#7f1d1d',
+                    padding: '0.75rem',
+                    borderRadius: '0.375rem',
+                    marginBottom: '1rem',
+                  }}
+                >
+                  {errorMessage.value}
+                </div>
+              )}
+
+              {queryResult.value && (
+                <ResultArea result={queryResult.value} />
+              )}
+            </main>
+          </div>
+
+          <JournalPanel
+            onLoadSQL={(sql) => { editorSQL.value = sql; }}
+            refreshToken={journalRefreshToken.value}
+          />
+        </>
       )}
     </div>
   );
