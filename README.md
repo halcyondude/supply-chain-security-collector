@@ -1,11 +1,11 @@
 # supply chain security collector
 
-measure how well open source projects actually ship secure software.
+discover what supply chain security practices are visible across open source projects.
 
 point it at any set of GitHub repos (or the entire CNCF landscape) and get back:
 - which projects publish SBOMs, signatures, and attestations in their releases
-- which CI pipelines run cosign, syft, trivy, codeql, and 20+ other security tools
-- security posture summaries per repo and per CNCF project, queryable in SQL
+- which CI pipelines reference cosign, syft, trivy, codeql, and 20+ other security tools
+- per-repo and per-project summaries, queryable in SQL
 
 the output is a DuckDB database + Parquet files. query it, graph it, or feed it to anything.
 
