@@ -36,7 +36,7 @@ export function normalizeGetOrgRepos(
 
             // Extract primary language (first in the list, ordered by size)
             const languages = node.languages?.nodes ?? [];
-            const primaryLanguage = languages.find(l => l !== null)?.name ?? '';
+            const primaryLanguage = languages.find((l: { name: string } | null) => l !== null)?.name ?? '';
 
             repos.push({
                 id: node.id,
