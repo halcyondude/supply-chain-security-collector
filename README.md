@@ -3,11 +3,29 @@
 discover what supply chain security practices are visible across open source projects.
 
 point it at any set of GitHub repos (or the entire CNCF landscape) and get back:
-- which projects publish SBOMs, signatures, and attestations in their releases
-- which CI pipelines reference cosign, syft, trivy, codeql, and 20+ other security tools
+- which projects publish SBOMs, signatures, and attestations in their GitHub releases
+- which GitHub Actions workflows reference cosign, syft, trivy, codeql, and 20+ other security tools
 - per-repo and per-project summaries, queryable in SQL
 
 the output is a DuckDB database + Parquet files. query it, graph it, or feed it to anything.
+
+### what this covers today
+
+this tool collects from **GitHub's GraphQL API only**. it sees:
+- release assets (SBOMs, `.sig` files, attestations, cosign bundles)
+- GitHub Actions workflow files (tool references via full-text search)
+- branch protection rules, SECURITY-INSIGHTS.yml, security advisories
+
+### what it doesn't see (yet)
+
+many projects ship security artifacts through channels this tool can't reach:
+- **OCI registries** — container image signatures via cosign (`cosign verify`)
+- **package managers** — npm provenance, PyPI attestations, Go module checksums
+- **non-GitHub CI** — Prow (Kubernetes), Azure Pipelines, Jenkins, CircleCI
+- **GitHub Attestations API** — `actions/attest-build-provenance` (not yet queried)
+- **GoReleaser / release tooling** — config-driven signing that doesn't surface in workflow grep
+
+**every number this tool produces is a lower bound.** absence of evidence ≠ evidence of absence. a project showing zero artifacts here may be signing everything — just not through a channel we collect from.
 
 ## quick start
 
