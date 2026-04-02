@@ -420,7 +420,7 @@ export class ReportGenerator {
 
         const rows = await this.queryObjects(`
             SELECT
-                org_login,
+                org,
                 cncf_project_name,
                 total_repos,
                 repos_in_landscape,
@@ -446,7 +446,7 @@ export class ReportGenerator {
         lines.push(`| Organization | CNCF Project | Total Repos | In Landscape | Not Scanned | Archived |`);
         lines.push(`|-------------|-------------|------------:|-------------:|------------:|---------:|`);
         for (const r of rows) {
-            lines.push(`| ${r.org_login} | ${r.cncf_project_name} | ${this.n(r.total_repos)} | ${this.n(r.repos_in_landscape)} | ${this.n(r.repos_not_in_landscape)} | ${this.n(r.archived_repos)} |`);
+            lines.push(`| ${r.org} | ${r.cncf_project_name} | ${this.n(r.total_repos)} | ${this.n(r.repos_in_landscape)} | ${this.n(r.repos_not_in_landscape)} | ${this.n(r.archived_repos)} |`);
         }
         lines.push(``);
 

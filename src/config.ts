@@ -105,17 +105,6 @@ export interface OrgRepo {
   cncf_project_name: string; // which CNCF project this org belongs to
 }
 
-// OrgWorkflow represents a workflow file from a repo discovered via org-level scanning.
-// Workflow content is fetched in Phase 2 for repos not already in base_repositories.
-export interface OrgWorkflow {
-  id: string;
-  org: string;
-  repo_name: string;
-  nameWithOwner: string;
-  filename: string;
-  content: string;
-  cncf_project_name: string;
-}
 
 // Note: Repository list is now provided via input JSON files for all test and production runs.
 // This file defines the type interfaces for both simple and rich input formats.
