@@ -1,0 +1,31 @@
+query GetOrgRepos($org: String!, $cursor: String) {
+  organization(login: $org) {
+    __typename
+    login
+    repositories(first: 100, after: $cursor, privacy: PUBLIC, orderBy: { field: UPDATED_AT, direction: DESC }) {
+      totalCount
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        __typename
+        id
+        name
+        nameWithOwner
+        url
+        description
+        isArchived
+        isFork
+        defaultBranchRef {
+          name
+        }
+        languages(first: 5, orderBy: { field: SIZE, direction: DESC }) {
+          nodes {
+            name
+          }
+        }
+      }
+    }
+  }
+}

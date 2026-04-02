@@ -6,10 +6,11 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo } from './api';
+import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos } from './api';
 import { appendRawResponse } from './rawResponseWriter';
-import { writeArtifacts } from './ArtifactWriter';
+import { writeArtifacts, writeOrgRepoArtifacts } from './ArtifactWriter';
 import type { RepositoryTarget, ProjectMetadata } from './config';
+import { normalizeGetOrgRepos, getOrgReposNormalizationStats } from './normalizers/GetOrgReposNormalizer';
 import { SecurityAnalyzer } from './SecurityAnalyzer';
 
 type QueryFunction = (client: ReturnType<typeof createApiClient>, variables: { owner: string; name: string }, verbose: boolean) => Promise<unknown>;
@@ -81,20 +82,22 @@ async function main() {
     .option('--parallel', 'Fetch repositories in parallel', false)
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
+    .option('--scan-orgs', 'Scan all GitHub orgs found in input data for repo discovery', false)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
   const options = program.opts();
-  const { 
-    input, 
-    output, 
-    queries: queryNames, 
+  const {
+    input,
+    output,
+    queries: queryNames,
     maturity: maturityLevels,
     repoScope,
-    parallel: useParallel, 
+    parallel: useParallel,
     analyze: runAnalysis,
     persistFiles,
-    verbose 
+    scanOrgs,
+    verbose
   } = options;
 
   console.log(chalk.blue.bold('🚀 GraphQL Data Collection'));
@@ -242,6 +245,115 @@ async function main() {
     }
   } else {
     console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
+  }
+
+  // Org-level scanning: discover all repos across orgs present in the input data
+  if (scanOrgs) {
+    console.log(chalk.gray('\n' + '─'.repeat(50)));
+    console.log(chalk.bold.cyan('\n🔭 Scanning orgs...\n'));
+
+    // Extract unique org names from all repos in the raw input
+    const orgSet = new Set<string>();
+    // Build an org → cncf_project_name map (first project wins if an org appears in multiple)
+    const orgToProject = new Map<string, string>();
+
+    for (const item of rawInput) {
+      if ('repos' in item && Array.isArray((item as ProjectMetadata).repos)) {
+        const project = item as ProjectMetadata;
+        for (const repo of project.repos) {
+          if (!orgSet.has(repo.owner)) {
+            orgSet.add(repo.owner);
+            orgToProject.set(repo.owner, project.project_name);
+          }
+        }
+      } else {
+        const repo = item as RepositoryTarget;
+        orgSet.add(repo.owner);
+        // No project name for simple-format repos; use empty string
+        if (!orgToProject.has(repo.owner)) {
+          orgToProject.set(repo.owner, '');
+        }
+      }
+    }
+
+    const uniqueOrgs = Array.from(orgSet);
+    console.log(chalk.cyan(`  Unique orgs found: ${uniqueOrgs.length}`));
+
+    // Collect the set of nameWithOwner values already in the landscape for summary reporting
+    const landscapeRepoSet = new Set(
+      normalizedInput.map(item => `${item.repo.owner}/${item.repo.name}`)
+    );
+
+    // Fetch org repos sequentially (pagination is handled inside fetchOrgRepos)
+    type OrgQueryTuple = { cncfProjectName: string; data: import('./generated/graphql').GetOrgReposQuery };
+    const orgQueryResults: OrgQueryTuple[] = [];
+    let orgsScanned = 0;
+
+    for (const org of uniqueOrgs) {
+      if (verbose) {
+        console.log(chalk.gray(`  → scanning org: ${org}`));
+      }
+      const result = await fetchOrgRepos(client, org, verbose);
+      if (!result) {
+        if (verbose) {
+          console.log(chalk.yellow(`  ⚠ ${org}: skipped (personal account or error)`));
+        }
+        continue;
+      }
+      orgsScanned++;
+
+      // Reconstruct the raw GetOrgReposQuery shape expected by the normalizer.
+      // fetchOrgRepos returns already-unwrapped nodes; wrap them back for the normalizer.
+      const syntheticQuery: import('./generated/graphql').GetOrgReposQuery = {
+        organization: {
+          __typename: 'Organization',
+          login: org,
+          repositories: {
+            totalCount: result.totalCount,
+            pageInfo: { hasNextPage: false, endCursor: null },
+            nodes: result.repos,
+          },
+        },
+      };
+
+      orgQueryResults.push({
+        cncfProjectName: orgToProject.get(org) ?? '',
+        data: syntheticQuery,
+      });
+
+      if (!verbose) {
+        console.log(chalk.green(`  ✓ ${org}: ${result.totalCount} repos`));
+      }
+    }
+
+    if (orgQueryResults.length > 0) {
+      const normalized = normalizeGetOrgRepos(orgQueryResults);
+      console.log(chalk.gray('\n' + getOrgReposNormalizationStats(normalized)));
+
+      // Count repos already covered by the landscape scan
+      const alreadyInLandscape = normalized.base_org_repos.filter(
+        r => landscapeRepoSet.has(r.nameWithOwner)
+      ).length;
+
+      // Write to DuckDB (appends base_org_repos table to the existing database)
+      try {
+        await writeOrgRepoArtifacts(normalized.base_org_repos, timestampedDir);
+        console.log(chalk.green('  ✓ base_org_repos table written'));
+      } catch (error) {
+        console.error(chalk.red('\n❌ base_org_repos write failed:'), error);
+        throw error;
+      }
+
+      // Summary line
+      console.log(
+        chalk.bold(
+          `\n  Scanned ${orgsScanned} orgs, found ${normalized.base_org_repos.length} repos` +
+          ` (${alreadyInLandscape} already in landscape)`
+        )
+      );
+    } else {
+      console.log(chalk.yellow('  ⚠ No org data collected (all orgs were personal accounts or errored)'));
+    }
   }
 
   // Update 'current' symlink for this input

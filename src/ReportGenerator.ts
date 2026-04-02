@@ -108,6 +108,11 @@ export class ReportGenerator {
             sections.push(await this.generateRecommendations());
         }
 
+        // Org CI visibility (requires org-level scan data)
+        if (await this.tableExists('agg_org_summary')) {
+            sections.push(await this.generateOrgCiVisibility());
+        }
+
         return sections.join('\n');
     }
 
@@ -406,6 +411,46 @@ export class ReportGenerator {
                 lines.push(`| ${r.display_name} | ${r.maturity} | ${r.repos_with_sbom} | ${r.repos_with_signatures} | ${r.repos_using_cosign} |`);
             }
         }
+
+        return lines.join('\n') + '\n';
+    }
+
+    private async generateOrgCiVisibility(): Promise<string> {
+        const lines: string[] = ['## CI across CNCF organizations\n'];
+
+        const rows = await this.queryObjects(`
+            SELECT
+                org,
+                cncf_project_name,
+                total_repos,
+                repos_in_landscape,
+                repos_not_in_landscape,
+                archived_repos
+            FROM agg_org_summary
+            ORDER BY repos_not_in_landscape DESC
+        `);
+
+        if (rows.length === 0) {
+            lines.push('*No org-level summary data available.*');
+            return lines.join('\n') + '\n';
+        }
+
+        // Summary statistics
+        const totalOrgs = rows.length;
+        const totalRepos = rows.reduce((sum, r) => sum + Number(r.total_repos || 0), 0);
+        const totalInLandscape = rows.reduce((sum, r) => sum + Number(r.repos_in_landscape || 0), 0);
+        const landscapePct = totalRepos > 0 ? Math.round((totalInLandscape / totalRepos) * 100) : 0;
+
+        lines.push(`Scanned ${totalOrgs} organizations hosting CNCF projects. These orgs contain ${totalRepos} total public repos, of which ${totalInLandscape} (${landscapePct}%) are included in the landscape scan.\n`);
+
+        lines.push(`| Organization | CNCF Project | Total Repos | In Landscape | Not Scanned | Archived |`);
+        lines.push(`|-------------|-------------|------------:|-------------:|------------:|---------:|`);
+        for (const r of rows) {
+            lines.push(`| ${r.org} | ${r.cncf_project_name} | ${this.n(r.total_repos)} | ${this.n(r.repos_in_landscape)} | ${this.n(r.repos_not_in_landscape)} | ${this.n(r.archived_repos)} |`);
+        }
+        lines.push(``);
+
+        lines.push(`> **Note:** Repos not in the landscape scan may contain additional CI workflows, security tooling, and release artifacts not captured in this analysis. Expanding coverage to these repos is a planned improvement.`);
 
         return lines.join('\n') + '\n';
     }
