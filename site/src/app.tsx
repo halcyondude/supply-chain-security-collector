@@ -88,6 +88,17 @@ export function App() {
 
   return (
     <div>
+      <div style={{
+        background: '#f59e0b',
+        color: '#000',
+        padding: '0.5rem 1rem',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        fontSize: '0.875rem',
+        marginBottom: '1rem',
+      }}>
+        🚧 Work in progress — data and queries are under active development. Numbers shown are lower bounds based on what GitHub's API surfaces.
+      </div>
       <header style={{ marginBottom: '2rem' }}>
         <h1>CNCF Supply Chain Security Explorer</h1>
         <p style={{ color: '#94a3b8', marginTop: '0.5rem' }}>

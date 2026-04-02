@@ -44,9 +44,9 @@ ORDER BY project_count DESC`,
 
   // --- Signing & SBOMs ---
   {
-    id: 'signing-leaders',
-    name: 'Signing Leaders',
-    description: 'Top projects by signature artifact count',
+    id: 'signing-adoption',
+    name: 'Signing Adoption',
+    description: 'Projects with signature artifacts in releases',
     sql: `SELECT nameWithOwner, signature_artifact_count, sbom_artifact_count
 FROM agg_repo_summary
 WHERE signature_artifact_count > 0
@@ -56,9 +56,9 @@ LIMIT 20`,
     renderHint: 'bar',
   },
   {
-    id: 'sbom-leaders',
-    name: 'SBOM Leaders',
-    description: 'Top projects producing SBOMs in releases',
+    id: 'sbom-adoption',
+    name: 'SBOM Adoption',
+    description: 'Projects publishing SBOMs in releases',
     sql: `SELECT nameWithOwner, sbom_artifact_count, total_release_assets
 FROM agg_repo_summary
 WHERE sbom_artifact_count > 0
