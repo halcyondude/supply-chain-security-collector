@@ -186,6 +186,22 @@ CLI flags: `--input <file>`, `--queries <name>`, `--parallel`, `--analyze`, `--m
 
 **Other GraphQL APIs:** The collection layer is generic. Swap `src/api.ts` endpoint, write new queries and normalizers. Normalizers are hand-written (not auto-generated) — each transforms nested GraphQL responses into flat relational arrays.
 
+## interactive explorer
+
+browse the full CNCF landscape data in your browser — no backend required:
+
+**[Live Explorer →](https://halcyondude.github.io/supply-chain-security-collector/)**
+
+DuckDB-WASM loads Parquet files directly in the browser. Write SQL, see charts, explore 236 projects interactively. Includes a 15-query pre-built library and an exploration journal.
+
+## presentation
+
+this tool was built to support a CNCF TAG Security presentation (April 2026). all materials are in the repo:
+
+- [Presentation materials](docs/presentations/2026-04-08-tag-sc/) — deck, findings report, strategy docs, diagrams
+- [Project history](docs/PROJECT-HISTORY.md) — full timeline with annotated Mermaid charts
+- [Key findings](docs/presentations/2026-04-08-tag-sc/cncf-supply-chain-findings.md) — what we found across 236 projects
+
 ## documentation
 
 - [Adding New Queries](docs/adding-new-queries.md) — step-by-step extension guide
