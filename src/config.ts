@@ -85,6 +85,27 @@ export interface ProjectMetadata {
   default_branch?: string;
 }
 
+// ============================================================================
+// ORG-LEVEL SCANNING TYPES
+// ============================================================================
+
+// OrgRepo represents a single repository discovered via org-level scanning.
+// These repos may or may not overlap with the repos listed in landscape.yml.
+export interface OrgRepo {
+  id: string;
+  org: string;
+  name: string;
+  nameWithOwner: string;
+  url: string;
+  description: string;
+  isArchived: boolean;
+  isFork: boolean;
+  defaultBranch: string;
+  primaryLanguage: string;
+  cncf_project_name: string; // which CNCF project this org belongs to
+}
+
+
 // Note: Repository list is now provided via input JSON files for all test and production runs.
 // This file defines the type interfaces for both simple and rich input formats.
 // Simple format: RepositoryTarget[] - just owner/name

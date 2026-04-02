@@ -21,6 +21,8 @@ import {
   GetRepoDataArtifactsQuery,
   GetRepoDataExtendedInfoDocument,
   GetRepoDataExtendedInfoQuery,
+  GetOrgReposDocument,
+  GetOrgReposQuery,
 } from './generated/graphql';
 
 /**
@@ -170,4 +172,113 @@ export async function fetchRepositoryExtendedInfo(
     }
     return null;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Org-level repo scanning
+// ---------------------------------------------------------------------------
+
+/** Non-null repo node from GetOrgRepos query */
+type OrgRepoNode = NonNullable<NonNullable<NonNullable<GetOrgReposQuery['organization']>['repositories']['nodes']>[number]>;
+
+/** Result of fetching all repos for a single org */
+export interface OrgRepoResult {
+  org: string;
+  repos: OrgRepoNode[];
+  totalCount: number;
+}
+
+/**
+ * Fetches all public repositories for a GitHub organization using cursor-based pagination.
+ *
+ * Returns null for personal accounts (the organization query returns null for non-org logins).
+ * Implements rate-limit awareness: when x-ratelimit-remaining drops below 500, sleeps until reset.
+ *
+ * @param client - The GraphQLClient instance to use for the request.
+ * @param org - The GitHub organization login name.
+ * @param verbose - A flag to enable or disable detailed logging.
+ * @returns The complete list of repos for the org, or null if not an org / on error.
+ */
+export async function fetchOrgRepos(
+  client: GraphQLClient,
+  org: string,
+  verbose: boolean
+): Promise<OrgRepoResult | null> {
+  const allRepos: OrgRepoNode[] = [];
+  let cursor: string | null = null;
+  let pageNum = 0;
+
+  do {
+    try {
+      const result: GetOrgReposQuery = await client.request<GetOrgReposQuery>(
+        GetOrgReposDocument,
+        { org, cursor }
+      );
+
+      if (!result.organization) {
+        if (verbose) {
+          console.log(chalk.yellow(`  [ORG] ${org}: not an organization (personal account?), skipping`));
+        }
+        return null; // personal account, not an org
+      }
+
+      const repoNodes = result.organization.repositories.nodes ?? [];
+      for (const node of repoNodes) {
+        if (node) allRepos.push(node);
+      }
+
+      pageNum++;
+      if (verbose) {
+        const total = result.organization.repositories.totalCount;
+        console.log(
+          chalk.gray(`  [ORG] ${org}: fetched page ${pageNum} (${allRepos.length}/${total} repos)`)
+        );
+      }
+
+      const pageInfo: { hasNextPage: boolean; endCursor: string | null } = result.organization.repositories.pageInfo;
+      cursor = pageInfo.hasNextPage ? (pageInfo.endCursor ?? null) : null;
+    } catch (error: unknown) {
+      // Check for rate limit exhaustion and retry after sleeping
+      if (error instanceof ClientError) {
+        const { headers } = error.response;
+        if (headers && typeof (headers as Headers).get === 'function') {
+          const h = headers as Headers;
+          const remaining = h.get('x-ratelimit-remaining');
+          if (remaining && parseInt(remaining, 10) < 500) {
+            const reset = h.get('x-ratelimit-reset');
+            const waitMs = reset
+              ? Math.max(0, parseInt(reset, 10) * 1000 - Date.now())
+              : 60_000;
+            console.log(
+              chalk.yellow(`  [ORG] Rate limit approaching (${remaining} left), waiting ${Math.ceil(waitMs / 1000)}s`)
+            );
+            await new Promise(r => setTimeout(r, waitMs));
+            continue; // retry this page
+          }
+        }
+
+        // Non-rate-limit error -- log details
+        if (error.response.status !== undefined) {
+          console.error(chalk.red(`  [ORG] ${org}: HTTP ${error.response.status}`));
+        }
+        if (error.response.errors) {
+          console.error(
+            chalk.red(`  [ORG] ${org}: GraphQL errors:`),
+            JSON.stringify(error.response.errors, null, 2)
+          );
+        }
+      } else if (error instanceof Error) {
+        console.error(chalk.red(`  [ORG] ${org}: ${error.message}`));
+      } else {
+        console.error(chalk.red(`  [ORG] ${org}: unknown error`), error);
+      }
+      return null;
+    }
+  } while (cursor);
+
+  if (verbose) {
+    console.log(chalk.green(`  [ORG] ${org}: ${allRepos.length} repos fetched`));
+  }
+
+  return { org, repos: allRepos, totalCount: allRepos.length };
 }
