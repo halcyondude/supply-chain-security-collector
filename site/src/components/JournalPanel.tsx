@@ -9,7 +9,7 @@
  *  - Clear with confirmation
  */
 
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useEffect } from 'preact/hooks';
 import {
   getEntries,
   addNote,
@@ -213,10 +213,9 @@ export function JournalPanel({ onLoadSQL, refreshToken }: JournalPanelProps) {
   const [confirmClear, setConfirmClear] = useState(false);
 
   // Refresh when refreshToken changes (new entry written externally)
-  const prevToken = useState(refreshToken)[0];
-  if (refreshToken !== prevToken || (open && entries.length === 0 && getEntries().length > 0)) {
+  useEffect(() => {
     setEntries(getEntries());
-  }
+  }, [refreshToken]);
 
   // Also refresh on open
   const handleToggle = () => {

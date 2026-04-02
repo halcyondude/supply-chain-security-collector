@@ -68,7 +68,7 @@ async function loadBaseData(): Promise<void> {
   if (!db || !conn) throw new Error('DuckDB not initialized');
 
   try {
-    const manifestResp = await fetch('/data/manifest.json');
+    const manifestResp = await fetch(`${import.meta.env.BASE_URL}data/manifest.json`);
     if (!manifestResp.ok) {
       console.warn(
         'No data manifest found at /data/manifest.json — running without base data',
@@ -80,7 +80,7 @@ async function loadBaseData(): Promise<void> {
       await manifestResp.json();
 
     for (const table of manifest.tables) {
-      const url = `/data/${table.file}`;
+      const url = `${import.meta.env.BASE_URL}data/${table.file}`;
       const resp = await fetch(url);
       if (!resp.ok) {
         console.warn(`Failed to fetch ${url}, skipping table ${table.name}`);
@@ -89,8 +89,10 @@ async function loadBaseData(): Promise<void> {
 
       const buffer = new Uint8Array(await resp.arrayBuffer());
       await db.registerFileBuffer(table.file, buffer);
+      const safeName = `"${table.name.replace(/"/g, '""')}"`;
+      const safeFile = table.file.replace(/'/g, "''");
       await conn.query(
-        `CREATE TABLE ${table.name} AS SELECT * FROM read_parquet('${table.file}')`,
+        `CREATE TABLE ${safeName} AS SELECT * FROM read_parquet('${safeFile}')`,
       );
     }
 

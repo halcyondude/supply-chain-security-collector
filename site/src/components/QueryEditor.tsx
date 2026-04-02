@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 
 export interface QueryEditorProps {
-  onExecute: (sql: string) => void;
+  onExecute: (sql: string) => Promise<void> | void;
   initialSQL?: string;
   isLoading: boolean;
 }
@@ -26,18 +26,14 @@ export function QueryEditor({ onExecute, initialSQL, isLoading }: QueryEditorPro
     }
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
     if (isLoading || !sql.trim()) return;
     const start = performance.now();
-    // Wrap onExecute so we can record wall-clock time for the UI.
-    // The parent resolves async; we use a Promise trick to measure end-to-end.
-    Promise.resolve()
-      .then(() => {
-        onExecute(sql);
-      })
-      .finally(() => {
-        setExecTime(performance.now() - start);
-      });
+    try {
+      await onExecute(sql);
+    } finally {
+      setExecTime(performance.now() - start);
+    }
   };
 
   return (

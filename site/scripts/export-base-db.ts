@@ -96,73 +96,77 @@ async function main() {
   });
   const conn = await instance.connect();
 
-  // Get list of tables that actually exist in the source
-  const tableResult = await conn.run(
-    "SELECT DISTINCT table_name FROM duckdb_tables() WHERE schema_name = 'main'",
-  );
-  const existingTables = new Set<string>();
-  for (const row of await tableResult.getRows()) {
-    existingTables.add(row[0] as string);
-  }
-
-  const manifest: { tables: Array<{ name: string; file: string; rows: number }> } = {
-    tables: [],
-  };
-
-  let totalBytes = 0;
-
-  for (const table of TABLES_TO_EXPORT) {
-    if (!existingTables.has(table.name)) {
-      console.log(`  SKIP ${table.name} (not found in source)`);
-      continue;
-    }
-
-    const parquetFile = `${table.name}.parquet`;
-    const outputPath = path.join(output, parquetFile);
-    const selectSql = table.sql ?? `SELECT * FROM ${table.name}`;
-
-    try {
-      // Export to Parquet with ZSTD compression
-      await conn.run(
-        `COPY (${selectSql}) TO '${outputPath}' (FORMAT PARQUET, COMPRESSION ZSTD)`,
-      );
-
-      // Get row count
-      const countResult = await conn.run(
-        `SELECT COUNT(*) FROM (${selectSql})`,
-      );
-      const countRows = await countResult.getRows();
-      const rowCount = Number(countRows[0][0]);
-
-      const stats = fs.statSync(outputPath);
-      totalBytes += stats.size;
-
-      manifest.tables.push({
-        name: table.name,
-        file: parquetFile,
-        rows: rowCount,
-      });
-
-      console.log(
-        `  OK   ${table.name}: ${rowCount} rows, ${(stats.size / 1024).toFixed(1)} KB`,
-      );
-    } catch (err) {
-      console.error(`  FAIL ${table.name}: ${err}`);
-    }
-  }
-
-  // Write manifest
-  const manifestPath = path.join(output, 'manifest.json');
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-  console.log(`\nManifest written to ${manifestPath}`);
-  console.log(
-    `Total: ${manifest.tables.length} tables, ${(totalBytes / 1024 / 1024).toFixed(2)} MB`,
-  );
-
-  if (totalBytes > 5 * 1024 * 1024) {
-    console.warn(
-      `WARNING: Total size ${(totalBytes / 1024 / 1024).toFixed(2)} MB exceeds 5MB target`,
+  try {
+    // Get list of tables that actually exist in the source
+    const tableResult = await conn.run(
+      "SELECT DISTINCT table_name FROM duckdb_tables() WHERE schema_name = 'main'",
     );
+    const existingTables = new Set<string>();
+    for (const row of await tableResult.getRows()) {
+      existingTables.add(row[0] as string);
+    }
+
+    const manifest: { tables: Array<{ name: string; file: string; rows: number }> } = {
+      tables: [],
+    };
+
+    let totalBytes = 0;
+
+    for (const table of TABLES_TO_EXPORT) {
+      if (!existingTables.has(table.name)) {
+        console.log(`  SKIP ${table.name} (not found in source)`);
+        continue;
+      }
+
+      const parquetFile = `${table.name}.parquet`;
+      const outputPath = path.join(output, parquetFile);
+      const selectSql = table.sql ?? `SELECT * FROM ${table.name}`;
+
+      try {
+        // Export to Parquet with ZSTD compression
+        await conn.run(
+          `COPY (${selectSql}) TO '${outputPath}' (FORMAT PARQUET, COMPRESSION ZSTD)`,
+        );
+
+        // Get row count
+        const countResult = await conn.run(
+          `SELECT COUNT(*) FROM (${selectSql})`,
+        );
+        const countRows = await countResult.getRows();
+        const rowCount = Number(countRows[0][0]);
+
+        const stats = fs.statSync(outputPath);
+        totalBytes += stats.size;
+
+        manifest.tables.push({
+          name: table.name,
+          file: parquetFile,
+          rows: rowCount,
+        });
+
+        console.log(
+          `  OK   ${table.name}: ${rowCount} rows, ${(stats.size / 1024).toFixed(1)} KB`,
+        );
+      } catch (err) {
+        console.error(`  FAIL ${table.name}: ${err}`);
+      }
+    }
+
+    // Write manifest
+    const manifestPath = path.join(output, 'manifest.json');
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+    console.log(`\nManifest written to ${manifestPath}`);
+    console.log(
+      `Total: ${manifest.tables.length} tables, ${(totalBytes / 1024 / 1024).toFixed(2)} MB`,
+    );
+
+    if (totalBytes > 5 * 1024 * 1024) {
+      console.warn(
+        `WARNING: Total size ${(totalBytes / 1024 / 1024).toFixed(2)} MB exceeds 5MB target`,
+      );
+    }
+  } finally {
+    await conn.close();
   }
 }
 

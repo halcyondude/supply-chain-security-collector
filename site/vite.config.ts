@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 
 export default defineConfig({
+  base: '/supply-chain-security-collector/',
   plugins: [preact()],
   build: {
     target: 'esnext',
