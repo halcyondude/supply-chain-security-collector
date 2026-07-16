@@ -76,7 +76,9 @@ Per-maturity view across all 236 projects (release-asset evidence):
 
 The counterintuitive result: **incubating projects out-publish graduated ones** on both SBOMs and signatures. That fits a story where SBOM/signing tooling matured *after* the graduated cohort locked in their release pipelines — the newer projects adopted it as a default, the established ones haven't retrofitted.
 
-**Only 14 of 236 projects do both** — publish an SBOM *and* sign releases. That's the number that matters if the goal is verifiable provenance, and it's thin across every tier.
+**Only 14 of 236 projects do both** — publish an SBOM *and* sign releases. That's the number that matters if the goal is verifiable provenance, and it's thin across every tier.[^both]
+
+[^both]: An earlier brain demonstrator reported **13** projects doing both; **14** is correct. The 14th is **ContainerSSH**, which was dropped from the earlier count by a case-sensitive owner/repo join — the same class of bug as the CubeFS miscount below. This report's join is case-insensitive, so both figures now reconcile at 14.
 
 ### Formats — SPDX wins decisively
 
@@ -88,7 +90,7 @@ Of the SBOM artifacts we could classify by format:
 | CycloneDX | 29 | 3 |
 | Unknown / unclassified | 1,316 | 19 |
 
-Among classified SBOMs, **SPDX outnumbers CycloneDX ~36:1 by artifact count.** SPDX is the de facto ecosystem default. CycloneDX presence is real but small. The large "unknown" bucket is itself a **findability** finding: a third of SBOM-like artifacts don't announce their format in a way a scanner can cheaply detect — which means any downstream aggregator (including GUAC) has to open and sniff files rather than trust naming conventions.
+Among classified SBOMs, **SPDX outnumbers CycloneDX ~36:1 by artifact count** (1,057 vs 29). That ratio is artifact-skewed — a few SPDX-heavy projects attach many SBOMs per release — so read it alongside the **per-repo** count: **19 repos publish SPDX, 3 publish CycloneDX** (roughly 6:1 by project). Either way, SPDX is the de facto ecosystem default; CycloneDX presence is real but small. The large "unknown" bucket is itself a **findability** finding: a third of SBOM-like artifacts don't announce their format in a way a scanner can cheaply detect — which means any downstream aggregator (including GUAC) has to open and sniff files rather than trust naming conventions.
 
 ### Tooling signal
 
@@ -108,7 +110,7 @@ Two things to note. First, **code scanning (CodeQL, 80) is far more adopted than
 
 ### A data-correction note, in the open
 
-The headline is **23, not 24.** The collector's own project-level rollup (`agg_cncf_project_summary`) miscounts CubeFS as publishing no signatures because of a case-sensitivity bug in how it matches artifact owners to landscape entries. CubeFS in fact ships **13 signature artifacts** — the per-repo table (`agg_repo_summary`) records them correctly. We derived every number in this report from the per-repo layer, not the buggy rollup, and CubeFS is excluded from the 23. We're flagging this because if we're asking projects to trust our numbers, we owe them the bugs we found in our own. The fix is tracked in the collector repo.
+The headline is **23, not 24.** The collector's own project-level rollup (`agg_cncf_project_summary`) miscounts CubeFS as publishing no signatures because of a case-sensitivity bug in how it matches artifact owners to landscape entries. CubeFS in fact ships **13 signature artifacts** (note: 13 *artifacts in one project*, not to be confused with the 14 *projects* that do both SBOM + signing in §4) — the per-repo table (`agg_repo_summary`) records them correctly. We derived every number in this report from the per-repo layer, not the buggy rollup, and CubeFS is excluded from the 23. We're flagging this because if we're asking projects to trust our numbers, we owe them the bugs we found in our own. The fix is tracked in the collector repo.
 
 ## 5. Methodology and reproducibility
 
@@ -241,7 +243,3 @@ FROM 'agg_repo_summary.parquet';   -- codeql 80, trivy 19, goreleaser 22, cosign
 SELECT COUNT(*) FROM 'agg_cncf_project_summary.parquet'
 WHERE maturity='graduated' AND repos_with_sbom=0 AND repos_with_signatures=0;   -- 24 (wrong)
 ```
-
----
-
-*Agent: dt-iris:iris · Skills: matt-voice, tech-writer, doc-standards, backmatter · 2026-07-16*
