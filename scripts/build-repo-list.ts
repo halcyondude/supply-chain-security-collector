@@ -180,13 +180,15 @@ interface FullJsonResponse {
   [key: string]: unknown;
 }
 
-// .project project.yaml shape (what we need)
+// .project project.yaml shape (what we need).
+// `repositories` is typed `unknown` because hand-edited files sometimes use a
+// scalar string instead of a list; fetchDotProject() coerces + filters to string[].
 interface DotProjectYaml {
   schema_version?: string;
   slug?: string;
   name?: string;
   description?: string;
-  repositories?: string[];
+  repositories?: unknown;
   maturity_log?: Array<{ phase?: string; date?: string; issue?: string }>;
 }
 
@@ -308,39 +310,46 @@ async function fetchDotProject(
     headers['Authorization'] = `Bearer ${githubToken}`;
   }
 
-  // Try main branch first, then master
-  for (const branch of ['main', 'master']) {
-    const url = `https://raw.githubusercontent.com/${org}/.project/${branch}/project.yaml`;
-    try {
-      const resp = await fetch(url, { headers });
-      if (resp.status === 404) continue;
-      if (resp.status === 403 || resp.status === 429) {
-        console.warn(`  [rate-limited] ${org}/.project (HTTP ${resp.status}) — set GITHUB_TOKEN to raise limits`);
-        return null;
-      }
-      if (!resp.ok) {
-        if (verbose) console.log(`    [${projectName}] ${org}/.project (${branch}): HTTP ${resp.status}`);
-        return null;
-      }
-      const text = await resp.text();
-      try {
-        const parsed = yaml.parse(text) as DotProjectYaml;
-        if (parsed && Array.isArray(parsed.repositories) && parsed.repositories.length > 0) {
-          return parsed;
-        }
-        return null;  // no repositories field or empty
-      } catch {
-        if (verbose) console.log(`    [${projectName}] YAML parse error for ${org}/.project`);
-        return null;
-      }
-    } catch (err) {
-      if (verbose) {
-        console.log(`    [${projectName}] fetch error: ${err instanceof Error ? err.message : err}`);
-      }
+  // Resolve against the repo's DEFAULT BRANCH via the `HEAD` symbolic ref.
+  // raw.githubusercontent.com supports `.../HEAD/<path>`, which redirects to the
+  // default branch — no need to guess main-vs-master. This mirrors the GraphQL
+  // path in src/api.ts, which fetches `HEAD:project.yaml`.
+  const url = `https://raw.githubusercontent.com/${org}/.project/HEAD/project.yaml`;
+  try {
+    const resp = await fetch(url, { headers });
+    if (resp.status === 404) return null;
+    if (resp.status === 403 || resp.status === 429) {
+      console.warn(`  [rate-limited] ${org}/.project (HTTP ${resp.status}) — set GITHUB_TOKEN to raise limits`);
       return null;
     }
+    if (!resp.ok) {
+      if (verbose) console.log(`    [${projectName}] ${org}/.project (HEAD): HTTP ${resp.status}`);
+      return null;
+    }
+    const text = await resp.text();
+    try {
+      const parsed = yaml.parse(text) as DotProjectYaml;
+      // Defensive: repositories may be a scalar string (schema violation) rather
+      // than a list. Coerce scalar→array so single-repo .project files aren't dropped.
+      const rawRepos = parsed?.repositories;
+      const repos = rawRepos === undefined || rawRepos === null
+        ? []
+        : (Array.isArray(rawRepos) ? rawRepos : [rawRepos]);
+      const stringRepos = repos.filter((r): r is string => typeof r === 'string' && r.trim().length > 0);
+      if (parsed && stringRepos.length > 0) {
+        return { ...parsed, repositories: stringRepos };
+      }
+      return null;  // no usable repositories
+    } catch {
+      if (verbose) console.log(`    [${projectName}] YAML parse error for ${org}/.project`);
+      return null;
+    }
+  } catch (err) {
+    if (verbose) {
+      console.log(`    [${projectName}] fetch error: ${err instanceof Error ? err.message : err}`);
+    }
+    return null;
   }
-  return null;
 }
 
 // ============================================================================
@@ -425,7 +434,11 @@ async function main() {
         dotProjectFound++;
         const newRepos: string[] = [];
 
-        for (const repoUrl of dotData.repositories || []) {
+        // fetchDotProject() normalizes repositories to string[] on its non-null return.
+        const dotRepos: string[] = Array.isArray(dotData.repositories)
+          ? (dotData.repositories as string[])
+          : [];
+        for (const repoUrl of dotRepos) {
           const r = repoFromUrl(repoUrl, false);
           if (!r) continue;
           const key = nwo(r.owner, r.name);

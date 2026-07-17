@@ -3,6 +3,14 @@ query GetDotProjectData($owner: String!, $name: String!) {
     __typename
     id
     nameWithOwner
+    defaultBranchRef {
+      name
+      target {
+        ... on Commit {
+          oid
+        }
+      }
+    }
     projectYaml: object(expression: "HEAD:project.yaml") {
       ... on Blob {
         __typename

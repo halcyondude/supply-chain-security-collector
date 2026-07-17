@@ -40,6 +40,14 @@ const GET_DOT_PROJECT_DATA_QUERY = `
       __typename
       id
       nameWithOwner
+      defaultBranchRef {
+        name
+        target {
+          ... on Commit {
+            oid
+          }
+        }
+      }
       projectYaml: object(expression: "HEAD:project.yaml") {
         ... on Blob {
           __typename
@@ -68,6 +76,14 @@ export interface GetDotProjectDataResponse {
     __typename: string;
     id: string;
     nameWithOwner: string;
+    /** Default branch ref — used to resolve a permalink commit SHA for provenance. */
+    defaultBranchRef: {
+      name: string;
+      target: {
+        // Commit selection returns oid; other target types return {} here.
+        oid?: string;
+      } | null;
+    } | null;
     projectYaml: {
       __typename: string;
       id: string;

@@ -22,7 +22,9 @@ This is an internal engineering reference, not a CNCF report.
 Builds `input/cncf-expanded-repo-list.json` by UNION-ing:
 - **(a)** CNCF landscape repos from `https://landscape.cncf.io/data/full.json` (`.items[]`)
 - **(b)** `.project` `repositories[]` for each CNCF project (fetched from
-  `https://raw.githubusercontent.com/<org>/.project/main/project.yaml`)
+  `https://raw.githubusercontent.com/<org>/.project/HEAD/project.yaml` — the `HEAD`
+  symbolic ref resolves to the repo's default branch, so no main-vs-master guessing;
+  this matches the GraphQL `HEAD:project.yaml` expression used by `--dot-project`)
 
 Each entry carries a `source` field: `"landscape"`, `"dot-project"`, or `"both"`.
 Deduplication is on `owner/name` (case-insensitive).
@@ -115,22 +117,38 @@ GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx npm start
 
 When `--dot-project` is passed, the collector additionally:
 
-1. Collects all unique GitHub orgs from the scanned repos.
+1. Builds an ordered, de-duplicated org list to probe:
+   - **canonical orgs first** — the org of each project's *primary* repo (the
+     canonical `.project` location per the schema), so a project whose non-primary
+     repos live under a different/legacy org is not missed;
+   - then all remaining repo-owner orgs (fallback coverage for multi-org projects).
 2. For each org, fetches `https://github.com/<org>/.project` via the same GraphQL
    blob-fetch mechanism used for SECURITY.md and workflow files
-   (`object(expression: "HEAD:project.yaml") { ... on Blob { text } }`).
-3. Parses the `project.yaml` YAML and normalizes it into four DuckDB tables:
+   (`object(expression: "HEAD:project.yaml") { ... on Blob { text } }`), also
+   pulling `maintainers.yaml` and the default-branch commit SHA (for a permalink
+   `source_url`). Requests run in batches of 8 with a 600 ms inter-batch delay,
+   matching `build-repo-list.ts`.
+3. Parses `project.yaml` (and `maintainers.yaml`) and normalizes into five DuckDB tables:
 
-| Table | Description |
-|-------|-------------|
-| `dot_project` | One row per org that has a `.project` repo — top-level fields (slug, name, current maturity, security fields, etc.) |
-| `dot_project_repositories` | One row per URL in `repositories[]` — parsed into `repo_owner`/`repo_name` |
-| `dot_project_maturity_log` | One row per `maturity_log[]` entry (phase, date, issue URL) |
-| `dot_project_audits` | One row per `audits[]` entry (date, type, URL) |
+| Table | Key | Description |
+|-------|-----|-------------|
+| `dot_project` | PK `org` | One row per org with a `.project` repo — top-level fields (slug, name, current maturity, security fields, landscape, etc.) |
+| `dot_project_repositories` | PK `(org, position)` | One row per URL in `repositories[]` — parsed into `repo_owner`/`repo_name` (null for relative/non-github URLs) |
+| `dot_project_maturity_log` | PK `(org, position)` | One row per `maturity_log[]` entry (phase, `date` as TIMESTAMP, issue URL) |
+| `dot_project_audits` | PK `(org, position)` | One row per `audits[]` entry (`date` as TIMESTAMP, type, URL) |
+| `dot_project_maintainers` | — | One row per maintainer member from `maintainers.yaml` (org, project_id, team, member) |
 
 Orgs without a `.project` repo (the majority — ~61/251 CNCF orgs have one as of 2026)
 are silently skipped. Handle-absence is built into the GraphQL blob-fetch: a missing
 repo returns `repository: null`; a missing file returns `projectYaml: null`.
+
+**Robustness:** `.project` files are hand-edited and frequently violate the schema
+(a scalar where a list is expected, non-string entries, wrong types). The parser
+(`parseDotProject`) is contractually **no-throw**: it coerces scalar→array, skips
+non-string/non-object entries with a warning, and validates `project_lead` (a
+numeric lead is dropped as NULL, never coerced to a bogus `"42"`). A malformed
+`.project` for one org logs + skips that org and the scan continues. Tolerated
+schema violations are summarized as warning counts at the end of the run.
 
 **Relationship to build-repo-list.ts:**
 `build-repo-list.ts` (Step 1) also fetches `.project` repos, but via unauthenticated
@@ -150,6 +168,7 @@ output/<input-basename>/<ISO-timestamp>/
     dot_project_repositories.parquet
     dot_project_maturity_log.parquet
     dot_project_audits.parquet
+    dot_project_maintainers.parquet
     ...other tables...
   raw-responses.GetRepoDataExtendedInfo.jsonl  ← audit log (JSONL)
   files/                                   ← SECURITY.md, security-insights.yml

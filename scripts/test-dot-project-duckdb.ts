@@ -1,8 +1,14 @@
 /**
  * test-dot-project-duckdb.ts
  *
- * Validates that parseDotProject output actually lands in DuckDB correctly.
- * Uses an in-memory DuckDB instance — no token, no network required.
+ * Validates that .project data actually lands in DuckDB correctly by driving the
+ * REAL writeDotProjectArtifacts() production path with synthetic GraphQL
+ * responses — no token, no network. Confirms:
+ *   - all five dot_project* tables are created
+ *   - PRIMARY KEY on dot_project(org) is enforced
+ *   - date columns land as TIMESTAMP (aligned with fetched_at), not TEXT
+ *   - maintainers.yaml is parsed into dot_project_maintainers
+ *   - a malformed project.yaml for one org does NOT abort the write
  *
  * Usage:
  *   npx ts-node scripts/test-dot-project-duckdb.ts
@@ -12,10 +18,37 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { DuckDBInstance } from '@duckdb/node-api';
-import { parseDotProject, mergeDotProjectResults } from '../src/normalizers/DotProjectNormalizer';
-import { installAndLoadExtensions } from '../src/duckdb-extensions';
+import { writeDotProjectArtifacts } from '../src/ArtifactWriter';
+import type { GetDotProjectDataResponse } from '../src/api';
 
-// Fixture: real open-telemetry data from test-dot-project-parse.ts
+// Helper: build a synthetic GraphQL response as fetchDotProjectData would return.
+function makeResponse(
+    org: string,
+    projectYamlText: string | null,
+    maintainersYamlText: string | null = null,
+    oid: string | null = null
+): { org: string; data: GetDotProjectDataResponse } {
+    return {
+        org,
+        data: {
+            repository: {
+                __typename: 'Repository',
+                id: `id_${org}`,
+                nameWithOwner: `${org}/.project`,
+                defaultBranchRef: oid
+                    ? { name: 'main', target: { oid } }
+                    : { name: 'main', target: null },
+                projectYaml: projectYamlText === null
+                    ? null
+                    : { __typename: 'Blob', id: `blob_${org}`, text: projectYamlText },
+                maintainersYaml: maintainersYamlText === null
+                    ? null
+                    : { __typename: 'Blob', id: `mblob_${org}`, text: maintainersYamlText },
+            },
+        },
+    };
+}
+
 const OTEL_YAML = `
 schema_version: "1.0.0"
 slug: "opentelemetry"
@@ -65,194 +98,190 @@ security:
     email: "security@kubernetes.io"
 `;
 
-const DOT_PROJECT_SCHEMAS = {
-    dot_project: `
-        org TEXT NOT NULL,
-        source_url TEXT NOT NULL,
-        schema_version TEXT,
-        slug TEXT,
-        name TEXT,
-        description TEXT,
-        type TEXT,
-        project_lead TEXT,
-        repository_count INTEGER,
-        website TEXT,
-        current_maturity TEXT,
-        current_maturity_date TEXT,
-        audit_count INTEGER,
-        security_policy_path TEXT,
-        security_threat_model_path TEXT,
-        security_contact_email TEXT,
-        security_advisory_url TEXT,
-        landscape_category TEXT,
-        landscape_subcategory TEXT,
-        package_managers_json TEXT,
-        fetched_at TIMESTAMP
-    `,
-    dot_project_repositories: `
-        org TEXT NOT NULL,
-        position INTEGER NOT NULL,
-        repo_url TEXT NOT NULL,
-        repo_owner TEXT,
-        repo_name TEXT
-    `,
-    dot_project_maturity_log: `
-        org TEXT NOT NULL,
-        position INTEGER NOT NULL,
-        phase TEXT,
-        date TEXT,
-        issue TEXT
-    `,
-    dot_project_audits: `
-        org TEXT NOT NULL,
-        position INTEGER NOT NULL,
-        date TEXT,
-        type TEXT,
-        url TEXT
-    `,
-} as const;
+const KUBERNETES_MAINTAINERS_YAML = `
+maintainers:
+  - project_id: "kubernetes"
+    org: "kubernetes"
+    teams:
+      - name: "project-maintainers"
+        members:
+          - "@thockin"
+          - "dims"
+`;
+
+// A DELIBERATELY malformed project.yaml (scalar repositories + numeric lead +
+// non-string repo entries) that would have CRASHED the old code. It must be
+// tolerated: parsed defensively and NOT abort the write of the other orgs.
+const MALFORMED_YAML = `
+schema_version: "1.0.0"
+slug: "malformed"
+name: "Malformed Project"
+project_lead: 42
+repositories: "https://github.com/malformed-org/only-repo"
+maturity_log: "not-a-list"
+`;
 
 async function main() {
-    console.log('DotProjectNormalizer → DuckDB landing test');
-    console.log('='.repeat(50));
+    console.log('writeDotProjectArtifacts → DuckDB landing test (real production path)');
+    console.log('='.repeat(60));
 
-    // Parse fixtures
-    const r1 = parseDotProject('open-telemetry', OTEL_YAML,
-        'https://github.com/open-telemetry/.project/blob/HEAD/project.yaml');
-    const r2 = parseDotProject('kubernetes', KUBERNETES_YAML,
-        'https://github.com/kubernetes/.project/blob/HEAD/project.yaml');
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dot-project-test-'));
+    const dbPath = path.join(tmpDir, 'database.db');
 
-    if (!r1 || !r2) {
-        console.error('FAIL: parseDotProject returned null for a fixture');
+    // Pre-create an empty database.db (writeDotProjectArtifacts opens an existing one)
+    {
+        const db = await DuckDBInstance.create(dbPath);
+        const con = await db.connect();
+        await con.run('CREATE TABLE _placeholder (x INTEGER)');
+        await con.run('CHECKPOINT');
+        con.closeSync();
+    }
+
+    // Drive the REAL production function with synthetic responses, including:
+    //  - open-telemetry (2 repos, advisory url)
+    //  - kubernetes (1 repo, 1 audit, email, maintainers.yaml, resolved oid → permalink)
+    //  - malformed (scalar/numeric junk that must not crash)
+    //  - ghost (repo exists but no project.yaml → skipped)
+    const responses = [
+        makeResponse('open-telemetry', OTEL_YAML),
+        makeResponse('kubernetes', KUBERNETES_YAML, KUBERNETES_MAINTAINERS_YAML, 'abc123def456'),
+        makeResponse('malformed-org', MALFORMED_YAML),
+        makeResponse('ghost-org', null),
+    ];
+
+    try {
+        await writeDotProjectArtifacts(responses, tmpDir);
+    } catch (err) {
+        console.error('FAIL: writeDotProjectArtifacts threw (should never happen):', err);
         process.exit(1);
     }
 
-    const merged = mergeDotProjectResults([r1, r2]);
-    console.log(`Parsed: ${merged.dot_project.length} projects, ${merged.dot_project_repositories.length} repos`);
-
-    // Write to a temp DuckDB
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dot-project-test-'));
-    const dbPath = path.join(tmpDir, 'test.db');
+    // Re-open and validate
     const db = await DuckDBInstance.create(dbPath);
     const con = await db.connect();
 
+    function assert(cond: boolean, msg: string) {
+        if (!cond) { console.error(`  FAIL: ${msg}`); process.exitCode = 1; }
+        else console.log(`  PASS: ${msg}`);
+    }
+
     try {
-        await installAndLoadExtensions(con);
-
-        // Write each table using the same pattern as writeDotProjectArtifacts
-        for (const [tableName, data] of [
-            ['dot_project', merged.dot_project],
-            ['dot_project_repositories', merged.dot_project_repositories],
-            ['dot_project_maturity_log', merged.dot_project_maturity_log],
-            ['dot_project_audits', merged.dot_project_audits],
-        ] as const) {
-            const schema = DOT_PROJECT_SCHEMAS[tableName];
-            if (data.length > 0) {
-                const tempPath = path.join(tmpDir, `temp_${tableName}.json`);
-                fs.writeFileSync(tempPath, JSON.stringify(data));
-                await con.run(`
-                    CREATE TABLE ${tableName} AS
-                    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
-                `);
-                fs.unlinkSync(tempPath);
-            } else {
-                await con.run(`CREATE TABLE ${tableName} (${schema})`);
-            }
-            console.log(`  Created: ${tableName} (${(data as unknown[]).length} rows)`);
-        }
-
-        // Query and validate
-        console.log('\n── dot_project ──');
-        const dpResult = await con.run(`
-            SELECT org, slug, name, current_maturity, repository_count, audit_count,
-                   security_advisory_url IS NOT NULL AS has_advisory,
-                   security_contact_email,
-                   landscape_category
-            FROM dot_project
-            ORDER BY org
-        `);
-        const dpRows = await dpResult.getRows();
-        for (const row of dpRows) {
-            console.log(row);
-        }
-
-        console.log('\n── dot_project_repositories ──');
-        const repoResult = await con.run(`
-            SELECT org, repo_owner, repo_name, position
-            FROM dot_project_repositories
-            ORDER BY org, position
-        `);
-        const repoRows = await repoResult.getRows();
-        for (const row of repoRows) {
-            console.log(row);
-        }
-
-        console.log('\n── dot_project_maturity_log ──');
-        const matResult = await con.run(`
-            SELECT org, phase, date, position
-            FROM dot_project_maturity_log
-            ORDER BY org, position
-        `);
-        const matRows = await matResult.getRows();
-        for (const row of matRows) {
-            console.log(row);
-        }
-
-        console.log('\n── dot_project_audits ──');
-        const auditResult = await con.run(`
-            SELECT org, type, url, position
-            FROM dot_project_audits
-            ORDER BY org, position
-        `);
-        const auditRows = await auditResult.getRows();
-        for (const row of auditRows) {
-            console.log(row);
-        }
-
-        // Assertions on query results
         console.log('\n── Assertions ──');
 
-        function assert(cond: boolean, msg: string) {
-            if (!cond) { console.error(`  FAIL: ${msg}`); process.exitCode = 1; }
-            else console.log(`  PASS: ${msg}`);
+        // All five tables exist
+        const tablesResult = await con.run(`
+            SELECT table_name FROM information_schema.tables
+            WHERE table_schema='main' AND table_name LIKE 'dot_project%'
+            ORDER BY table_name
+        `);
+        const tableNames = (await tablesResult.getRows()).map(r => String(r[0]));
+        console.log('  Tables:', tableNames.join(', '));
+        for (const t of ['dot_project', 'dot_project_audits', 'dot_project_maintainers',
+                         'dot_project_maturity_log', 'dot_project_repositories']) {
+            assert(tableNames.includes(t), `table ${t} exists`);
         }
 
-        assert(dpRows.length === 2, `dot_project has 2 rows (got ${dpRows.length})`);
+        // Row counts: malformed-org still lands (defensive parse); ghost-org does not
+        const dpCount = await con.run('SELECT count(*) FROM dot_project');
+        const dpRows = Number((await dpCount.getRows())[0][0]);
+        assert(dpRows === 3, `dot_project has 3 rows (otel, k8s, malformed; ghost skipped) — got ${dpRows}`);
 
-        // Row ordering: open-telemetry < kubernetes alphabetically
-        const otelRow = dpRows.find(r => r[0] === 'open-telemetry');
-        const k8sRow = dpRows.find(r => r[0] === 'kubernetes');
+        // PRIMARY KEY on org is enforced
+        const pkResult = await con.run(`
+            SELECT constraint_type FROM information_schema.table_constraints
+            WHERE table_name='dot_project' AND constraint_type='PRIMARY KEY'
+        `);
+        const pkRows = await pkResult.getRows();
+        assert(pkRows.length >= 1, 'dot_project has a PRIMARY KEY constraint');
 
-        assert(otelRow !== undefined, 'open-telemetry row exists');
-        assert(k8sRow !== undefined, 'kubernetes row exists');
-
-        if (otelRow) {
-            assert(otelRow[1] === 'opentelemetry', `otel slug = opentelemetry (got ${otelRow[1]})`);
-            assert(otelRow[3] === 'graduated', `otel maturity = graduated (got ${otelRow[3]})`);
-            assert(Number(otelRow[4]) === 2, `otel repository_count = 2 (got ${otelRow[4]})`);
-            assert(otelRow[6] === true, 'otel has_advisory = true');
+        // Inserting a duplicate org must violate the PK
+        let pkViolated = false;
+        try {
+            await con.run(`
+                INSERT INTO dot_project (org, source_url) VALUES ('kubernetes', 'dup')
+            `);
+        } catch {
+            pkViolated = true;
         }
+        assert(pkViolated, 'duplicate org insert rejected by PRIMARY KEY');
 
-        if (k8sRow) {
-            assert(k8sRow[1] === 'kubernetes', `k8s slug = kubernetes (got ${k8sRow[1]})`);
-            assert(Number(k8sRow[5]) === 1, `k8s audit_count = 1 (got ${k8sRow[5]})`);
-            assert(k8sRow[7] === 'security@kubernetes.io', `k8s security_contact_email set`);
+        // Column types: date columns are TIMESTAMP, aligned with fetched_at
+        const typesResult = await con.run(`
+            SELECT column_name, data_type FROM information_schema.columns
+            WHERE table_name='dot_project'
+              AND column_name IN ('current_maturity_date', 'fetched_at')
+        `);
+        const typeMap = new Map<string, string>();
+        for (const row of await typesResult.getRows()) {
+            typeMap.set(String(row[0]), String(row[1]));
         }
+        console.log('  dot_project column types:', JSON.stringify(Object.fromEntries(typeMap)));
+        assert(typeMap.get('current_maturity_date') === 'TIMESTAMP', `current_maturity_date is TIMESTAMP (got ${typeMap.get('current_maturity_date')})`);
+        assert(typeMap.get('fetched_at') === 'TIMESTAMP', `fetched_at is TIMESTAMP (got ${typeMap.get('fetched_at')})`);
 
-        assert(repoRows.length === 3, `dot_project_repositories has 3 rows (got ${repoRows.length})`);
-        assert(matRows.length === 2, `dot_project_maturity_log has 2 rows (got ${matRows.length})`);
-        assert(auditRows.length === 1, `dot_project_audits has 1 row (got ${auditRows.length})`);
+        const matDateType = await con.run(`
+            SELECT data_type FROM information_schema.columns
+            WHERE table_name='dot_project_maturity_log' AND column_name='date'
+        `);
+        assert(String((await matDateType.getRows())[0][0]) === 'TIMESTAMP', 'dot_project_maturity_log.date is TIMESTAMP');
 
-        await con.run('CHECKPOINT');
+        // Content spot-checks
+        const otel = await con.run(`
+            SELECT slug, current_maturity, repository_count, current_maturity_date
+            FROM dot_project WHERE org='open-telemetry'
+        `);
+        const otelRow = (await otel.getRows())[0];
+        console.log('  open-telemetry:', otelRow);
+        assert(otelRow[0] === 'opentelemetry', 'otel slug');
+        assert(otelRow[1] === 'graduated', 'otel maturity');
+        assert(Number(otelRow[2]) === 2, 'otel repository_count = 2');
+        assert(otelRow[3] !== null, 'otel current_maturity_date populated (TIMESTAMP cast worked)');
+
+        // malformed-org: numeric project_lead dropped, scalar repo coerced to 1
+        const mal = await con.run(`
+            SELECT project_lead, repository_count FROM dot_project WHERE org='malformed-org'
+        `);
+        const malRow = (await mal.getRows())[0];
+        console.log('  malformed-org:', malRow);
+        assert(malRow[0] === null, 'malformed project_lead=42 dropped to NULL (not "42")');
+        assert(Number(malRow[1]) === 1, 'malformed scalar repositories coerced to 1');
+
+        // repositories rows
+        const repoCount = await con.run('SELECT count(*) FROM dot_project_repositories');
+        const repoRows = Number((await repoCount.getRows())[0][0]);
+        assert(repoRows === 4, `dot_project_repositories has 4 rows (otel 2 + k8s 1 + malformed 1) — got ${repoRows}`);
+
+        // audits
+        const auditCount = await con.run('SELECT count(*) FROM dot_project_audits');
+        assert(Number((await auditCount.getRows())[0][0]) === 1, 'dot_project_audits has 1 row (k8s)');
+
+        // maintainers (from kubernetes maintainers.yaml)
+        const maintCount = await con.run('SELECT count(*) FROM dot_project_maintainers');
+        const maintRows = Number((await maintCount.getRows())[0][0]);
+        assert(maintRows === 2, `dot_project_maintainers has 2 rows (thockin, dims) — got ${maintRows}`);
+
+        const maintDetail = await con.run(`
+            SELECT member, team FROM dot_project_maintainers ORDER BY member
+        `);
+        const maintDetailRows = await maintDetail.getRows();
+        console.log('  maintainers:', maintDetailRows);
+        assert(maintDetailRows.some(r => r[0] === 'thockin'), 'thockin present (@ stripped)');
+        assert(maintDetailRows.some(r => r[0] === 'dims'), 'dims present');
+
+        // Parquet files exported
+        const parquetDir = path.join(tmpDir, 'parquet');
+        for (const t of ['dot_project', 'dot_project_repositories', 'dot_project_maturity_log',
+                         'dot_project_audits', 'dot_project_maintainers']) {
+            assert(fs.existsSync(path.join(parquetDir, `${t}.parquet`)), `${t}.parquet exported`);
+        }
     } finally {
         try { con.closeSync(); } catch { /* ignore */ }
     }
 
-    // Cleanup
     fs.rmSync(tmpDir, { recursive: true });
 
     const exitCode = process.exitCode ?? 0;
-    console.log(`\n${'='.repeat(50)}`);
+    console.log(`\n${'='.repeat(60)}`);
     if (exitCode === 0) {
         console.log('All DuckDB landing tests passed.');
     } else {

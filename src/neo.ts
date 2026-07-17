@@ -249,37 +249,80 @@ async function main() {
     console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
   }
 
-  // .project metadata: fetch project.yaml from <org>/.project for each unique org
+  // .project metadata: fetch project.yaml from <org>/.project.
+  //
+  // The canonical .project repo lives in the org of a project's PRIMARY repo.
+  // We probe, in priority order:
+  //   1. each project's primary-repo org (the canonical .project location)
+  //   2. all other repo-owner orgs (covers multi-org projects / non-primary orgs)
+  // Ordering primary orgs first means the canonical org is probed even for
+  // projects whose non-primary repos live under different/legacy orgs.
   if (fetchDotProject && allResponses.length > 0) {
     console.log(chalk.gray('\n' + '─'.repeat(50)));
     console.log(chalk.bold.cyan('\n📋 Fetching .project metadata...\n'));
 
-    // Collect unique orgs from the scanned repos
-    const dotProjectOrgSet = new Set<string>();
-    for (const item of normalizedInput) {
-      dotProjectOrgSet.add(item.repo.owner);
-    }
-    const uniqueOrgs = Array.from(dotProjectOrgSet);
-    console.log(chalk.cyan(`  Unique orgs to probe: ${uniqueOrgs.length}`));
+    // Build an ordered, de-duplicated org list: canonical (primary) orgs first.
+    const seenOrgs = new Set<string>();
+    const orderedOrgs: string[] = [];
+    const addOrg = (org: string) => {
+      if (!org || seenOrgs.has(org)) return;
+      seenOrgs.add(org);
+      orderedOrgs.push(org);
+    };
 
-    // Fetch <org>/.project for each unique org (sequential to be polite)
+    // Pass 1: canonical .project org = org of each project's primary repo.
+    // rawInput carries the rich ProjectMetadata (with the `primary` flag);
+    // normalizedInput has already been flattened and lost per-project grouping.
+    for (const item of rawInput) {
+      if ('repos' in item && Array.isArray((item as ProjectMetadata).repos)) {
+        const project = item as ProjectMetadata;
+        const primary = project.repos.find(r => r.primary) ?? project.repos[0];
+        if (primary) addOrg(primary.owner);
+      }
+    }
+    // Pass 2: all remaining orgs from the scanned repos (fallback coverage).
+    for (const item of normalizedInput) {
+      addOrg(item.repo.owner);
+    }
+
+    console.log(chalk.cyan(`  Unique orgs to probe: ${orderedOrgs.length} (canonical/primary orgs first)`));
+
+    // Fetch <org>/.project in small batches with an inter-batch delay,
+    // mirroring build-repo-list.ts (BATCH_SIZE=8, BATCH_DELAY_MS=600) to avoid
+    // hammering the GraphQL API across a ~250-org sweep.
     const dotProjectResults: Array<{ org: string; data: import('./api').GetDotProjectDataResponse }> = [];
     let dotProjectFound = 0;
     let dotProjectMissing = 0;
 
-    for (const org of uniqueOrgs) {
-      const data = await fetchDotProjectData(client, org, verbose);
-      if (data && data.repository !== null) {
-        dotProjectResults.push({ org, data });
-        dotProjectFound++;
-        if (!verbose) {
-          console.log(chalk.green(`  ✓ ${org}/.project`));
+    const DP_BATCH_SIZE = 8;
+    const DP_BATCH_DELAY_MS = 600;
+
+    for (let i = 0; i < orderedOrgs.length; i += DP_BATCH_SIZE) {
+      const batch = orderedOrgs.slice(i, i + DP_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (org) => {
+          const data = await fetchDotProjectData(client, org, verbose);
+          return { org, data };
+        })
+      );
+
+      for (const { org, data } of batchResults) {
+        if (data && data.repository !== null) {
+          dotProjectResults.push({ org, data });
+          dotProjectFound++;
+          if (!verbose) {
+            console.log(chalk.green(`  ✓ ${org}/.project`));
+          }
+        } else {
+          dotProjectMissing++;
+          if (verbose) {
+            console.log(chalk.gray(`  ○ ${org}/.project: not found (skipped)`));
+          }
         }
-      } else {
-        dotProjectMissing++;
-        if (verbose) {
-          console.log(chalk.gray(`  ○ ${org}/.project: not found (skipped)`));
-        }
+      }
+
+      if (i + DP_BATCH_SIZE < orderedOrgs.length) {
+        await new Promise(resolve => setTimeout(resolve, DP_BATCH_DELAY_MS));
       }
     }
 

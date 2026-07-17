@@ -14,7 +14,12 @@
  */
 
 import * as https from 'https';
-import { parseDotProject, mergeDotProjectResults, getDotProjectStats } from '../src/normalizers/DotProjectNormalizer';
+import {
+  parseDotProject,
+  parseMaintainers,
+  mergeDotProjectResults,
+  getDotProjectStats,
+} from '../src/normalizers/DotProjectNormalizer';
 
 // ---------------------------------------------------------------------------
 // Inline example fixture (mirrors the schema example — kubernetes)
@@ -232,6 +237,203 @@ function testMerge(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Test 5: BLOCKING edge cases — malformed .project files must NOT crash
+// ---------------------------------------------------------------------------
+
+function testMalformedEdgeCases(): void {
+  console.log('\n══ Test 5: Malformed .project edge cases (must never throw) ══\n');
+
+  // 5a: repositories is a SCALAR string, not a sequence.
+  // Before the fix, `rawRepos.map` threw "map is not a function".
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "scalar-repo"
+name: "Scalar Repo"
+maturity_log:
+  - phase: "sandbox"
+    date: "2020-01-01T00:00:00Z"
+    issue: "https://github.com/cncf/toc/issues/1"
+repositories: "https://github.com/scalar-org/scalar-repo"
+`;
+    let result;
+    try {
+      result = parseDotProject('scalar-org', yamlText, 'test');
+    } catch (e) {
+      console.error(`  FAIL: threw on scalar repositories: ${e instanceof Error ? e.message : e}`);
+      process.exitCode = 1;
+      return;
+    }
+    assert(result !== null, '5a: scalar repositories parses (no throw)');
+    assert(result!.dot_project_repositories.length === 1, `5a: coerced scalar → 1 repo (got ${result!.dot_project_repositories.length})`);
+    assert(result!.dot_project_repositories[0].repo_owner === 'scalar-org', '5a: scalar repo owner parsed');
+    assert(result!.dot_project[0].repository_count === 1, '5a: repository_count = 1');
+    assert(result!.warnings.some(w => w.field === 'repositories'), '5a: emitted a repositories warning');
+  }
+
+  // 5b: repositories contains NON-STRING entries (number, null, object).
+  // Before the fix, `url.match` threw "url.match is not a function".
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "mixed-repo"
+name: "Mixed Repo"
+repositories:
+  - "https://github.com/mixed-org/good-repo"
+  - 42
+  - null
+  - { nested: "object" }
+  - "https://github.com/mixed-org/second-repo"
+`;
+    let result;
+    try {
+      result = parseDotProject('mixed-org', yamlText, 'test');
+    } catch (e) {
+      console.error(`  FAIL: threw on non-string repo entries: ${e instanceof Error ? e.message : e}`);
+      process.exitCode = 1;
+      return;
+    }
+    assert(result !== null, '5b: mixed-type repositories parses (no throw)');
+    // Only the 2 valid string github URLs should survive.
+    assert(result!.dot_project_repositories.length === 2, `5b: kept 2 valid repos, skipped 3 junk (got ${result!.dot_project_repositories.length})`);
+    assert(result!.dot_project_repositories[0].repo_name === 'good-repo', '5b: first valid repo = good-repo');
+    assert(result!.dot_project_repositories[1].repo_name === 'second-repo', '5b: second valid repo = second-repo');
+    const repoWarnings = result!.warnings.filter(w => w.field === 'repositories');
+    assert(repoWarnings.length === 3, `5b: 3 skip warnings for non-string entries (got ${repoWarnings.length})`);
+  }
+
+  // 5c: project_lead as a NUMBER — must be skipped, not coerced to "42".
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "numeric-lead"
+name: "Numeric Lead"
+project_lead: 42
+repositories:
+  - "https://github.com/nl-org/nl-repo"
+`;
+    const result = parseDotProject('nl-org', yamlText, 'test');
+    assert(result !== null, '5c: numeric project_lead parses');
+    assert(result!.dot_project[0].project_lead === null, `5c: numeric project_lead → null, NOT "42" (got ${JSON.stringify(result!.dot_project[0].project_lead)})`);
+    assert(result!.warnings.some(w => w.field === 'project_lead'), '5c: emitted project_lead warning');
+  }
+
+  // 5d: project_lead as MIXED list — keep strings, skip numbers.
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "mixed-lead"
+name: "Mixed Lead"
+project_lead:
+  - "@alice"
+  - 99
+  - "bob"
+repositories:
+  - "https://github.com/ml-org/ml-repo"
+`;
+    const result = parseDotProject('ml-org', yamlText, 'test');
+    assert(result !== null, '5d: mixed project_lead parses');
+    assert(result!.dot_project[0].project_lead === 'alice, bob', `5d: kept alice,bob (@ stripped), skipped 99 (got ${JSON.stringify(result!.dot_project[0].project_lead)})`);
+  }
+
+  // 5e: maturity_log is a SCALAR (not a list) and audits contain junk.
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "scalar-maturity"
+name: "Scalar Maturity"
+maturity_log: "not-a-list"
+audits:
+  - "junk-string"
+  - date: "2021-01-01T00:00:00Z"
+    type: "security"
+    url: "https://example.com/a"
+repositories:
+  - "https://github.com/sm-org/sm-repo"
+`;
+    let result;
+    try {
+      result = parseDotProject('sm-org', yamlText, 'test');
+    } catch (e) {
+      console.error(`  FAIL: threw on scalar maturity_log: ${e instanceof Error ? e.message : e}`);
+      process.exitCode = 1;
+      return;
+    }
+    assert(result !== null, '5e: scalar maturity_log + junk audits parses (no throw)');
+    // "not-a-list" coerced to 1-element array, then skipped (non-object) → 0 entries
+    assert(result!.dot_project_maturity_log.length === 0, `5e: non-object maturity entry skipped (got ${result!.dot_project_maturity_log.length})`);
+    assert(result!.dot_project_audits.length === 1, `5e: kept 1 valid audit, skipped junk (got ${result!.dot_project_audits.length})`);
+  }
+
+  // 5f: relative (non-github) repo URL — stored with null owner/name + warning.
+  {
+    const yamlText = `
+schema_version: "1.0.0"
+slug: "relative-repo"
+name: "Relative Repo"
+repositories:
+  - "SECURITY.md"
+  - "https://gitlab.com/foo/bar"
+`;
+    const result = parseDotProject('rel-org', yamlText, 'test');
+    assert(result !== null, '5f: relative/non-github URLs parse');
+    assert(result!.dot_project_repositories.length === 2, '5f: both non-github entries stored');
+    assert(result!.dot_project_repositories[0].repo_owner === null, '5f: relative URL → null owner');
+    assert(result!.dot_project_repositories[1].repo_owner === null, '5f: gitlab URL → null owner');
+    assert(result!.warnings.filter(w => w.field === 'repositories').length === 2, '5f: 2 non-github warnings');
+  }
+
+  // 5g: top-level YAML is a scalar/array, not a map → returns null (not a crash).
+  {
+    assert(parseDotProject('x', 'just a string', 'test') === null, '5g: scalar YAML → null');
+    assert(parseDotProject('x', '- a\n- b', 'test') === null, '5g: array YAML → null');
+    assert(parseDotProject('x', '', 'test') === null, '5g: empty YAML → null');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Test 6: maintainers.yaml parsing
+// ---------------------------------------------------------------------------
+
+function testMaintainers(): void {
+  console.log('\n══ Test 6: parseMaintainers ══\n');
+
+  const yamlText = `
+maintainers:
+  - project_id: "myproject"
+    org: "myorg"
+    teams:
+      - name: "project-maintainers"
+        members:
+          - "@alice"
+          - "bob"
+          - 42
+      - name: "reviewers"
+        members:
+          - "carol"
+`;
+  const { maintainers, warnings } = parseMaintainers('myorg', yamlText);
+  console.log(JSON.stringify(maintainers, null, 2));
+  assert(maintainers.length === 3, `parsed 3 members (alice, bob, carol), skipped numeric (got ${maintainers.length})`);
+  assert(maintainers[0].member === 'alice', 'first member = alice (@ stripped)');
+  assert(maintainers[0].team === 'project-maintainers', 'team captured');
+  assert(maintainers[0].project_id === 'myproject', 'project_id captured');
+  assert(maintainers[0].maintainer_org === 'myorg', 'maintainer_org captured');
+  assert(warnings.some(w => w.field === 'maintainers.members'), 'emitted warning for numeric member');
+
+  // Malformed maintainers.yaml must not throw
+  let crashed = false;
+  try {
+    parseMaintainers('x', 'maintainers: "not-a-list"');
+    parseMaintainers('x', ': broken yaml [');
+    parseMaintainers('x', 'maintainers:\n  - teams: "not-a-list"');
+  } catch {
+    crashed = true;
+  }
+  assert(!crashed, 'malformed maintainers.yaml never throws');
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -243,6 +445,8 @@ async function main() {
   await testOpenTelemetry();
   testInvalidYaml();
   testMerge();
+  testMalformedEdgeCases();
+  testMaintainers();
 
   const exitCode = process.exitCode ?? 0;
   console.log(`\n${'='.repeat(50)}`);

@@ -17,6 +17,7 @@ import {
 } from './normalizers/GetRepoDataExtendedInfoNormalizer';
 import {
     parseDotProject,
+    parseMaintainers,
     mergeDotProjectResults,
     getDotProjectStats,
     type DotProjectNormalized,
@@ -683,12 +684,19 @@ export async function writeOrgRepoArtifacts(
 // ---------------------------------------------------------------------------
 
 /**
- * DuckDB table schemas for empty .project tables.
- * Mirrors the DotProjectNormalizer record shapes exactly.
+ * DuckDB table schemas for the .project tables.
+ *
+ * These are ALWAYS applied (not just for empty tables): the table is created
+ * with the explicit schema first, then rows are INSERTed from JSON. This:
+ *   - enforces the PRIMARY KEY / column types regardless of data presence
+ *   - aligns date columns as TIMESTAMP (matching fetched_at), not TEXT
+ *   - guarantees a stable column order for downstream SQL models
+ *
+ * Column order here MUST match the SELECT projection used at insert time.
  */
 const DOT_PROJECT_TABLE_SCHEMAS = {
     dot_project: `
-        org TEXT NOT NULL,
+        org TEXT NOT NULL PRIMARY KEY,
         source_url TEXT NOT NULL,
         schema_version TEXT,
         slug TEXT,
@@ -699,7 +707,7 @@ const DOT_PROJECT_TABLE_SCHEMAS = {
         repository_count INTEGER,
         website TEXT,
         current_maturity TEXT,
-        current_maturity_date TEXT,
+        current_maturity_date TIMESTAMP,
         audit_count INTEGER,
         security_policy_path TEXT,
         security_threat_model_path TEXT,
@@ -715,36 +723,83 @@ const DOT_PROJECT_TABLE_SCHEMAS = {
         position INTEGER NOT NULL,
         repo_url TEXT NOT NULL,
         repo_owner TEXT,
-        repo_name TEXT
+        repo_name TEXT,
+        PRIMARY KEY (org, position)
     `,
     dot_project_maturity_log: `
         org TEXT NOT NULL,
         position INTEGER NOT NULL,
         phase TEXT,
-        date TEXT,
-        issue TEXT
+        date TIMESTAMP,
+        issue TEXT,
+        PRIMARY KEY (org, position)
     `,
     dot_project_audits: `
         org TEXT NOT NULL,
         position INTEGER NOT NULL,
-        date TEXT,
+        date TIMESTAMP,
         type TEXT,
-        url TEXT
+        url TEXT,
+        PRIMARY KEY (org, position)
+    `,
+    dot_project_maintainers: `
+        org TEXT NOT NULL,
+        project_id TEXT,
+        maintainer_org TEXT,
+        team TEXT,
+        member TEXT NOT NULL
     `,
 } as const;
 
 /**
- * Processes GetDotProjectData GraphQL responses and writes four .project tables
- * to an existing DuckDB database.  Follows the same temp-JSON + read_json()
- * pattern used throughout ArtifactWriter.
+ * Explicit column projections for each table's INSERT ... SELECT.
+ * Must match the column order in DOT_PROJECT_TABLE_SCHEMAS above.
+ * TIMESTAMP columns are cast from the JSON string via TRY_CAST so a malformed
+ * date lands as NULL rather than aborting the insert.
+ */
+const DOT_PROJECT_SELECT_COLUMNS: Record<keyof typeof DOT_PROJECT_TABLE_SCHEMAS, string> = {
+    dot_project: `
+        org, source_url, schema_version, slug, name, description, type,
+        project_lead, repository_count, website, current_maturity,
+        TRY_CAST(current_maturity_date AS TIMESTAMP) AS current_maturity_date,
+        audit_count, security_policy_path, security_threat_model_path,
+        security_contact_email, security_advisory_url, landscape_category,
+        landscape_subcategory, package_managers_json,
+        TRY_CAST(fetched_at AS TIMESTAMP) AS fetched_at
+    `,
+    dot_project_repositories: `
+        org, position, repo_url, repo_owner, repo_name
+    `,
+    dot_project_maturity_log: `
+        org, position, phase, TRY_CAST(date AS TIMESTAMP) AS date, issue
+    `,
+    dot_project_audits: `
+        org, position, TRY_CAST(date AS TIMESTAMP) AS date, type, url
+    `,
+    dot_project_maintainers: `
+        org, project_id, maintainer_org, team, member
+    `,
+};
+
+/**
+ * Processes GetDotProjectData GraphQL responses and writes five .project tables
+ * to an existing DuckDB database. Follows the same temp-JSON + read_json()
+ * pattern used throughout ArtifactWriter, but with explicit CREATE + INSERT so
+ * PRIMARY KEY and TIMESTAMP types are enforced.
  *
  * Tables written:
- *   dot_project              — one row per org that has a .project repo
- *   dot_project_repositories — one row per URL in repositories[]
- *   dot_project_maturity_log — one row per maturity_log entry
- *   dot_project_audits       — one row per audits[] entry
+ *   dot_project              — one row per org that has a .project repo (PK: org)
+ *   dot_project_repositories — one row per URL in repositories[] (PK: org,position)
+ *   dot_project_maturity_log — one row per maturity_log entry (PK: org,position)
+ *   dot_project_audits       — one row per audits[] entry (PK: org,position)
+ *   dot_project_maintainers  — one row per maintainer member (from maintainers.yaml)
  *
- * Called from neo.ts after the main scan is complete (analogous to writeOrgRepoArtifacts).
+ * ROBUSTNESS: a malformed project.yaml for ONE org must never abort the whole
+ * scan. Each org is parsed inside a try/catch; a failure logs + skips that org
+ * and continues. Schema violations that are tolerated (scalar-vs-array, bad
+ * types) are accumulated as warnings and summarized.
+ *
+ * Called from neo.ts after the main scan (analogous to writeOrgRepoArtifacts).
  *
  * @param dotProjectResponses - Raw GraphQL responses from fetchDotProjectData (non-null only)
  * @param outputDir           - Timestamped run directory that already contains database.db
@@ -762,53 +817,97 @@ export async function writeDotProjectArtifacts(
 
         console.log(chalk.cyan('\n📋 Processing .project data...'));
 
-        // Parse and normalize all responses
-        const parseResults = dotProjectResponses.map(({ org, data }) => {
-            const repo = data.repository;
-            if (!repo) return null;
+        // Parse and normalize all responses. Each org is isolated: a parse crash
+        // for one .project must NOT abort the scan of the other 249 orgs.
+        const parseResults: (DotProjectNormalized | null)[] = [];
+        for (const { org, data } of dotProjectResponses) {
+            try {
+                const repo = data.repository;
+                if (!repo) {
+                    parseResults.push(null);
+                    continue;
+                }
 
-            const projectYamlBlob = repo.projectYaml;
-            if (
-                !projectYamlBlob ||
-                projectYamlBlob.__typename !== 'Blob' ||
-                !projectYamlBlob.text
-            ) {
-                // Repo exists but no project.yaml — unusual, skip
-                console.log(chalk.gray(`  ○ ${org}/.project: repo exists but no project.yaml`));
-                return null;
+                const projectYamlBlob = repo.projectYaml;
+                if (
+                    !projectYamlBlob ||
+                    projectYamlBlob.__typename !== 'Blob' ||
+                    !projectYamlBlob.text
+                ) {
+                    console.log(chalk.gray(`  ○ ${org}/.project: repo exists but no project.yaml`));
+                    parseResults.push(null);
+                    continue;
+                }
+
+                // Provenance: use the resolved commit SHA if the query returned one
+                // (permalink), else fall back to the branch ref name, else HEAD.
+                const ref = repo.defaultBranchRef?.target?.oid
+                    ?? repo.defaultBranchRef?.name
+                    ?? 'HEAD';
+                const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/${ref}/project.yaml`;
+
+                const result = parseDotProject(org, projectYamlBlob.text, sourceUrl);
+                if (!result) {
+                    console.log(chalk.yellow(`  ⚠ ${org}/.project: project.yaml parse error (skipped, scan continues)`));
+                    parseResults.push(null);
+                    continue;
+                }
+
+                // Parse maintainers.yaml if present (also defensive)
+                const maintainersBlob = repo.maintainersYaml;
+                if (maintainersBlob && maintainersBlob.__typename === 'Blob' && maintainersBlob.text) {
+                    const { maintainers, warnings } = parseMaintainers(org, maintainersBlob.text);
+                    result.dot_project_maintainers.push(...maintainers);
+                    result.warnings.push(...warnings);
+                }
+
+                const maturity = result.dot_project[0]?.current_maturity ?? 'unknown';
+                console.log(chalk.green(
+                    `  ✓ ${org}/.project: ${maturity} ` +
+                    `(${result.dot_project_repositories.length} repos, ${result.dot_project_maintainers.length} maintainers)`
+                ));
+                parseResults.push(result);
+            } catch (err) {
+                // Belt-and-suspenders: parseDotProject is contractually no-throw,
+                // but anything unexpected here still must not kill the scan.
+                console.log(chalk.yellow(
+                    `  ⚠ ${org}/.project: unexpected error, skipped (scan continues): ` +
+                    `${err instanceof Error ? err.message : String(err)}`
+                ));
+                parseResults.push(null);
             }
-
-            const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/HEAD/project.yaml`;
-            const result = parseDotProject(org, projectYamlBlob.text, sourceUrl);
-
-            if (!result) {
-                console.log(chalk.yellow(`  ⚠ ${org}/.project: project.yaml parse error`));
-                return null;
-            }
-
-            const maturity = result.dot_project[0]?.current_maturity ?? 'unknown';
-            console.log(chalk.green(`  ✓ ${org}/.project: ${maturity} (${result.dot_project_repositories.length} repos)`));
-            return result;
-        });
+        }
 
         const normalized: DotProjectNormalized = mergeDotProjectResults(parseResults);
         console.log(chalk.gray('\n' + getDotProjectStats(normalized)));
 
-        // Helper: write one table using temp-JSON + read_json() (or explicit schema if empty)
+        // Surface a compact warning summary (grouped by field) without spamming.
+        if (normalized.warnings.length > 0) {
+            const byField = new Map<string, number>();
+            for (const w of normalized.warnings) {
+                byField.set(w.field, (byField.get(w.field) ?? 0) + 1);
+            }
+            const summary = Array.from(byField.entries())
+                .map(([field, n]) => `${field}: ${n}`)
+                .join(', ');
+            console.log(chalk.yellow(`  ⚠ Schema warnings (tolerated): ${summary}`));
+        }
+
+        // Write one table: explicit CREATE (with PK + types) then INSERT from JSON.
         const writeTable = async (
             tableName: keyof typeof DOT_PROJECT_TABLE_SCHEMAS,
             data: unknown[]
         ) => {
+            await con.run(`CREATE TABLE ${tableName} (${DOT_PROJECT_TABLE_SCHEMAS[tableName]})`);
             if (data.length > 0) {
                 const tempPath = path.join(outputDir, `temp_${tableName}.json`);
                 fs.writeFileSync(tempPath, JSON.stringify(data));
                 await con.run(`
-                    CREATE TABLE ${tableName} AS
-                    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+                    INSERT INTO ${tableName}
+                    SELECT ${DOT_PROJECT_SELECT_COLUMNS[tableName]}
+                    FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
                 `);
                 fs.unlinkSync(tempPath);
-            } else {
-                await con.run(`CREATE TABLE ${tableName} (${DOT_PROJECT_TABLE_SCHEMAS[tableName]})`);
             }
             console.log(`  ✅ Created table: ${tableName} (${data.length} rows)`);
         };
@@ -817,6 +916,7 @@ export async function writeDotProjectArtifacts(
         await writeTable('dot_project_repositories', normalized.dot_project_repositories);
         await writeTable('dot_project_maturity_log', normalized.dot_project_maturity_log);
         await writeTable('dot_project_audits', normalized.dot_project_audits);
+        await writeTable('dot_project_maintainers', normalized.dot_project_maintainers);
 
         // Export new tables to Parquet (appends alongside existing parquet/ files)
         const parquetDir = path.join(outputDir, 'parquet');
