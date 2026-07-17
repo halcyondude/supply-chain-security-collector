@@ -17,6 +17,7 @@
     "graph:query": "ts-node src/graph/graph-cli.ts query",
     "graph:list": "ts-node src/graph/graph-cli.ts list",
     "fetch:landscape": "ts-node scripts/fetch-cncf-landscape.ts",
+    "build:repos": "ts-node scripts/build-repo-list.ts",
     "codegen": "graphql-codegen --config codegen.ts",
     "postinstall": "npm run codegen",
     "lint": "npx eslint src/",

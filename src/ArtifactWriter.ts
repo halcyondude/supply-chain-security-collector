@@ -7,14 +7,22 @@ import chalk from 'chalk';
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
 import type { OrgRepo, ProjectMetadata, RepositoryTarget } from './config';
 import { installAndLoadExtensions } from './duckdb-extensions';
-import { 
-    normalizeGetRepoDataArtifacts, 
-    getNormalizationStats as getArtifactsStats 
+import {
+    normalizeGetRepoDataArtifacts,
+    getNormalizationStats as getArtifactsStats
 } from './normalizers/GetRepoDataArtifactsNormalizer';
-import { 
-    normalizeGetRepoDataExtendedInfo, 
-    getNormalizationStats as getExtendedStats 
+import {
+    normalizeGetRepoDataExtendedInfo,
+    getNormalizationStats as getExtendedStats
 } from './normalizers/GetRepoDataExtendedInfoNormalizer';
+import {
+    parseDotProject,
+    parseMaintainers,
+    mergeDotProjectResults,
+    getDotProjectStats,
+    type DotProjectNormalized,
+} from './normalizers/DotProjectNormalizer';
+import type { GetDotProjectDataResponse } from './api';
 
 /**
  * Write artifacts to database and Parquet files
@@ -667,6 +675,268 @@ export async function writeOrgRepoArtifacts(
             con.closeSync();
         } catch (error) {
             console.warn('Warning: Could not properly close database connection:', error);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// .project data writer
+// ---------------------------------------------------------------------------
+
+/**
+ * DuckDB table schemas for the .project tables.
+ *
+ * These are ALWAYS applied (not just for empty tables): the table is created
+ * with the explicit schema first, then rows are INSERTed from JSON. This:
+ *   - enforces the PRIMARY KEY / column types regardless of data presence
+ *   - aligns date columns as TIMESTAMP (matching fetched_at), not TEXT
+ *   - guarantees a stable column order for downstream SQL models
+ *
+ * Column order here MUST match the SELECT projection used at insert time.
+ */
+const DOT_PROJECT_TABLE_SCHEMAS = {
+    dot_project: `
+        org TEXT NOT NULL PRIMARY KEY,
+        source_url TEXT NOT NULL,
+        schema_version TEXT,
+        slug TEXT,
+        name TEXT,
+        description TEXT,
+        type TEXT,
+        project_lead TEXT,
+        repository_count INTEGER,
+        website TEXT,
+        current_maturity TEXT,
+        current_maturity_date TIMESTAMP,
+        audit_count INTEGER,
+        security_policy_path TEXT,
+        security_threat_model_path TEXT,
+        security_contact_email TEXT,
+        security_advisory_url TEXT,
+        landscape_category TEXT,
+        landscape_subcategory TEXT,
+        package_managers_json TEXT,
+        fetched_at TIMESTAMP
+    `,
+    dot_project_repositories: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        repo_url TEXT NOT NULL,
+        repo_owner TEXT,
+        repo_name TEXT,
+        PRIMARY KEY (org, position)
+    `,
+    dot_project_maturity_log: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        phase TEXT,
+        date TIMESTAMP,
+        issue TEXT,
+        PRIMARY KEY (org, position)
+    `,
+    dot_project_audits: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        date TIMESTAMP,
+        type TEXT,
+        url TEXT,
+        PRIMARY KEY (org, position)
+    `,
+    dot_project_maintainers: `
+        org TEXT NOT NULL,
+        project_id TEXT,
+        maintainer_org TEXT,
+        team TEXT,
+        member TEXT NOT NULL
+    `,
+} as const;
+
+/**
+ * Explicit column projections for each table's INSERT ... SELECT.
+ * Must match the column order in DOT_PROJECT_TABLE_SCHEMAS above.
+ * TIMESTAMP columns are cast from the JSON string via TRY_CAST so a malformed
+ * date lands as NULL rather than aborting the insert.
+ */
+const DOT_PROJECT_SELECT_COLUMNS: Record<keyof typeof DOT_PROJECT_TABLE_SCHEMAS, string> = {
+    dot_project: `
+        org, source_url, schema_version, slug, name, description, type,
+        project_lead, repository_count, website, current_maturity,
+        TRY_CAST(current_maturity_date AS TIMESTAMP) AS current_maturity_date,
+        audit_count, security_policy_path, security_threat_model_path,
+        security_contact_email, security_advisory_url, landscape_category,
+        landscape_subcategory, package_managers_json,
+        TRY_CAST(fetched_at AS TIMESTAMP) AS fetched_at
+    `,
+    dot_project_repositories: `
+        org, position, repo_url, repo_owner, repo_name
+    `,
+    dot_project_maturity_log: `
+        org, position, phase, TRY_CAST(date AS TIMESTAMP) AS date, issue
+    `,
+    dot_project_audits: `
+        org, position, TRY_CAST(date AS TIMESTAMP) AS date, type, url
+    `,
+    dot_project_maintainers: `
+        org, project_id, maintainer_org, team, member
+    `,
+};
+
+/**
+ * Processes GetDotProjectData GraphQL responses and writes five .project tables
+ * to an existing DuckDB database. Follows the same temp-JSON + read_json()
+ * pattern used throughout ArtifactWriter, but with explicit CREATE + INSERT so
+ * PRIMARY KEY and TIMESTAMP types are enforced.
+ *
+ * Tables written:
+ *   dot_project              — one row per org that has a .project repo (PK: org)
+ *   dot_project_repositories — one row per URL in repositories[] (PK: org,position)
+ *   dot_project_maturity_log — one row per maturity_log entry (PK: org,position)
+ *   dot_project_audits       — one row per audits[] entry (PK: org,position)
+ *   dot_project_maintainers  — one row per maintainer member (from maintainers.yaml)
+ *
+ * ROBUSTNESS: a malformed project.yaml for ONE org must never abort the whole
+ * scan. Each org is parsed inside a try/catch; a failure logs + skips that org
+ * and continues. Schema violations that are tolerated (scalar-vs-array, bad
+ * types) are accumulated as warnings and summarized.
+ *
+ * Called from neo.ts after the main scan (analogous to writeOrgRepoArtifacts).
+ *
+ * @param dotProjectResponses - Raw GraphQL responses from fetchDotProjectData (non-null only)
+ * @param outputDir           - Timestamped run directory that already contains database.db
+ */
+export async function writeDotProjectArtifacts(
+    dotProjectResponses: Array<{ org: string; data: GetDotProjectDataResponse }>,
+    outputDir: string
+): Promise<void> {
+    const dbPath = path.join(outputDir, 'database.db');
+    const db = await DuckDBInstance.create(dbPath);
+    const con = await db.connect();
+
+    try {
+        await installAndLoadExtensions(con);
+
+        console.log(chalk.cyan('\n📋 Processing .project data...'));
+
+        // Parse and normalize all responses. Each org is isolated: a parse crash
+        // for one .project must NOT abort the scan of the other 249 orgs.
+        const parseResults: (DotProjectNormalized | null)[] = [];
+        for (const { org, data } of dotProjectResponses) {
+            try {
+                const repo = data.repository;
+                if (!repo) {
+                    parseResults.push(null);
+                    continue;
+                }
+
+                const projectYamlBlob = repo.projectYaml;
+                if (
+                    !projectYamlBlob ||
+                    projectYamlBlob.__typename !== 'Blob' ||
+                    !projectYamlBlob.text
+                ) {
+                    console.log(chalk.gray(`  ○ ${org}/.project: repo exists but no project.yaml`));
+                    parseResults.push(null);
+                    continue;
+                }
+
+                // Provenance: use the resolved commit SHA if the query returned one
+                // (permalink), else fall back to the branch ref name, else HEAD.
+                const ref = repo.defaultBranchRef?.target?.oid
+                    ?? repo.defaultBranchRef?.name
+                    ?? 'HEAD';
+                const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/${ref}/project.yaml`;
+
+                const result = parseDotProject(org, projectYamlBlob.text, sourceUrl);
+                if (!result) {
+                    console.log(chalk.yellow(`  ⚠ ${org}/.project: project.yaml parse error (skipped, scan continues)`));
+                    parseResults.push(null);
+                    continue;
+                }
+
+                // Parse maintainers.yaml if present (also defensive)
+                const maintainersBlob = repo.maintainersYaml;
+                if (maintainersBlob && maintainersBlob.__typename === 'Blob' && maintainersBlob.text) {
+                    const { maintainers, warnings } = parseMaintainers(org, maintainersBlob.text);
+                    result.dot_project_maintainers.push(...maintainers);
+                    result.warnings.push(...warnings);
+                }
+
+                const maturity = result.dot_project[0]?.current_maturity ?? 'unknown';
+                console.log(chalk.green(
+                    `  ✓ ${org}/.project: ${maturity} ` +
+                    `(${result.dot_project_repositories.length} repos, ${result.dot_project_maintainers.length} maintainers)`
+                ));
+                parseResults.push(result);
+            } catch (err) {
+                // Belt-and-suspenders: parseDotProject is contractually no-throw,
+                // but anything unexpected here still must not kill the scan.
+                console.log(chalk.yellow(
+                    `  ⚠ ${org}/.project: unexpected error, skipped (scan continues): ` +
+                    `${err instanceof Error ? err.message : String(err)}`
+                ));
+                parseResults.push(null);
+            }
+        }
+
+        const normalized: DotProjectNormalized = mergeDotProjectResults(parseResults);
+        console.log(chalk.gray('\n' + getDotProjectStats(normalized)));
+
+        // Surface a compact warning summary (grouped by field) without spamming.
+        if (normalized.warnings.length > 0) {
+            const byField = new Map<string, number>();
+            for (const w of normalized.warnings) {
+                byField.set(w.field, (byField.get(w.field) ?? 0) + 1);
+            }
+            const summary = Array.from(byField.entries())
+                .map(([field, n]) => `${field}: ${n}`)
+                .join(', ');
+            console.log(chalk.yellow(`  ⚠ Schema warnings (tolerated): ${summary}`));
+        }
+
+        // Write one table: explicit CREATE (with PK + types) then INSERT from JSON.
+        const writeTable = async (
+            tableName: keyof typeof DOT_PROJECT_TABLE_SCHEMAS,
+            data: unknown[]
+        ) => {
+            await con.run(`CREATE TABLE ${tableName} (${DOT_PROJECT_TABLE_SCHEMAS[tableName]})`);
+            if (data.length > 0) {
+                const tempPath = path.join(outputDir, `temp_${tableName}.json`);
+                fs.writeFileSync(tempPath, JSON.stringify(data));
+                await con.run(`
+                    INSERT INTO ${tableName}
+                    SELECT ${DOT_PROJECT_SELECT_COLUMNS[tableName]}
+                    FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+                `);
+                fs.unlinkSync(tempPath);
+            }
+            console.log(`  ✅ Created table: ${tableName} (${data.length} rows)`);
+        };
+
+        await writeTable('dot_project', normalized.dot_project);
+        await writeTable('dot_project_repositories', normalized.dot_project_repositories);
+        await writeTable('dot_project_maturity_log', normalized.dot_project_maturity_log);
+        await writeTable('dot_project_audits', normalized.dot_project_audits);
+        await writeTable('dot_project_maintainers', normalized.dot_project_maintainers);
+
+        // Export new tables to Parquet (appends alongside existing parquet/ files)
+        const parquetDir = path.join(outputDir, 'parquet');
+        fs.mkdirSync(parquetDir, { recursive: true });
+
+        for (const tableName of Object.keys(DOT_PROJECT_TABLE_SCHEMAS) as Array<keyof typeof DOT_PROJECT_TABLE_SCHEMAS>) {
+            const parquetPath = path.join(parquetDir, `${tableName}.parquet`);
+            await con.run(`
+                COPY ${tableName} TO '${parquetPath}'
+                (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000)
+            `);
+        }
+        console.log(chalk.green('  ✓ Exported .project tables to Parquet'));
+
+        await con.run('CHECKPOINT');
+    } finally {
+        try {
+            con.closeSync();
+        } catch (error) {
+            console.warn('Warning: Could not properly close .project database connection:', error);
         }
     }
 }

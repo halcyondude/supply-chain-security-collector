@@ -25,6 +25,78 @@ import {
   GetOrgReposQuery,
 } from './generated/graphql';
 
+// ---------------------------------------------------------------------------
+// GetDotProjectData — inline query (avoids codegen dependency for new query)
+//
+// Fetches project.yaml (and maintainers.yaml) from the <org>/.project repo.
+// These are the canonical CNCF .project metadata files per the schema at:
+// ~/gh/f/cncf/automation/utilities/dot-project/SCHEMA.md
+//
+// Run `npm run codegen` to generate typed Document/Query for this if preferred.
+// ---------------------------------------------------------------------------
+const GET_DOT_PROJECT_DATA_QUERY = `
+  query GetDotProjectData($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+      __typename
+      id
+      nameWithOwner
+      defaultBranchRef {
+        name
+        target {
+          ... on Commit {
+            oid
+          }
+        }
+      }
+      projectYaml: object(expression: "HEAD:project.yaml") {
+        ... on Blob {
+          __typename
+          id
+          text
+        }
+      }
+      maintainersYaml: object(expression: "HEAD:maintainers.yaml") {
+        ... on Blob {
+          __typename
+          id
+          text
+        }
+      }
+    }
+  }
+`;
+
+/**
+ * Shape of the GetDotProjectData response.
+ * Hand-typed here because we bypass the codegen for this query.
+ * Run `npm run codegen` to generate a proper typed document if desired.
+ */
+export interface GetDotProjectDataResponse {
+  repository: {
+    __typename: string;
+    id: string;
+    nameWithOwner: string;
+    /** Default branch ref — used to resolve a permalink commit SHA for provenance. */
+    defaultBranchRef: {
+      name: string;
+      target: {
+        // Commit selection returns oid; other target types return {} here.
+        oid?: string;
+      } | null;
+    } | null;
+    projectYaml: {
+      __typename: string;
+      id: string;
+      text: string | null;
+    } | null;
+    maintainersYaml: {
+      __typename: string;
+      id: string;
+      text: string | null;
+    } | null;
+  } | null;
+}
+
 /**
  * Creates and configures a GraphQLClient for the GitHub API.
  * @param token - The GitHub Personal Access Token.
@@ -281,4 +353,81 @@ export async function fetchOrgRepos(
   }
 
   return { org, repos: allRepos, totalCount: allRepos.length };
+}
+
+// ---------------------------------------------------------------------------
+// .project data fetching
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetches project.yaml (and maintainers.yaml) from the <org>/.project repository.
+ *
+ * The .project repo is the canonical CNCF project metadata store. It lives at
+ * github.com/<org>/.project and contains project.yaml at the repo root.
+ * Many CNCF orgs don't have a .project repo yet — absent repos return null gracefully.
+ *
+ * Implementation note: uses the same GraphQL blob-fetch mechanism as
+ * GetRepoDataExtendedInfo (object(expression: "HEAD:...") { ... on Blob { text } }).
+ * The query is inlined rather than generated to avoid a codegen round-trip;
+ * run `npm run codegen` if you want a typed document node for this query.
+ *
+ * @param client  - GraphQL client (requires auth token)
+ * @param org     - GitHub organization login (e.g. "argoproj")
+ * @param verbose - Enable verbose logging
+ * @returns Parsed response, or null if the repo doesn't exist / fetch fails
+ */
+export async function fetchDotProjectData(
+  client: GraphQLClient,
+  org: string,
+  verbose: boolean
+): Promise<GetDotProjectDataResponse | null> {
+  const identifier = `${org}/.project`;
+
+  if (verbose) {
+    console.log(chalk.gray(`[API] Fetching .project for ${identifier}...`));
+  }
+
+  try {
+    const data = await client.request<GetDotProjectDataResponse>(
+      GET_DOT_PROJECT_DATA_QUERY,
+      { owner: org, name: '.project' }
+    );
+
+    if (data.repository === null) {
+      if (verbose) {
+        console.log(chalk.gray(`[API] ${identifier}: no .project repo (expected for most orgs)`));
+      }
+      return null;
+    }
+
+    if (verbose) {
+      const hasYaml = data.repository.projectYaml !== null;
+      console.log(chalk.green(`[API] ${identifier}: found (project.yaml: ${hasYaml ? 'yes' : 'no'})`));
+    }
+
+    return data;
+  } catch (error: unknown) {
+    // A NOT_FOUND error (repo doesn't exist) is expected and non-fatal.
+    // Any other error is logged but also returns null to keep the scan running.
+    if (error instanceof ClientError) {
+      const errors = error.response.errors ?? [];
+      const isNotFound = errors.some(
+        // GraphQLError has extensions.code or a raw `type` field depending on GitHub's error shape
+        (e: { type?: string; extensions?: { code?: string } }) =>
+          e.type === 'NOT_FOUND' || e.extensions?.code === 'NOT_FOUND'
+      );
+      if (isNotFound) {
+        if (verbose) {
+          console.log(chalk.gray(`[API] ${identifier}: NOT_FOUND (no .project repo)`));
+        }
+        return null;
+      }
+
+      // Log non-404 errors at warn level (don't fail the scan)
+      console.warn(chalk.yellow(`[API] ${identifier}: GraphQL error`), JSON.stringify(errors));
+    } else if (error instanceof Error) {
+      console.warn(chalk.yellow(`[API] ${identifier}: ${error.message}`));
+    }
+    return null;
+  }
 }
