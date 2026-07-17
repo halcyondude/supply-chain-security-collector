@@ -83,44 +83,88 @@ Runs the GraphQL data collector against the expanded repo list.
 ```bash
 export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx
 
-# Full landscape scan (use expanded list for maximum coverage)
+# Full landscape scan with .project metadata (recommended)
+npx ts-node src/neo.ts \
+  --input input/cncf-expanded-repo-list.json \
+  --queries GetRepoDataExtendedInfo \
+  --dot-project \
+  --analyze \
+  --parallel
+
+# Without .project metadata (faster, skips dot_project* tables)
 npx ts-node src/neo.ts \
   --input input/cncf-expanded-repo-list.json \
   --queries GetRepoDataExtendedInfo \
   --analyze \
   --parallel
 
-# Or with maturity filter (e.g., graduated only)
+# With maturity filter (e.g., graduated only) + .project
 npx ts-node src/neo.ts \
   --input input/cncf-expanded-repo-list.json \
   --queries GetRepoDataExtendedInfo \
   --maturity graduated \
+  --dot-project \
   --analyze \
   --parallel
 
-# Or use npm alias (runs against cncf-full-landscape.json)
+# Or use npm alias (runs against cncf-full-landscape.json, no --dot-project by default)
 GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxx npm start
 ```
+
+### --dot-project flag
+
+When `--dot-project` is passed, the collector additionally:
+
+1. Collects all unique GitHub orgs from the scanned repos.
+2. For each org, fetches `https://github.com/<org>/.project` via the same GraphQL
+   blob-fetch mechanism used for SECURITY.md and workflow files
+   (`object(expression: "HEAD:project.yaml") { ... on Blob { text } }`).
+3. Parses the `project.yaml` YAML and normalizes it into four DuckDB tables:
+
+| Table | Description |
+|-------|-------------|
+| `dot_project` | One row per org that has a `.project` repo — top-level fields (slug, name, current maturity, security fields, etc.) |
+| `dot_project_repositories` | One row per URL in `repositories[]` — parsed into `repo_owner`/`repo_name` |
+| `dot_project_maturity_log` | One row per `maturity_log[]` entry (phase, date, issue URL) |
+| `dot_project_audits` | One row per `audits[]` entry (date, type, URL) |
+
+Orgs without a `.project` repo (the majority — ~61/251 CNCF orgs have one as of 2026)
+are silently skipped. Handle-absence is built into the GraphQL blob-fetch: a missing
+repo returns `repository: null`; a missing file returns `projectYaml: null`.
+
+**Relationship to build-repo-list.ts:**
+`build-repo-list.ts` (Step 1) also fetches `.project` repos, but via unauthenticated
+raw HTTP (`raw.githubusercontent.com`) *pre-scan* to build the repo list. The `--dot-project`
+flag fetches them *during the scan* via GraphQL with auth, normalizes all fields (not just
+`repositories[]`), and lands them in DuckDB. They are complementary:
+- Step 1 enriches the repo list with `.project` `repositories[]`
+- Step 2 `--dot-project` captures all `.project` metadata fields in DuckDB
 
 **Output structure:**
 
 ```
 output/<input-basename>/<ISO-timestamp>/
-  database.db                              ← DuckDB (base + agg tables)
-  parquet/                                 ← Parquet files per table
+  database.db                              ← DuckDB (base + agg + dot_project* tables)
+  parquet/
+    dot_project.parquet
+    dot_project_repositories.parquet
+    dot_project_maturity_log.parquet
+    dot_project_audits.parquet
+    ...other tables...
   raw-responses.GetRepoDataExtendedInfo.jsonl  ← audit log (JSONL)
   files/                                   ← SECURITY.md, security-insights.yml
-  security-insights-attestations.csv
-  security-insights-sboms.csv
 output/<input-basename>/current -> <latest-timestamp>/   ← symlink
 ```
 
 **What requires the token:**
 - All `npm start` / `npx ts-node src/neo.ts` invocations — GitHub GraphQL API requires auth.
 - `--scan-orgs` mode (org-level repo discovery) — also requires token.
+- `--dot-project` mode — also requires token (GraphQL API).
 
 **What does NOT require a token:**
 - Steps 1, 3, 4, 5 (repo list build, graph build, export, queries).
+- `.project` YAML parsing / DuckDB normalization (the `parseDotProject` function
+  is token-free and testable with local fixtures — see "Pipeline Validation" below).
 
 ---
 
@@ -384,6 +428,48 @@ npm run build:repos -- --dry-run --no-dot-project
 │ 1       │ 'Jaeger'       │ 'jaegertracing/jaeger' │
 └─────────┴────────────────┴────────────────────────┘
 2 row(s)
+```
+
+### .project Parse Validation (No Token)
+
+The `parseDotProject` normalizer can be validated without a token using local YAML fixtures.
+The example below uses the schema example at `~/gh/f/cncf/automation/utilities/dot-project/example/project.yaml`
+as a parse target, then queries the resulting DuckDB tables:
+
+```bash
+# Run the standalone .project parse test (no network, no token)
+npx ts-node scripts/test-dot-project-parse.ts
+
+# Or validate the normalizer unit test
+npx ts-node -e "
+const { parseDotProject } = require('./src/normalizers/DotProjectNormalizer');
+const fs = require('fs');
+const yaml = fs.readFileSync('./input/test-dot-project-argoproj.yaml', 'utf-8');
+const result = parseDotProject('argoproj', yaml, 'https://github.com/argoproj/.project/blob/HEAD/project.yaml');
+console.log(JSON.stringify(result, null, 2));
+"
+```
+
+For an end-to-end test against a real `.project` repo without a GraphQL token,
+use the unauthenticated raw fetch (same as `build-repo-list.ts` Step 1):
+
+```bash
+# Fetch argoproj/.project/project.yaml via raw.githubusercontent.com (no auth)
+curl -s https://raw.githubusercontent.com/argoproj/.project/main/project.yaml | \
+  npx ts-node -e "
+const { parseDotProject } = require('./src/normalizers/DotProjectNormalizer');
+const fs = require('fs');
+process.stdin.resume();
+let data = '';
+process.stdin.on('data', d => data += d);
+process.stdin.on('end', () => {
+  const result = parseDotProject('argoproj', data, 'test');
+  console.log(JSON.stringify(result?.dot_project[0], null, 2));
+  console.log('repositories:', result?.dot_project_repositories.length);
+  console.log('maturity entries:', result?.dot_project_maturity_log.length);
+  console.log('audits:', result?.dot_project_audits.length);
+});
+"
 ```
 
 ---
