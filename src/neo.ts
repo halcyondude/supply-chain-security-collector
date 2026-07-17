@@ -6,9 +6,9 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos } from './api';
+import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos, fetchDotProjectData } from './api';
 import { appendRawResponse } from './rawResponseWriter';
-import { writeArtifacts, writeOrgRepoArtifacts } from './ArtifactWriter';
+import { writeArtifacts, writeOrgRepoArtifacts, writeDotProjectArtifacts } from './ArtifactWriter';
 import type { RepositoryTarget, ProjectMetadata } from './config';
 import { normalizeGetOrgRepos, getOrgReposNormalizationStats } from './normalizers/GetOrgReposNormalizer';
 import { SecurityAnalyzer } from './SecurityAnalyzer';
@@ -83,6 +83,7 @@ async function main() {
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
     .option('--scan-orgs', 'Scan all GitHub orgs found in input data for repo discovery', false)
+    .option('--dot-project', 'Fetch .project metadata (project.yaml) for each org via GraphQL and write to DuckDB', false)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
@@ -97,6 +98,7 @@ async function main() {
     analyze: runAnalysis,
     persistFiles,
     scanOrgs,
+    dotProject: fetchDotProject,
     verbose
   } = options;
 
@@ -245,6 +247,55 @@ async function main() {
     }
   } else {
     console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
+  }
+
+  // .project metadata: fetch project.yaml from <org>/.project for each unique org
+  if (fetchDotProject && allResponses.length > 0) {
+    console.log(chalk.gray('\n' + '─'.repeat(50)));
+    console.log(chalk.bold.cyan('\n📋 Fetching .project metadata...\n'));
+
+    // Collect unique orgs from the scanned repos
+    const dotProjectOrgSet = new Set<string>();
+    for (const item of normalizedInput) {
+      dotProjectOrgSet.add(item.repo.owner);
+    }
+    const uniqueOrgs = Array.from(dotProjectOrgSet);
+    console.log(chalk.cyan(`  Unique orgs to probe: ${uniqueOrgs.length}`));
+
+    // Fetch <org>/.project for each unique org (sequential to be polite)
+    const dotProjectResults: Array<{ org: string; data: import('./api').GetDotProjectDataResponse }> = [];
+    let dotProjectFound = 0;
+    let dotProjectMissing = 0;
+
+    for (const org of uniqueOrgs) {
+      const data = await fetchDotProjectData(client, org, verbose);
+      if (data && data.repository !== null) {
+        dotProjectResults.push({ org, data });
+        dotProjectFound++;
+        if (!verbose) {
+          console.log(chalk.green(`  ✓ ${org}/.project`));
+        }
+      } else {
+        dotProjectMissing++;
+        if (verbose) {
+          console.log(chalk.gray(`  ○ ${org}/.project: not found (skipped)`));
+        }
+      }
+    }
+
+    console.log(chalk.gray(`\n  Found: ${dotProjectFound}, Missing/skipped: ${dotProjectMissing}`));
+
+    if (dotProjectResults.length > 0) {
+      try {
+        await writeDotProjectArtifacts(dotProjectResults, timestampedDir);
+        console.log(chalk.green('  ✓ .project tables written to database'));
+      } catch (error) {
+        console.error(chalk.red('\n❌ .project write failed:'), error);
+        throw error;
+      }
+    } else {
+      console.log(chalk.yellow('  ⚠ No .project repos found for any org in this scan'));
+    }
   }
 
   // Org-level scanning: discover all repos across orgs present in the input data
