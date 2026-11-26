@@ -51,6 +51,17 @@ const PLAIN = repoResponse({
             '      - uses: docker/build-push-action@v6',
             '      - run: ./hack/generate-release-notes.sh --github',
         ].join('\n'),
+        // Stemming makes 'generate' match 'generator': an SPDX SBOM step is not
+        // spdx-sbom-generator, and SLSA provenance via GitHub is not slsa-github-generator.
+        'provenance.yml': [
+            'jobs:',
+            '  sbom:',
+            '    steps:',
+            '      - name: Generate SPDX SBOM',
+            '        run: make sbom FORMAT=spdx-json',
+            '      - name: Generate SLSA provenance with GitHub attestations',
+            '        uses: actions/attest-build-provenance@v2',
+        ].join('\n'),
     },
 });
 
@@ -110,7 +121,7 @@ describe('collection → analysis', () => {
             base_repositories: 3,
             base_releases: 3,
             base_release_assets: 5,
-            base_workflows: 4,
+            base_workflows: 5,
             base_cncf_projects: 1,
             base_cncf_project_repos: 3,
         };
