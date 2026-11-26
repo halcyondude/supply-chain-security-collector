@@ -19,7 +19,6 @@ Data: the collector's CNCF landscape run (236 primary repos, 4,169 releases, 39,
 | SBOM files with their own signature or Sigstore bundle | 336 of 2,025 (16.6%), in 6 repos |
 | repos with a `SECURITY-INSIGHTS.yml` | 27 (11.4%); 18 still on schema 1.0.0 |
 | ...that declare an SBOM in it | 8; only Jaeger's points at a current file |
-| repos that publish SBOMs **and** reference an SBOM generator in Actions | 6 (32 publish with no generator visible; 25 reference one and publish nothing) |
 
 [^basis]: Counts SBOM documents only, excluding signature, certificate and bundle files. The [State of the Ecosystem report](state-of-the-ecosystem.md) counts every SBOM-flagged asset, including those, and gets 1,316 of 2,402. Both are 55%.
 
@@ -107,7 +106,7 @@ What a collector should do, in order, and what a project can rely on being found
 4. **Ask the registry** for each image in `distribution-points`: OCI referrers or cosign attestations on the digest.
 5. **Ask GitHub** for artifact attestations on the release artifacts.
 6. **Pair signatures** by name: `<sbom>.sig`, `.pem`, `.asc`, `.sigstore.json`, `.bundle`. Verify where possible; record "present" vs "verified" separately.
-7. **Record the channel** each SBOM came from, and record misses as "not found in channels X, Y", never as "does not publish". Do not infer SBOMs from CI tool references: in our data only 6 repos had both.
+7. **Record the channel** each SBOM came from, and record misses as "not found in channels X, Y", never as "does not publish". Do not infer SBOMs from CI tool references: a generator in a workflow says nothing about whether, or where, its output is published.
 
 ```mermaid
 flowchart LR
@@ -203,8 +202,6 @@ JOIN base_repositories r ON r.id = a.repo_id WHERE a.attestation_predicate_uri =
 SELECT s.sbom_file, count(a.asset_id) FROM base_si_sboms s
 LEFT JOIN agg_artifact_patterns a ON a.asset_name = regexp_extract(s.sbom_file, '[^/]+$') GROUP BY 1;
 
--- generator in Actions vs SBOM in releases: (true,true)=6, (false,true)=32, (true,false)=25
-SELECT uses_sbom_generator, has_sbom_artifact, count(*) FROM agg_repo_summary GROUP BY ALL;
 ```
 
-Caveats: `is_sbom` is filename full-text match (`sbom OR spdx OR cyclonedx`), so SBOMs named without those words are missed and the counts are a floor. `uses_sbom_generator` includes Trivy, which is also used purely as a scanner. SBOM content (graph shape, quality) was not collected; recommendation 4 rests on the final report, not this data.
+Caveats: `is_sbom` is filename full-text match (`sbom OR spdx OR cyclonedx`), so SBOMs named without those words are missed and the counts are a floor. CI-tool flags (`uses_*`) are not used: the collector's workflow index matched file names only (index bug, fix pending), so those figures are unreliable. SBOM content (graph shape, quality) was not collected; recommendation 4 rests on the final report, not this data.
