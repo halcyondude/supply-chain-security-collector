@@ -87,7 +87,7 @@ Added `--scan-orgs` flag to scan all public repos in each CNCF project's GitHub 
 **New files:**
 - `src/graphql/GetOrgRepos.graphql` — GraphQL query
 - `src/normalizers/GetOrgReposNormalizer.ts` — typed normalizer
-- `sql/models/05b_org_summary.sql` — analysis model
+- `sql/models/06_org_ci_visibility.sql` — analysis model (`agg_org_summary`)
 
 **New tables:**
 - `base_org_repos` — all public repos per org
