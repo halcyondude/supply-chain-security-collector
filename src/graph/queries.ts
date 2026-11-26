@@ -16,7 +16,7 @@ export const CYPHER_QUERIES: CypherQuery[] = [
         cypher: `
 MATCH (p:CNCFProject {maturity: 'graduated'})<-[:BELONGS_TO]-(r:Repository)
 WHERE NOT EXISTS {
-    MATCH (r)-[:HAS_WORKFLOW]->(:Workflow)-[:USES_TOOL]->(:Tool)<-[:IN_CATEGORY]-(:ToolCategory {category_name: 'signer'})
+    MATCH (r)-[:HAS_WORKFLOW]->(:Workflow)-[:USES_TOOL]->(:Tool)-[:IN_CATEGORY]->(:ToolCategory {category_name: 'signer'})
 }
 RETURN p.display_name, r.nameWithOwner
 ORDER BY p.display_name
@@ -36,13 +36,14 @@ LIMIT 20
     },
     {
         name: 'full-pipeline',
-        description: 'Repos with full SBOM + signing pipeline (SBOM assets + cosign/sigstore)',
+        description: 'Repos with a full SBOM + signing pipeline (SBOM release assets + a signer in CI)',
         cypher: `
-MATCH (p:CNCFProject)<-[:BELONGS_TO]-(r:Repository)-[:HAS_RELEASE]->(rel:Release)-[:HAS_ASSET]->(a:ReleaseAsset)
-MATCH (r)-[:HAS_WORKFLOW]->(w:Workflow)-[:USES_TOOL]->(t:Tool)
-WHERE a.name CONTAINS 'sbom' AND t.tool_name IN ['cosign', 'sigstore']
-RETURN p.display_name, r.nameWithOwner, count(DISTINCT rel) AS signed_releases
-ORDER BY signed_releases DESC
+MATCH (p:CNCFProject)<-[:BELONGS_TO]-(r:Repository)-[:HAS_RELEASE]->(rel:Release)-[:HAS_ASSET]->(a:ReleaseAsset {is_sbom: true})
+WHERE EXISTS {
+    MATCH (r)-[:HAS_WORKFLOW]->(:Workflow)-[:USES_TOOL]->(:Tool)-[:IN_CATEGORY]->(:ToolCategory {category_name: 'signer'})
+}
+RETURN p.display_name, r.nameWithOwner, count(DISTINCT rel) AS releases_with_sbom
+ORDER BY releases_with_sbom DESC
         `.trim(),
     },
     {

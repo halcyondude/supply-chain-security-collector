@@ -56,8 +56,21 @@ export const NODE_TABLES: NodeTableDef[] = [
             { name: 'id', type: 'STRING' },
             { name: 'name', type: 'STRING' },
             { name: 'downloadUrl', type: 'STRING' },
+            { name: 'is_sbom', type: 'BOOLEAN' },
+            { name: 'sbom_format', type: 'STRING' },
+            { name: 'is_signature', type: 'BOOLEAN' },
+            { name: 'is_attestation', type: 'BOOLEAN' },
         ],
-        sourceQuery: `SELECT id, name, downloadUrl FROM base_release_assets`,
+        // Classification comes from sql/models/01_artifact_analysis.sql so graph
+        // queries use the same SBOM/signature rules as the SQL layer.
+        sourceQuery: `
+            SELECT a.id, a.name, a.downloadUrl,
+                   COALESCE(ap.is_sbom, false) AS is_sbom,
+                   ap.sbom_format,
+                   COALESCE(ap.is_signature, false) AS is_signature,
+                   COALESCE(ap.is_attestation, false) AS is_attestation
+            FROM base_release_assets a
+            LEFT JOIN agg_artifact_patterns ap ON ap.asset_id = a.id`,
     },
     {
         name: 'Workflow',
