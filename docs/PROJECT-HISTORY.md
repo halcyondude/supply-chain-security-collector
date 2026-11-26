@@ -30,11 +30,11 @@ gantt
 
     section Quality & Reporting
     FTS bug fix (cosign 1→102)             :done, m9, 2026-03-03, 1d
-    Report generator & LadybugDB graph     :done, m10, 2026-03-03, 1d
+    Report generator & LadybugDB graph (PR #27) :done, m10, 2026-03-03, 2026-03-30
 
     section Presentation Sprint
     Spring cleaning (22-file docs audit)   :done, m11, 2026-03-30, 1d
-    Org CI scanning — PR #31               :done, m12, 2026-03-30, 2d
+    Org CI scanning — PR #31               :done, m12, 2026-03-31, 2d
     Interactive explorer — PR #32          :done, m13, 2026-03-31, 2d
     Full landscape run (236 projects)      :done, m14, 2026-03-30, 1d
     Presentation artifacts & deck          :done, m15, 2026-03-30, 3d
@@ -49,9 +49,9 @@ gantt
 | **Core Pipeline** | Oct 6–13, 2025 | PR #1 (277K add, 90 files) | Two-stage architecture: collection → normalization → DuckDB + Parquet. Typed normalizers, rate-limited GraphQL client. |
 | **Security Features** | Oct 21–27, 2025 | PR #4 (10K add, 24 files) | SECURITY-INSIGHTS.yml parsing, security document detection, column alignment |
 | **DevEx & Docs** | Oct 17–20, 2025 | — | Jupyter Lab integration, documentation suite, `npm run clean` |
-| **CNCF Integration** | Nov 7, 2025 | PR #6 (9K add, 9 files) | CLOMonitor data files, landscape fetch script |
+| **CNCF Integration** | Nov 7–8, 2025 | PR #6 (9K add, 9 files) | CLOMonitor data files, landscape fetch script |
 | **Maintenance** | Nov 2025 – Feb 2026 | PR #14, 6 Dependabot PRs | Dependency updates, landscape data refresh, GraphQL node IDs |
-| **Quality & Reporting** | Mar 3, 2026 | PR #27 (11K add, 25 files) | FTS index bug fix (cosign: 1→102), `ReportGenerator.ts`, LadybugDB property graph, agg_* Parquet export, lint cleanup (6→0 errors) |
+| **Quality & Reporting** | Mar 3–30, 2026 (PR #27 authored Mar 3, merged Mar 30) | PR #27 (11K add, 25 files) | FTS index bug fix (cosign: 1→102), `ReportGenerator.ts`, LadybugDB property graph, agg_* Parquet export, lint cleanup (6→0 errors) |
 | **Presentation Sprint** | Mar 30 – Apr 2, 2026 | PR #31, PR #32 | Org CI scanning (`--scan-orgs`), DuckDB-WASM interactive explorer, GitHub Pages deployment, 22-file docs audit, full landscape run, 12-slide deck, 5 SVG diagrams, findings report, GUAC strategy |
 
 ## Key Findings (Full CNCF Landscape)
@@ -87,7 +87,7 @@ Every number is a **lower bound** — absence of evidence ≠ evidence of absenc
 ```
 Input JSON → GitHub GraphQL API → Typed Normalizers → DuckDB base_* tables + Parquet
                                                           ↓
-                                              SQL Models (00–05) → agg_* tables
+                                              SQL Models (00–06) → agg_* tables
                                                           ↓
                                           ┌───────────────┼───────────────┐
                                     Markdown Report    LadybugDB       Explorer
