@@ -8,7 +8,7 @@ The data model consists of three table layers:
 2. **Base Tables** (`base_*`) — Normalized relational data from GraphQL responses
 3. **Aggregated Tables** (`agg_*`) — Business insights from SQL models in `sql/models/`
 
-All tables reside in a single DuckDB database per query type. Tables are exported to Parquet files in a flat directory alongside the database.
+All tables for a run reside in a single DuckDB database (`database.db`). Tables are exported to Parquet files in a `parquet/` subdirectory next to it. The 25 tables are: 1 raw, 11 base, 13 agg. `base_si_sboms` is created by the analysis step and is not exported to Parquet; the `agg_*` tables are exported by `SecurityAnalyzer` after the SQL models run.
 
 ## Data Loading
 
@@ -27,32 +27,39 @@ fs.unlinkSync(tempPath);
 ## Output Directory Structure
 
 ```text
-output/<run-name>-<timestamp>/
-  database.db
-  raw-responses.jsonl
-  raw_GetRepoDataExtendedInfo.parquet
-  base_repositories.parquet
-  base_releases.parquet
-  base_release_assets.parquet
-  base_workflows.parquet
-  base_branch_protection_rules.parquet
-  base_security_md.parquet
-  base_si_documents.parquet
-  base_si_sboms.parquet
-  base_cncf_projects.parquet
-  base_cncf_project_repos.parquet
-  agg_artifact_patterns.parquet
-  agg_workflow_tools.parquet
-  agg_repo_summary.parquet
-  agg_executive_summary.parquet
-  agg_tool_summary.parquet
-  agg_repo_summary_sorted.parquet
-  agg_sbom_summary.parquet
-  agg_advanced_artifacts.parquet
-  agg_tool_category_summary.parquet
-  agg_repo_detail.parquet
-  agg_si_attestations.parquet
-  agg_cncf_project_summary.parquet
+output/<input-name>/
+  <timestamp>/
+    database.db
+    raw-responses.<QueryName>.jsonl      # API audit trail, one file per query
+    security-insights-sboms.csv          # written by SecurityAnalyzer (--analyze), if data exists
+    security-insights-attestations.csv   # written by SecurityAnalyzer (--analyze), if data exists
+    files/                               # persisted workflows and SECURITY.md (--persist-files)
+    parquet/
+      raw_GetRepoDataExtendedInfo.parquet
+      base_repositories.parquet
+      base_releases.parquet
+      base_release_assets.parquet
+      base_workflows.parquet
+      base_branch_protection_rules.parquet
+      base_security_md.parquet
+      base_si_documents.parquet
+      base_cncf_projects.parquet         # rich-format input only
+      base_cncf_project_repos.parquet    # rich-format input only
+      base_org_repos.parquet             # org scan only
+      agg_artifact_patterns.parquet
+      agg_workflow_tools.parquet
+      agg_repo_summary.parquet
+      agg_executive_summary.parquet
+      agg_tool_summary.parquet
+      agg_repo_summary_sorted.parquet
+      agg_sbom_summary.parquet
+      agg_advanced_artifacts.parquet
+      agg_tool_category_summary.parquet
+      agg_repo_detail.parquet
+      agg_si_attestations.parquet
+      agg_cncf_project_summary.parquet   # rich-format input only
+      agg_org_summary.parquet            # org scan only
+  current -> <timestamp>/                # symlink to the latest run
 ```
 
 ## Raw Tables
@@ -61,7 +68,7 @@ output/<run-name>-<timestamp>/
 
 Full GraphQL API responses preserved as-is. Loaded from the temp JSON file via `read_json()` with `maximum_depth=-1` to keep nested structure intact.
 
-**Source:** `ArtifactWriter.ts` — `createRawTable()`
+**Source:** `ArtifactWriter.ts` — `writeArtifacts()` (table name is `raw_<queryName>`)
 
 ## Base Tables (Collection Layer)
 
@@ -145,7 +152,7 @@ Produced by query-specific TypeScript normalizers in `src/normalizers/`.
 
 ### base_security_md
 
-**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `SecurityMarkdown` interface
+**Source:** `GetRepoDataExtendedInfoNormalizer.ts` — `SecurityMarkdown` interface. The normalizer currently returns an empty array, so this table is created empty (schema defined in `ArtifactWriter.ts`).
 
 | Column | Type |
 |--------|------|
@@ -184,6 +191,24 @@ Produced by query-specific TypeScript normalizers in `src/normalizers/`.
 | sbom_url | TEXT |
 | sbom_file | TEXT |
 | sbom_comment | TEXT |
+
+### base_org_repos
+
+**Source:** `ArtifactWriter.ts` — `writeOrgRepoArtifacts()`, from the `GetOrgRepos` org scan (see [adding-new-queries.md](adding-new-queries.md)). Appended to the existing database; only present when an org scan runs.
+
+| Column | Type |
+|--------|------|
+| id | TEXT |
+| org | TEXT |
+| name | TEXT |
+| nameWithOwner | TEXT |
+| url | TEXT |
+| description | TEXT |
+| isArchived | BOOLEAN |
+| isFork | BOOLEAN |
+| defaultBranch | TEXT |
+| primaryLanguage | TEXT |
+| cncf_project_name | TEXT |
 
 ### base_cncf_projects
 
@@ -546,6 +571,22 @@ Flattened attestations from Security Insights YAML documents. Extracts from mult
 | blog_url | TEXT |
 | crunchbase | TEXT |
 | twitter | TEXT |
+
+### agg_org_summary
+
+**Source:** `sql/models/06_org_ci_visibility.sql` — only present when `base_org_repos` exists (org scan)
+
+One row per org and CNCF project: how many of the org's repos are in the landscape scan.
+
+| Column | Type |
+|--------|------|
+| cncf_project_name | TEXT |
+| org | TEXT |
+| total_repos | INTEGER |
+| repos_in_landscape | INTEGER |
+| repos_not_in_landscape | INTEGER |
+| archived_repos | INTEGER |
+| forked_repos | INTEGER |
 
 ## Schema Evolution
 
