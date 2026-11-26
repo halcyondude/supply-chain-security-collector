@@ -9,7 +9,6 @@
 //
 // Run with: npm run fetch:landscape
 
-import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';

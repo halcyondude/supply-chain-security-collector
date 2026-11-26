@@ -1,0 +1,29 @@
+# Version updates, grouped per ecosystem, weekly. The cooldown keeps new
+# releases out for 14 days so a compromised or yanked release has time to be
+# caught before it reaches this repo. Security updates are not delayed.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      npm-root: { patterns: ['*'] }
+  - package-ecosystem: npm
+    directory: /site
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      npm-site: { patterns: ['*'] }
+  - package-ecosystem: uv
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      python: { patterns: ['*'] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    cooldown: { default-days: 14 }
+    groups:
+      actions: { patterns: ['*'] }
