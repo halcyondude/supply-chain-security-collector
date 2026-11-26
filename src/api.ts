@@ -99,6 +99,7 @@ export async function fetchRepositoryExtendedInfo(
   }
 
   let includeBranchProtectionRules = true;
+  let transientRetries = 0;
   for (;;) {
     try {
       const data = await client.request<GetRepoDataExtendedInfoQuery>(GetRepoDataExtendedInfoDocument, {
@@ -125,10 +126,24 @@ export async function fetchRepositoryExtendedInfo(
         includeBranchProtectionRules = false;
         continue;
       }
+      if (isTransientServerError(error) && transientRetries < TRANSIENT_RETRY_DELAYS_MS.length) {
+        const delayMs = TRANSIENT_RETRY_DELAYS_MS[transientRetries++];
+        console.log(chalk.yellow(`[API] ${repoIdentifier}: HTTP ${(error as ClientError).response.status}, retrying in ${delayMs / 1000}s.`));
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        continue;
+      }
       logRequestError(repoIdentifier, error);
       return null;
     }
   }
+}
+
+/** Backoff before each retry of a 5xx response (GitHub returns 502/504 on slow queries). */
+export const TRANSIENT_RETRY_DELAYS_MS: readonly number[] = [2_000, 8_000];
+
+/** True for an HTTP 5xx from the API, which is usually worth one more try. */
+export function isTransientServerError(error: unknown): boolean {
+  return error instanceof ClientError && error.response.status >= 500 && error.response.status < 600;
 }
 
 /**
