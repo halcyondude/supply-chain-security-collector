@@ -9,7 +9,7 @@
 
 ---
 
-*Deliverable for [cncf/toc#1874](https://github.com/cncf/toc/issues/1874) — "SCI: Assess the State of CNCF Project Artifacts" — under initiative [cncf/toc#1709](https://github.com/cncf/toc/issues/1709), TAG Security & Compliance. Co-led with Evan Anderson ([@evankanderson](https://github.com/evankanderson)). Board: [cncf/projects/80](https://github.com/orgs/cncf/projects/80/views/4).*
+*Deliverable for [cncf/toc#1874](https://github.com/cncf/toc/issues/1874) — "SCI: Assess the State of CNCF Project Artifacts" — under initiative [cncf/toc#1709](https://github.com/cncf/toc/issues/1709), TAG Security & Compliance. Led by Matt Young ([@halcyondude](https://github.com/halcyondude)); TAG-SC liaison Evan Anderson ([@evankanderson](https://github.com/evankanderson)). Board: [cncf/projects/80](https://github.com/orgs/cncf/projects/80/views/4).*
 
 > **Status (November 2026).** [#1874](https://github.com/cncf/toc/issues/1874) and [#1879](https://github.com/cncf/toc/issues/1879) closed on 2026-10-08. The initiative ([#1709](https://github.com/cncf/toc/issues/1709)) closed on 2026-11-04 with a final summary in [cncf/toc#2320](https://github.com/cncf/toc/pull/2320), which records the blocking problems found. The data and findings below stand. §6 and §7 are the next steps as proposed in July 2026, kept for the record.
 
