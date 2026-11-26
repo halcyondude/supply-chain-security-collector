@@ -2,6 +2,7 @@
   {
     "project_name": "Akri",
     "display_name": "Akri",
+    "description": "A Kubernetes Resource Interface for the Edge",
     "repos": [
       {
         "owner": "project-akri",
@@ -43,6 +44,7 @@
     "homepage_url": "https://www.runatlantis.io/",
     "repo_url": "https://github.com/runatlantis/atlantis",
     "clomonitor_name": "atlantis",
+    "dev_stats_url": "https://atlantis.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -64,12 +66,49 @@
     "date_accepted": "2025-05-22",
     "homepage_url": "https://cadenceworkflow.io/",
     "repo_url": "https://github.com/cadence-workflow/cadence",
-    "clomonitor_name": "cadence-workflow",
+    "clomonitor_name": "cadence",
     "dev_stats_url": "https://cadence.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/CloudNativeFdn"
+  },
+  {
+    "project_name": "CAIPE",
+    "display_name": "CAIPE",
+    "description": "CAIPE is a self-hosted, open-source AI agent platform that provides a shared control plane for building, governing, and operating agents and workflows across cloud-native engineering systems.",
+    "repos": [
+      {
+        "owner": "caipe-io",
+        "name": "ai-platform-engineering",
+        "primary": true
+      },
+      {
+        "owner": "caipe-io",
+        "name": "caipe-cli",
+        "primary": false
+      },
+      {
+        "owner": "caipe-io",
+        "name": "governance",
+        "primary": false
+      },
+      {
+        "owner": "caipe-io",
+        "name": "agentic-apps",
+        "primary": false
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Automation & Configuration",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://caipe.io/",
+    "repo_url": "https://github.com/caipe-io/ai-platform-engineering",
+    "clomonitor_name": "caipe",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "CDK for Kubernetes CDK8s",
@@ -99,6 +138,7 @@
   {
     "project_name": "Cloud Custodian",
     "display_name": "Cloud Custodian",
+    "description": "Rules engine for cloud security, cost optimization, and governance, DSL in yaml for policies to query, filter, and take actions on resources",
     "repos": [
       {
         "owner": "cloud-custodian",
@@ -139,8 +179,6 @@
     "homepage_url": "https://www.devstream.io/",
     "repo_url": "https://github.com/devstream-io/devstream",
     "blog_url": "https://blog.devstream.io/",
-    "clomonitor_name": "devstream",
-    "dev_stats_url": "https://devstream.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -172,6 +210,7 @@
   {
     "project_name": "Kairos",
     "display_name": "Kairos",
+    "description": "The immutable Linux meta-distribution for edge Kubernetes",
     "repos": [
       {
         "owner": "kairos-io",
@@ -193,6 +232,7 @@
     "summary_tags": "security, Go, DevOps, DevSecOps, container, Cloud Native, Kubernetes, Runtime, Kubernetes, baremetal",
     "summary_use_case": "Transform any Linux system into a secure, customizable, and easily managed platform for edge computing with or without Kubernetes.",
     "summary_release_rate": "At least one minor release per quarter",
+    "dev_stats_url": "https://kairos.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -223,6 +263,29 @@
     "twitter": "https://twitter.com/kcl_language"
   },
   {
+    "project_name": "kbind",
+    "display_name": "kbind",
+    "description": "kbind aims to provide better support for service providers and consumers that reside in distinct Kubernetes clusters.",
+    "repos": [
+      {
+        "owner": "kbind-dev",
+        "name": "kbind",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Automation & Configuration",
+    "date_accepted": "2026-03-12",
+    "homepage_url": "https://kbind.dev/",
+    "repo_url": "https://github.com/kbind-dev/kbind",
+    "clomonitor_name": "kbind",
+    "dev_stats_url": "https://kbind.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "KitOps",
     "display_name": "KitOps",
     "description": "An open standard for packaging, managing, and deploying ML models and artifacts across different systems",
@@ -248,6 +311,7 @@
   {
     "project_name": "kpt",
     "display_name": "kpt",
+    "description": "Automate Kubernetes Configuration Editing",
     "repos": [
       {
         "owner": "kptdev",
@@ -265,7 +329,8 @@
     "dev_stats_url": "https://kpt.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/kptdev"
   },
   {
     "project_name": "Kubean",
@@ -307,8 +372,6 @@
     "date_archived": "2025-03-25",
     "homepage_url": "https://kubedl.io",
     "repo_url": "https://github.com/kubedl-io/kubedl",
-    "clomonitor_name": "kubedl",
-    "dev_stats_url": "https://kubedl.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -318,6 +381,7 @@
   {
     "project_name": "KubeEdge",
     "display_name": "KubeEdge",
+    "description": "A Kubernetes Native Edge Computing Framework",
     "repos": [
       {
         "owner": "kubeedge",
@@ -351,6 +415,7 @@
   {
     "project_name": "KusionStack",
     "display_name": "KusionStack",
+    "description": "Declarative Intent Driven Platform Orchestrator for Internal Developer Platform (IDP)",
     "repos": [
       {
         "owner": "KusionStack",
@@ -365,6 +430,7 @@
     "homepage_url": "https://kusionstack.io/",
     "repo_url": "https://github.com/KusionStack/kusion",
     "clomonitor_name": "kusionstack",
+    "dev_stats_url": "https://kusionstack.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/ant-group",
@@ -373,6 +439,7 @@
   {
     "project_name": "Meshery",
     "display_name": "Meshery",
+    "description": "Infrastructure by Design",
     "repos": [
       {
         "owner": "meshery",
@@ -380,15 +447,16 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Provisioning",
     "subcategory": "Automation & Configuration",
     "date_accepted": "2021-06-22",
+    "date_incubating": "2026-09-14",
     "homepage_url": "https://meshery.io",
     "repo_url": "https://github.com/meshery/meshery",
     "blog_url": "https://meshery.io/blog/",
     "clomonitor_name": "meshery",
-    "summary_business_use_case": "An extensible platform designed for building and managing cloud services and cloud native infrastructure, particularly Kubernetes and multi-cloud deployments. Meshery offers deep intergration with hundreds of different types of infrastructure components. Through its extensions, Meshery provides a drag-and-drop interface for designing infrastructure, version control, and policy enforcement. Meshery simplify the complexity of cloud native infrastructure management by offering a collaborative environment for teams to design, deploy, and manage their infrastructure",
+    "summary_business_use_case": "An extensible platform designed for building and managing cloud services and cloud native infrastructure, particularly Kubernetes and multi-cloud deployments. Meshery offers deep integration with hundreds of different types of infrastructure components. Through its extensions, Meshery provides a drag-and-drop interface for designing infrastructure, version control, and policy enforcement. Meshery simplify the complexity of cloud native infrastructure management by offering a collaborative environment for teams to design, deploy, and manage their infrastructure",
     "summary_integrations": "Kubernetes, GitHub, Kanvas, Prometheus, Grafana, Helm, Docker, Argo CD, AWS, GCP, Azure, Exoscale, DigitalOcean, GitOps, GitHub Actions",
     "summary_personas": "Platform Engineers, DevOps Engineers, SREs, SysAdmins, Developers",
     "summary_tags": "Collaboration, Configuration Management, DevOps, GitOps, Automation, Visual Topology",
@@ -402,8 +470,8 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/1169"
   },
   {
-    "project_name": "Metal",
-    "display_name": "Metal³",
+    "project_name": "metal3-io",
+    "display_name": "metal3-io",
     "repos": [
       {
         "owner": "metal3-io",
@@ -433,6 +501,29 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/958"
   },
   {
+    "project_name": "NMstate",
+    "display_name": "NMstate",
+    "description": "NMstate is a library with an accompanying command line tool that manages host networking settings in a declarative manner. When used in the Kubernetes environment it allows for declarative node network configuration through the Kubernetes API.",
+    "repos": [
+      {
+        "owner": "nmstate",
+        "name": "nmstate",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Automation & Configuration",
+    "date_accepted": "2026-03-12",
+    "homepage_url": "https://nmstate.io/",
+    "repo_url": "https://github.com/nmstate/nmstate",
+    "clomonitor_name": "nmstate",
+    "dev_stats_url": "https://nmstate.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "OpenTofu",
     "display_name": "OpenTofu",
     "description": "OpenTofu is an open source infrastructure as code tool that enables users to safely and predictably provision and manage cloud and on-prem infrastructure. It's a community-driven fork of Terraform that maintains backward compatibility while offering enhanced features, stability.",
@@ -449,6 +540,8 @@
     "date_accepted": "2025-04-23",
     "homepage_url": "https://opentofu.org/",
     "repo_url": "https://github.com/opentofu/opentofu",
+    "clomonitor_name": "opentofu",
+    "dev_stats_url": "https://opentofu.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -457,7 +550,7 @@
   {
     "project_name": "OpenYurt",
     "display_name": "OpenYurt",
-    "description": "An open platform that extending your native Kubernetes to edge.",
+    "description": "An open platform that extends upstream Kubernetes to Edge.",
     "repos": [
       {
         "owner": "openyurtio",
@@ -497,13 +590,69 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://runme.dev/",
     "repo_url": "https://github.com/runmedev/runme",
-    "clomonitor_name": "runme",
+    "clomonitor_name": "runme-notebooks",
     "summary_business_use_case": "Document and execute operational processes like deployments, infrastructure management, or incident response  directly from Notebooks, ensuring consistency and repeatability. Automate workflows with tools like Terraform,  Helm, Dagger, and Argo CD.",
     "summary_integrations": "Kubernetes, Terraform, Helm, Docker, Dagger, Argo CD, AWS, GCP, GitHub Actions",
     "summary_personas": "DevOps Engineers, SREs, Platform Engineers, Developers",
     "summary_tags": "DevOps, Notebooks, Markdown, Automation, GitOps",
     "summary_use_case": "Runme consolidates operational documentation and executable commands/code into interactive Notebooks or TUIs,  seamlessly integrating with cloud-native infrastructure. The toolchain empowers engineering teams to build  and maintain reliable, shareable documentation that can be tested in CI/CD.",
-    "dev_stats_url": "https://runme.devstats.cncf.io/",
+    "dev_stats_url": "https://runmenotebooks.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "SDC",
+    "display_name": "SDC",
+    "description": "SDC (Schema Driven Configuration) exposes any schema based configuration as Kubernetes resources.",
+    "repos": [
+      {
+        "owner": "sdcio",
+        "name": "docs",
+        "primary": true
+      },
+      {
+        "owner": "sdcio",
+        "name": "data-server",
+        "primary": false
+      },
+      {
+        "owner": "sdcio",
+        "name": "config-server",
+        "primary": false
+      },
+      {
+        "owner": "sdcio",
+        "name": "schema-server",
+        "primary": false
+      },
+      {
+        "owner": "sdcio",
+        "name": "sdc-lite",
+        "primary": false
+      },
+      {
+        "owner": "sdcio",
+        "name": "kubectl-sdcio",
+        "primary": false
+      },
+      {
+        "owner": "sdcio",
+        "name": "logger",
+        "primary": false
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Automation & Configuration",
+    "date_accepted": "2026-03-12",
+    "homepage_url": "https://docs.sdcio.dev/",
+    "repo_url": "https://github.com/sdcio/docs",
+    "clomonitor_name": "sdc",
+    "summary_integrations": "Kubernetes",
+    "summary_personas": "Network Engineers, SREs",
+    "summary_tags": "GitOps, Network Management, Automation, Netconf, YANG",
+    "summary_use_case": "The paradigm of schema-driven API approaches is gaining increasing popularity as it facilitates programmatic interaction with systems by both machines and humans. While OpenAPI schema stands out as a widely embraced system, there are other notable schema approaches like YANG, among others. This project endeavors to empower users with a declarative and idempotent method for seamless interaction with API systems, providing a robust foundation for effective system configuration.",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -527,8 +676,6 @@
     "homepage_url": "https://superedge.io/",
     "repo_url": "https://github.com/superedge/superedge",
     "blog_url": "https://superedge.io/blog/",
-    "clomonitor_name": "superedge",
-    "dev_stats_url": "https://superedge.devstats.cncf.io",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -536,6 +683,7 @@
   {
     "project_name": "Tinkerbell",
     "display_name": "Tinkerbell",
+    "description": "Bare metal provisioning engine, supporting network and ISO booting, BMC interactions, metadata service, and workflow engine.",
     "repos": [
       {
         "owner": "tinkerbell",
@@ -559,6 +707,7 @@
   {
     "project_name": "Distribution",
     "display_name": "Distribution",
+    "description": "The toolkit to pack, ship, store, and deliver container content",
     "repos": [
       {
         "owner": "distribution",
@@ -573,6 +722,7 @@
     "homepage_url": "https://github.com/distribution/distribution",
     "repo_url": "https://github.com/distribution/distribution",
     "clomonitor_name": "distribution",
+    "dev_stats_url": "https://distribution.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -614,6 +764,7 @@
   {
     "project_name": "Harbor",
     "display_name": "Harbor",
+    "description": "An open source trusted cloud native registry project that stores, signs, and scans content",
     "repos": [
       {
         "owner": "goharbor",
@@ -631,7 +782,7 @@
     "repo_url": "https://github.com/goharbor/harbor",
     "clomonitor_name": "harbor",
     "summary_business_use_case": "Self-hosted container registry with multiple integrations for security and validation.",
-    "summary_integrations": "trivy, cosing, notary, github, gce, jfrog, snyk, clair, sysdig, oidc, ldap, ecr, acr, docker, quay, helm",
+    "summary_integrations": "trivy, cosign, notary, github, gce, jfrog, snyk, clair, sysdig, oidc, ldap, ecr, acr, docker, quay, helm",
     "summary_personas": "SREs, Cloud Architects, Platform Engineers, DevOps Engineer, DevOps practitioners, DevSecOps practitioners",
     "summary_tags": "registry, images, OCI, container, artefacts, vulnerability scanning, self-hosted, harbor, edge, replication",
     "summary_use_case": "Harbor is an open source registry that secures artifacts with policies and role-based access control,  ensures images are scanned and free from vulnerabilities, and signs images as trusted. Can be installed on any Kubernetes environment or on a system with Docker support.",
@@ -735,6 +886,7 @@
     "repo_url": "https://github.com/bpfman/bpfman",
     "blog_url": "https://bpfman.io/main/blog/",
     "clomonitor_name": "bpfman",
+    "dev_stats_url": "https://bpfman.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -768,7 +920,7 @@
   {
     "project_name": "Cedar",
     "display_name": "Cedar",
-    "description": "Cedar is an open source authorization policy language that enables developers to express fine-grained permissions as easy-to-understand policies enforced in their applications, and decouple access control from application logic. Cedar is designed to be ergonomic, fast, safe, and analyzable using automated reasoning. Cedar's simple and intuitive syntax supports common authorization use-cases with readable policies, naturally expressing concepts from role-based, attribute-based, and relation-based access control models. Cedar's policy structure enables authorization requests to be decided quickly. Its policy validator uses optional typing to help policy writers avoid mistakes, but not get in their way. Cedar's design has been finely balanced to allow for a sound, complete, and decidable logical encoding, which enables precise automated analysis of Cedar policies, e.g., to ensure that policy refactoring preserves existing permissions. Cedar's language specification has been formally verified using a theorem prover to satisfy key security properties like \"deny trumps allow,\" and its implementation in Rust undergoes rigorous differential random testing against its formal specification. By combining mathematical rigor with developer-friendly design, Cedar offers a practical approach to secure, maintainable authorization for modern applications.",
+    "description": "Cedar is an open source authorization policy language that enables developers to express fine-grained permissions as easy-to-understand policies enforced in their applications, and decouple access control from application logic. Cedar is designed to be ergonomic, fast, safe, and analyzable using automated reasoning. Cedar's simple and intuitive syntax supports common authorization use-cases with readable policies, naturally expressing concepts from role-based, attribute-based, and relation-based access control models. Cedar's policy structure enables authorization requests to be decided quickly. Its policy validator uses optional typing to help policy writers avoid mistakes, but not get in their way. Cedar's design has been finely balanced to allow for a sound, complete, and decidable logical encoding, which enables precise automated analysis of Cedar policies, e.g., to ensure that policy refactoring preserves existing permissions. Cedar's language specification has been formally verified using a theorem prover to satisfy key security properties like `deny trumps allow,` and its implementation in Rust undergoes rigorous differential random testing against its formal specification. By combining mathematical rigor with developer-friendly design, Cedar offers a practical approach to secure, maintainable authorization for modern applications.",
     "repos": [
       {
         "owner": "cedar-policy",
@@ -787,7 +939,8 @@
     "date_accepted": "2025-10-08",
     "homepage_url": "https://cedarpolicy.com",
     "repo_url": "https://github.com/cedar-policy/cedar",
-    "clomonitor_name": "cedar",
+    "clomonitor_name": "cedar-policy",
+    "dev_stats_url": "https://cedarpolicy.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -795,6 +948,7 @@
   {
     "project_name": "cert-manager",
     "display_name": "cert-manager",
+    "description": "Automatically provision and manage TLS certificates in Kubernetes",
     "repos": [
       {
         "owner": "cert-manager",
@@ -836,10 +990,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2022-03-08",
+    "date_incubating": "2026-07-08",
     "homepage_url": "https://confidentialcontainers.org/",
     "repo_url": "https://github.com/confidential-containers/confidential-containers",
     "blog_url": "https://confidentialcontainers.org/blog/",
@@ -877,6 +1032,7 @@
   {
     "project_name": "Copa",
     "display_name": "Copa",
+    "description": "CLI tool for directly patching container image vulnerabilities",
     "repos": [
       {
         "owner": "project-copacetic",
@@ -888,7 +1044,7 @@
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2023-09-19",
-    "homepage_url": "https://github.com/project-copacetic/copacetic",
+    "homepage_url": "https://project-copacetic.github.io/copacetic/",
     "repo_url": "https://github.com/project-copacetic/copacetic",
     "clomonitor_name": "copacetic",
     "dev_stats_url": "https://copacetic.devstats.cncf.io/",
@@ -899,6 +1055,7 @@
   {
     "project_name": "Dex",
     "display_name": "Dex",
+    "description": "OpenID Connect (OIDC) identity and OAuth 2.0 provider with pluggable connectors",
     "repos": [
       {
         "owner": "dexidp",
@@ -917,12 +1074,14 @@
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/dexidp",
     "annual_review_date": "2021-07-30",
     "annual_review_url": "https://github.com/cncf/toc/pull/701"
   },
   {
     "project_name": "external-secrets",
     "display_name": "external-secrets",
+    "description": "External Secrets Operator reads information from a third-party service like AWS Secrets Manager and automatically injects the values as Kubernetes Secrets.",
     "repos": [
       {
         "owner": "external-secrets",
@@ -952,6 +1111,7 @@
   {
     "project_name": "Falco",
     "display_name": "Falco",
+    "description": "Falco, the cloud-native runtime security project, is the de facto Kubernetes threat detection engine",
     "repos": [
       {
         "owner": "falcosecurity",
@@ -992,13 +1152,13 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "archived",
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2022-07-26",
+    "date_archived": "2026-06-15",
     "homepage_url": "https://hexaorchestration.org/",
     "repo_url": "https://github.com/hexa-org/policy-orchestrator",
-    "clomonitor_name": "hexapolicyorchestrator",
     "dev_stats_url": "https://hexapolicyorchestrator.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -1008,6 +1168,7 @@
   {
     "project_name": "in-toto",
     "display_name": "in-toto",
+    "description": "in-toto is a framework to protect supply chain integrity.",
     "repos": [
       {
         "owner": "in-toto",
@@ -1146,7 +1307,7 @@
     "clomonitor_name": "kubescape",
     "summary_integrations": "Prometheus, Kubernetes API, VSCode, Lens, GitHub, Jenkins",
     "summary_personas": "DevOps, DevSecOps, Developers, Product security and CISO",
-    "summary_use_case": "Kubernetes security posutre, configuration posture, vulnerability posture, prioritization",
+    "summary_use_case": "Kubernetes security posture, configuration posture, vulnerability posture, prioritization",
     "summary_release_rate": "2 weeks",
     "dev_stats_url": "https://kubescape.devstats.cncf.io/",
     "has_security_audits": false,
@@ -1157,31 +1318,31 @@
   {
     "project_name": "Kubewarden",
     "display_name": "Kubewarden",
-    "description": "Kubewarden is a Policy Engine powered by WebAssembly policies. Its policies can be written in CEL, Rego (OPA & Gatekeeper flavours), Rust, Go, YAML, and others. Kubewarden simplifies Policy-As-Code by allowing policy authors and consumers to use their preferred tooling and stack, develop and test policies out of cluster. ",
+    "description": "Kubewarden is an open source security platform for Kubernetes: a set of complementary components to secure your workloads across the entire lifecycle, from admission to runtime. It includes the Admission Controller (a policy engine powered by WebAssembly policies written in CEL, Rego, Rust, Go, YAML, and others), the Network Enforcer, the Runtime Enforcer, and the SBOM Scanner.",
     "repos": [
       {
         "owner": "kubewarden",
-        "name": "kubewarden-controller",
+        "name": "adm-controller",
         "primary": true
       },
       {
         "owner": "kubewarden",
-        "name": "policy-server",
-        "primary": false
-      },
-      {
-        "owner": "kubewarden",
-        "name": "kwctl",
-        "primary": false
-      },
-      {
-        "owner": "kubewarden",
-        "name": "audit-scanner",
+        "name": "policies",
         "primary": false
       },
       {
         "owner": "kubewarden",
         "name": "community",
+        "primary": false
+      },
+      {
+        "owner": "kubewarden",
+        "name": "helm-charts",
+        "primary": false
+      },
+      {
+        "owner": "kubewarden",
+        "name": "sbomscanner",
         "primary": false
       }
     ],
@@ -1190,7 +1351,7 @@
     "subcategory": "Security & Compliance",
     "date_accepted": "2022-06-17",
     "homepage_url": "https://www.kubewarden.io",
-    "repo_url": "https://github.com/kubewarden/kubewarden-controller",
+    "repo_url": "https://github.com/kubewarden/adm-controller",
     "package_manager_url": "https://artifacthub.io/packages/search?kind=0&kind=13&ts_query_web=kubewarden&official=true&sort=relevance",
     "documentation_url": "https://docs.kubewarden.io",
     "blog_url": "https://kubewarden.io/blog",
@@ -1198,14 +1359,14 @@
     "summary_business_use_case": "Embracing WebAssembly for policies means that Policy Authors can use their preferred tooling (language libraries, Git, CI); thus lowering knowledge barrier and silos, reducing training, and minimizing ad-hoc solutions. Thanks to policies being WebAssembly, Kubewarden policies can leverage and reuse upstream libraries to expand on current policy solutions while keeping compatibility (e.g: its cel-policy uses Kubernetes' cel-go interpreter, its kyverno-policy compiles a subset of Kyverno codebase to support Kyverno's YAML-like DSL).  Kubewarden policy CRDs and PolicyServer CRD enable insulation of consumers per namespace, and self-service.",
     "summary_integrations": "Sigstore, Cosign, OpenTelemetry, Prometheus, Grafana, Jaeger, Policy Reporter",
     "summary_personas": "Platform engineering,DevOps engineers,Security admins,Cluster admins,Policy authors",
-    "summary_tags": "wasm, webassembly, web assembly, policy,policy-as-code,governance,software supply chain, pod security, compliance",
+    "summary_tags": "security, wasm, webassembly, web assembly, policy,policy-as-code,governance,software supply chain, pod security, compliance",
     "summary_use_case": "Kubewarden is a Policy Engine powered by WebAssembly policies. Its policies can be written in CEL, Rego (OPA & Gatekeeper flavours), Rust, Go, YAML, and others. Kubewarden simplifies Policy-As-Code by allowing policy authors and consumers to use their preferred tooling and stack, develop and test policies out of cluster. ",
     "summary_release_rate": "Approximately monthly for minor releases, when needed for patch releases.",
     "dev_stats_url": "https://kubewarden.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/kubewarden"
+    "twitter": "https://x.com/kubewarden"
   },
   {
     "project_name": "Kyverno",
@@ -1217,11 +1378,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2020-11-10",
     "date_incubating": "2022-07-13",
+    "date_graduated": "2026-03-16",
     "homepage_url": "https://kyverno.io/",
     "repo_url": "https://github.com/kyverno/kyverno",
     "clomonitor_name": "kyverno",
@@ -1242,6 +1404,7 @@
   {
     "project_name": "Notary Project",
     "display_name": "Notary Project",
+    "description": "A CLI tool to sign and verify artifacts",
     "repos": [
       {
         "owner": "notaryproject",
@@ -1287,7 +1450,7 @@
     "homepage_url": "https://oauth2-proxy.github.io/oauth2-proxy/",
     "repo_url": "https://github.com/oauth2-proxy/oauth2-proxy",
     "clomonitor_name": "oauth2-proxy",
-    "dev_stats_url": "https://oauth2-proxy.devstats.cncf.io/",
+    "dev_stats_url": "https://oauth2proxy.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -1295,6 +1458,7 @@
   {
     "project_name": "Open Policy Agent OPA",
     "display_name": "Open Policy Agent (OPA)",
+    "description": "An open source, general-purpose policy engine",
     "repos": [
       {
         "owner": "open-policy-agent",
@@ -1376,6 +1540,28 @@
     "twitter": "https://twitter.com/OpenFGA"
   },
   {
+    "project_name": "OpenShell",
+    "display_name": "OpenShell",
+    "description": "OpenShell provides secure, policy-enforced sandboxed runtimes for autonomous AI agents.",
+    "repos": [
+      {
+        "owner": "ai-openshell",
+        "name": "openshell",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Provisioning",
+    "subcategory": "Security & Compliance",
+    "date_accepted": "2026-09-26",
+    "homepage_url": "https://docs.nvidia.com/openshell/latest/",
+    "repo_url": "https://github.com/ai-openshell/openshell",
+    "clomonitor_name": "openshell",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "OSCAL-COMPASS",
     "display_name": "OSCAL-COMPASS",
     "description": "The OSCAL COMPASS project is set of tools that enable the creation, validation, and governance of documentation artifacts for compliance needs. It leverages NIST's OSCAL (Open Security Controls Assessment Language) as a standard data format for interchange between tools and people, and provides an opinionated approach to OSCAL SDK and adoption by policy engines.",
@@ -1405,13 +1591,14 @@
     "category": "Provisioning",
     "subcategory": "Security & Compliance",
     "date_accepted": "2024-06-21",
-    "homepage_url": "https://github.com/oscal-compass/community",
+    "homepage_url": "https://oscal-compass.dev/",
     "repo_url": "https://github.com/oscal-compass/compliance-trestle",
     "blog_url": "https://dzone.com/articles/compass-compliance-part-1",
     "url_for_bestpractices": "https://pages.nist.gov/OSCAL/",
     "clomonitor_name": "oscal-compass",
     "summary_personas": "Regulators, Control providers, Control assessors, System owners, Compliance officers, Security teams, Auditors, Operators, Administrators, DevSecOps",
     "summary_tags": "compliance, security, risk, oscal, catalog, profile, component definition, system security plan, system assessment plan, automation, devsecops, vulnerability, cloud, opensource, nist, fedramp",
+    "dev_stats_url": "https://trestlegrc.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
   },
@@ -1443,6 +1630,7 @@
   {
     "project_name": "Parsec",
     "display_name": "Parsec",
+    "description": "Platform AbstRaction for SECurity service",
     "repos": [
       {
         "owner": "parallaxsecond",
@@ -1538,6 +1726,7 @@
   {
     "project_name": "The Update Framework TUF",
     "display_name": "The Update Framework (TUF)",
+    "description": "Python reference implementation of The Update Framework (TUF)",
     "repos": [
       {
         "owner": "theupdateframework",
@@ -1555,7 +1744,7 @@
     "repo_url": "https://github.com/theupdateframework/python-tuf",
     "clomonitor_name": "tuf",
     "summary_business_use_case": "Prevents many types of key and repository/registry compromises from impacting your users. Provides a secure way to recover from compromise. Twelve years of practical experience, about a dozen security audits, a half-dozen or so peer reviewed papers, a half-dozen or so implementations used in production, and millions of containers, etc. secured.",
-    "summary_integrations": "Docker, Amazon, Microsoft, Google Fuschia, Harbor, Toradex, Datadog, Sigstore, Automotive Grade Linux",
+    "summary_integrations": "Docker, Amazon, Microsoft, Google Fuchsia, Harbor, Toradex, Datadog, Sigstore, Automotive Grade Linux",
     "summary_personas": "Security teams, Repository administrators, Registry administrators",
     "summary_tags": "Security, Go, Python, Rust, JavaScript, CLI",
     "summary_use_case": "TUF secures container registries, package repositories, etc. so that the system resists successful attacks and can recover securely.  TUF uses a combination of security mechanisms and tooling to provide a strong root of trust used by other security projects as well, such as Sigstore.  It is easy to integrate and simple to manage; try it for yourself",
@@ -1584,7 +1773,8 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://tokenetes.io/",
     "repo_url": "https://github.com/tokenetes/tokenetes",
-    "dev_stats_url": "https://tokenetes.devstats.cncf.io/",
+    "clomonitor_name": "tokenetes",
+    "dev_stats_url": "https://tratteria.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -1618,6 +1808,7 @@
   {
     "project_name": "SPIFFE",
     "display_name": "SPIFFE",
+    "description": "A universal identity control plane for distributed systems",
     "repos": [
       {
         "owner": "spiffe",
@@ -1649,6 +1840,7 @@
   {
     "project_name": "SPIRE",
     "display_name": "SPIRE",
+    "description": "The SPIFFE Runtime Environment",
     "repos": [
       {
         "owner": "spiffe",
@@ -1693,7 +1885,6 @@
     "date_archived": "2025-05-20",
     "homepage_url": "https://tlr.dev",
     "repo_url": "https://github.com/tellerops/teller",
-    "clomonitor_name": "teller",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -1701,6 +1892,7 @@
   {
     "project_name": "Carina",
     "display_name": "Carina",
+    "description": "Carina: an high performance and ops-free local storage for kubernetes",
     "repos": [
       {
         "owner": "carina-io",
@@ -1723,6 +1915,7 @@
   {
     "project_name": "CubeFS",
     "display_name": "CubeFS",
+    "description": "CubeFS (formerly ChubaoFS) is a cloud native distributed file system and object store",
     "repos": [
       {
         "owner": "cubeFS",
@@ -1769,7 +1962,29 @@
     "date_archived": "2024-10-26",
     "homepage_url": "http://www.opencurve.io/",
     "repo_url": "https://github.com/opencurve/curve",
-    "clomonitor_name": "curve",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "Curvine",
+    "display_name": "Curvine",
+    "description": "Curvine is a high-performance distributed multi-tier caching system written in Rust (memory/SSD/HDD), providing POSIX (FUSE), S3, and HDFS access to cloud object storage, with Kubernetes CSI integration.",
+    "repos": [
+      {
+        "owner": "CurvineIO",
+        "name": "curvine",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Runtime",
+    "subcategory": "Cloud Native Storage",
+    "date_accepted": "2026-01-06",
+    "homepage_url": "https://curvineio.github.io/",
+    "repo_url": "https://github.com/CurvineIO/curvine",
+    "clomonitor_name": "curvine",
+    "dev_stats_url": "https://curvine.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -1802,6 +2017,7 @@
   {
     "project_name": "K8up",
     "display_name": "K8up",
+    "description": "Kubernetes and OpenShift Backup Operator",
     "repos": [
       {
         "owner": "k8up-io",
@@ -1813,7 +2029,7 @@
     "category": "Runtime",
     "subcategory": "Cloud Native Storage",
     "date_accepted": "2021-11-16",
-    "homepage_url": "https://www.k8up.io/",
+    "homepage_url": "https://k8up.io/",
     "repo_url": "https://github.com/k8up-io/k8up",
     "clomonitor_name": "k8up",
     "dev_stats_url": "https://k8up.devstats.cncf.io/",
@@ -1826,6 +2042,7 @@
   {
     "project_name": "Kanister",
     "display_name": "Kanister",
+    "description": "An extensible framework for application-level data management on Kubernetes",
     "repos": [
       {
         "owner": "kanisterio",
@@ -1901,34 +2118,9 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/685"
   },
   {
-    "project_name": "ORAS",
-    "display_name": "ORAS",
-    "repos": [
-      {
-        "owner": "oras-project",
-        "name": "oras",
-        "primary": true
-      }
-    ],
-    "maturity": "sandbox",
-    "category": "Runtime",
-    "subcategory": "Cloud Native Storage",
-    "date_accepted": "2021-07-13",
-    "homepage_url": "https://oras.land/",
-    "repo_url": "https://github.com/oras-project/oras",
-    "blog_url": "https://oras.land/blog/",
-    "clomonitor_name": "oras",
-    "dev_stats_url": "https://oras.devstats.cncf.io/",
-    "has_security_audits": false,
-    "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/orasproject",
-    "annual_review_date": "2022-10-14",
-    "annual_review_url": "https://github.com/cncf/toc/pull/943"
-  },
-  {
     "project_name": "Piraeus Datastore",
     "display_name": "Piraeus Datastore",
+    "description": "The Piraeus Operator manages LINSTOR clusters in Kubernetes.",
     "repos": [
       {
         "owner": "piraeusdatastore",
@@ -1943,6 +2135,7 @@
     "homepage_url": "https://piraeus.io/",
     "repo_url": "https://github.com/piraeusdatastore/piraeus-operator",
     "clomonitor_name": "piraeus",
+    "dev_stats_url": "https://piraeus.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -1952,6 +2145,7 @@
   {
     "project_name": "Rook",
     "display_name": "Rook",
+    "description": "Storage Orchestration for Kubernetes",
     "repos": [
       {
         "owner": "rook",
@@ -1984,6 +2178,36 @@
     "twitter": "https://twitter.com/rook_io"
   },
   {
+    "project_name": "Velero",
+    "display_name": "Velero",
+    "description": "Backup and migrate Kubernetes applications and their persistent volumes",
+    "repos": [
+      {
+        "owner": "velero-io",
+        "name": "velero",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Runtime",
+    "subcategory": "Cloud Native Storage",
+    "date_accepted": "2026-03-11",
+    "homepage_url": "https://velero.io",
+    "repo_url": "https://github.com/velero-io/velero",
+    "clomonitor_name": "velero",
+    "summary_business_use_case": "Velero reduces the risk of data loss and extended downtime for organizations running stateful workloads on Kubernetes, supporting disaster recovery and business continuity. It helps meet compliance and regulatory obligations for data retention and recoverability, lowers the operational cost of protecting cluster state, and simplifies cluster migration and upgrades without locking into a single environment or provider.",
+    "summary_integrations": "Amazon S3, Azure Blob Storage, Google Cloud Storage, and other S3-compatible object stores; CSI snapshots; Kopia and Restic for filesystem-level backup; cloud provider volume snapshots via plugins for AWS, Azure, and GCP; Kubernetes.",
+    "summary_personas": "SREs, DevOps Engineers, Platform Engineers, Software Engineers, Cloud Architects, Kubernetes Administrators",
+    "summary_tags": "kubernetes, backup, restore, disaster recovery, migration, data protection, persistent volumes, CSI snapshots, stateful workloads, cloud native",
+    "summary_use_case": "Kubernetes has no built-in backup capability. Velero backs up and restores Kubernetes cluster resources and persistent volume data, so teams can recover from data loss, accidental deletion, or cluster failure. It also enables migrating workloads between clusters and cloud providers, and replicating environments. Backups run on demand or on a schedule, with support for CSI snapshots and filesystem-level backup of volume data.",
+    "summary_release_rate": "Minor releases approximately every five to six months, with patch releases in between as needed.",
+    "dev_stats_url": "https://velero.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/projectvelero"
+  },
+  {
     "project_name": "Vineyard",
     "display_name": "Vineyard",
     "description": "Vineyard (v6d) is an in-memory immutable data manager.",
@@ -1994,19 +2218,20 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "archived",
     "category": "Runtime",
     "subcategory": "Cloud Native Storage",
     "date_accepted": "2021-04-28",
+    "date_archived": "2026-07-10",
     "homepage_url": "https://v6d.io",
     "repo_url": "https://github.com/v6d-io/v6d",
-    "clomonitor_name": "vineyard",
     "summary_business_use_case": "Vineyard is used as a distributed immediate data store to share large tensors and dataframes between data scientists among a research division.",
     "summary_integrations": "Big-data: Numpy, Pandas, Dask, Mars, Spark\nOrchestration: Airflow",
     "summary_personas": "Users who are deploying data-intensive applications in cloud-native environments.",
     "summary_tags": "distributed systems,shared-memory,in-memory storage,big-data-analytics",
     "summary_use_case": "- Vineyard is deployed as a daemon and used as shared storage between users for structural data objects.\n- Vineyard is used to sharing the common data structure between computing engines that runs in separate isolated processes and containers.\n- Vineyard is used to sharing the immediate data between upstream and downstream tasks within a data-analytical workflow on Kubernetes.",
     "summary_release_rate": "2022-12-24",
+    "dev_stats_url": "https://vineyard.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2016,6 +2241,7 @@
   {
     "project_name": "containerd",
     "display_name": "containerd",
+    "description": "An open and reliable container runtime",
     "repos": [
       {
         "owner": "containerd",
@@ -2062,6 +2288,7 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://github.com/containers/composefs",
     "repo_url": "https://github.com/containers/composefs",
+    "clomonitor_name": "composefs",
     "dev_stats_url": "https://composefs.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -2070,10 +2297,10 @@
   {
     "project_name": "bootc",
     "display_name": "bootc",
-    "description": "The bootc provides transactional, in-place operating system images and updates using OCI/Docker container images. This project applies the Docker container layering model to bootable host systems, using standard OCI/Docker containers as a transport and delivery format for base operating system updates.",
+    "description": "The bootc project provides transactional, in-place operating system images and updates using OCI/Docker container images. This project applies the Docker container layering model to bootable host systems, using standard OCI/Docker containers as a transport and delivery format for base operating system updates.",
     "repos": [
       {
-        "owner": "containers",
+        "owner": "bootc-dev",
         "name": "bootc",
         "primary": true
       }
@@ -2082,8 +2309,9 @@
     "category": "Runtime",
     "subcategory": "Container Runtime",
     "date_accepted": "2025-01-21",
-    "homepage_url": "https://github.com/containers/bootc",
-    "repo_url": "https://github.com/containers/bootc",
+    "homepage_url": "https://bootc.dev",
+    "repo_url": "https://github.com/bootc-dev/bootc",
+    "clomonitor_name": "bootc",
     "dev_stats_url": "https://bootc.devstats.cncf.io",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -2092,6 +2320,7 @@
   {
     "project_name": "CRI-O",
     "display_name": "CRI-O",
+    "description": "Open Container Initiative-based implementation of Kubernetes Container Runtime Interface",
     "repos": [
       {
         "owner": "cri-o",
@@ -2139,7 +2368,29 @@
     "date_accepted": "2025-03-04",
     "homepage_url": "https://github.com/hyperlight-dev/hyperlight",
     "repo_url": "https://github.com/hyperlight-dev/hyperlight",
+    "clomonitor_name": "hyperlight",
     "dev_stats_url": "https://hyperlight.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "gVisor",
+    "display_name": "gVisor",
+    "description": "gVisor is a sandboxing layer for running containers and agentic workloads efficiently and securely.",
+    "repos": [
+      {
+        "owner": "gvisor",
+        "name": "gvisor",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Runtime",
+    "subcategory": "Container Runtime",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://gvisor.dev/",
+    "repo_url": "https://github.com/gvisor/gvisor",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -2147,6 +2398,7 @@
   {
     "project_name": "Inclavare Containers",
     "display_name": "Inclavare Containers",
+    "description": "A novel container runtime, aka confidential container, for cloud-native confidential computing and enclave runtime ecosystem",
     "repos": [
       {
         "owner": "inclavare-containers",
@@ -2208,9 +2460,10 @@
     "homepage_url": "https://kuasar.io/",
     "repo_url": "https://github.com/kuasar-io/kuasar",
     "clomonitor_name": "kuasar",
+    "dev_stats_url": "https://kuasar.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/huawei-cloud",
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/Kuasar_io"
   },
   {
@@ -2229,7 +2482,7 @@
     "subcategory": "Container Runtime",
     "date_accepted": "2022-09-14",
     "date_incubating": "2025-10-14",
-    "homepage_url": "https://github.com/lima-vm/lima",
+    "homepage_url": "https://lima-vm.io/",
     "repo_url": "https://github.com/lima-vm/lima",
     "clomonitor_name": "lima",
     "dev_stats_url": "https://lima.devstats.cncf.io/",
@@ -2241,10 +2494,10 @@
   {
     "project_name": "Podman Container Tools",
     "display_name": "Podman Container Tools",
-    "description": "A set of tools providing full management of container lifecycle, including Podman, Buildah, and Skopeo,  which manage containers and images without requiring a daemon or root privileges.",
+    "description": "A set of tools providing full management of container lifecycle, including Podman, Buildah, and Skopeo, which manage containers and images without requiring a daemon or root privileges.",
     "repos": [
       {
-        "owner": "containers",
+        "owner": "podman-container-tools",
         "name": "podman",
         "primary": true
       }
@@ -2254,9 +2507,9 @@
     "subcategory": "Container Runtime",
     "date_accepted": "2025-01-21",
     "homepage_url": "https://podman.io/",
-    "repo_url": "https://github.com/containers/podman",
-    "clomonitor_name": "podman",
-    "dev_stats_url": "https://podman.devstats.cncf.io/",
+    "repo_url": "https://github.com/podman-container-tools/podman",
+    "clomonitor_name": "podman-container-tools",
+    "dev_stats_url": "https://podmancontainertools.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
   },
@@ -2284,7 +2537,7 @@
   {
     "project_name": "urunc",
     "display_name": "urunc",
-    "description": "A CRI-compatible runtime for running unikernels and application kernels as containers.  urunc bridges the gap between unikernels and containerized environments, enabling seamless  integration with cloud-native architectures while maintaining OCI compatibility.",
+    "description": "An OCI- and CRI-compatible sandboxed container runtime that runs each container as a unikernel or single-application kernel in its own minimal, strongly isolated sandbox. With a pluggable design for sandbox monitors and guests, urunc supports diverse VM-based and software-based sandboxes and integrates seamlessly with cloud-native architectures.",
     "repos": [
       {
         "owner": "urunc-dev",
@@ -2298,6 +2551,7 @@
     "date_accepted": "2025-05-22",
     "homepage_url": "https://urunc.io/",
     "repo_url": "https://github.com/urunc-dev/urunc",
+    "clomonitor_name": "urunc",
     "dev_stats_url": "https://urunc.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -2306,6 +2560,7 @@
   {
     "project_name": "Virtual Kubelet",
     "display_name": "Virtual Kubelet",
+    "description": "Virtual Kubelet is an open source Kubernetes kubelet implementation",
     "repos": [
       {
         "owner": "virtual-kubelet",
@@ -2354,6 +2609,7 @@
   {
     "project_name": "WasmEdge Runtime",
     "display_name": "WasmEdge Runtime",
+    "description": "WasmEdge is a lightweight, high-performance, and extensible WebAssembly runtime for cloud native, edge, and decentralized applications. It powers serverless apps, embedded functions, microservices, smart contracts, and IoT devices",
     "repos": [
       {
         "owner": "WasmEdge",
@@ -2368,7 +2624,7 @@
     "homepage_url": "https://wasmedge.org/",
     "repo_url": "https://github.com/WasmEdge/WasmEdge",
     "clomonitor_name": "wasm-edge",
-    "summary_business_use_case": "WasmEdge improves cloud app’s operational efficiency by providing a secure, portable, fast, and lightweight alternative to traditional Linux containers. It allows microservice or servelsss applications to “scale to zero” — all computing resources can be made available on-demand, and “write once run anywhere”. It also works with existing container management infra and programming languages, and hence minimizing the cost of adoption and migration. It is great for running microservices and serverless functions embedded in data pipelines or SaaS platforms.",
+    "summary_business_use_case": "WasmEdge improves cloud app’s operational efficiency by providing a secure, portable, fast, and lightweight alternative to traditional Linux containers. It allows microservice or serverless applications to “scale to zero” — all computing resources can be made available on-demand, and “write once run anywhere”. It also works with existing container management infra and programming languages, and hence minimizing the cost of adoption and migration. It is great for running microservices and serverless functions embedded in data pipelines or SaaS platforms.",
     "summary_integrations": "Crun, Runwasi, Youki, Docker Desktop, Kubernetes, WebAssembly Languages Runtime maintained by VMWare, Proxy-wasm, Knative, SuperEdge, OpenYurt, KubeEdge, Fedora Linux",
     "summary_personas": "Developers, DevOps Engineers",
     "summary_tags": "Edge Cloud, Edge Devices, Container, Embedded runtime, Serverless, UDF, Microservices, Streaming data, OCI Runtime,SaaS",
@@ -2385,6 +2641,7 @@
   {
     "project_name": "youki",
     "display_name": "youki",
+    "description": "A container runtime written in Rust",
     "repos": [
       {
         "owner": "youki-dev",
@@ -2407,6 +2664,7 @@
   {
     "project_name": "Antrea",
     "display_name": "Antrea",
+    "description": "Kubernetes networking based on Open vSwitch",
     "repos": [
       {
         "owner": "antrea-io",
@@ -2421,6 +2679,7 @@
     "homepage_url": "https://antrea.io/",
     "repo_url": "https://github.com/antrea-io/antrea",
     "clomonitor_name": "antrea",
+    "dev_stats_url": "https://antrea.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2431,6 +2690,7 @@
   {
     "project_name": "Cilium",
     "display_name": "Cilium",
+    "description": "eBPF-based Networking, Observability, and Security",
     "repos": [
       {
         "owner": "cilium",
@@ -2465,6 +2725,7 @@
   {
     "project_name": "CNI-Genie",
     "display_name": "CNI-Genie",
+    "description": "Container Network Interface - networking for Linux containers",
     "repos": [
       {
         "owner": "cni-genie",
@@ -2479,8 +2740,6 @@
     "date_archived": "2025-05-22",
     "homepage_url": "https://cnigenie.netlify.app",
     "repo_url": "https://github.com/cni-genie/CNI-Genie",
-    "clomonitor_name": "cni-genie",
-    "dev_stats_url": "https://cnigenie.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2527,8 +2786,6 @@
     "date_archived": "2024-11-05",
     "homepage_url": "https://github.com/FabEdge/",
     "repo_url": "https://github.com/FabEdge/fabedge",
-    "clomonitor_name": "fabedge",
-    "dev_stats_url": "https://fabedge.devstats.cncf.io",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2538,6 +2795,7 @@
   {
     "project_name": "Kube-OVN",
     "display_name": "Kube-OVN",
+    "description": "A Kubernetes Network Fabric for Enterprises that is Rich in Functions and Easy in Operations",
     "repos": [
       {
         "owner": "kubeovn",
@@ -2552,6 +2810,7 @@
     "homepage_url": "https://kube-ovn.io",
     "repo_url": "https://github.com/kubeovn/kube-ovn",
     "clomonitor_name": "kube-ovn",
+    "dev_stats_url": "https://kubeovn.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2580,11 +2839,13 @@
     "dev_stats_url": "https://kubevip.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/kube_vip"
   },
   {
     "project_name": "Network Service Mesh",
     "display_name": "Network Service Mesh",
+    "description": "The Hybrid/Multi-cloud IP Service Mesh",
     "repos": [
       {
         "owner": "networkservicemesh",
@@ -2610,6 +2871,7 @@
   {
     "project_name": "OVN-Kubernetes",
     "display_name": "OVN-Kubernetes",
+    "description": "A robust Kubernetes networking platform",
     "repos": [
       {
         "owner": "ovn-kubernetes",
@@ -2630,7 +2892,7 @@
     "summary_tags": "CNI, Networking, Load Balancing, Network Security, Observability, Multicloud",
     "summary_use_case": "OVN-Kubernetes is a robust Kubernetes Networking platform, built from the ground up by leveraging Open vSwitch (OVS) as the data plane, and Open Virtual Network (OVN) as the SDN Controller.",
     "summary_release_rate": "2 major releases a year, plus minor and point releases for bug fixes and security updates",
-    "dev_stats_url": "https://ovn-kubernetes.devstats.cncf.io/",
+    "dev_stats_url": "https://ovnkubernetes.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -2677,6 +2939,7 @@
     "homepage_url": "https://submariner.io",
     "repo_url": "https://github.com/submariner-io/submariner",
     "clomonitor_name": "submariner",
+    "dev_stats_url": "https://submariner.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2685,8 +2948,55 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/1115"
   },
   {
+    "project_name": "Agent Substrate",
+    "display_name": "Agent Substrate",
+    "description": "A secure-by-default agent execution runtime for running millions of sandboxes.",
+    "repos": [
+      {
+        "owner": "agent-substrate",
+        "name": "substrate",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://github.com/agent-substrate/substrate",
+    "repo_url": "https://github.com/agent-substrate/substrate",
+    "clomonitor_name": "agent-substrate",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "Agones",
+    "display_name": "Agones",
+    "description": "Agones is a library for hosting, running, and scaling dedicated game servers on Kubernetes.",
+    "repos": [
+      {
+        "owner": "agones-dev",
+        "name": "agones",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2025-12-21",
+    "homepage_url": "https://agones.dev/site/",
+    "repo_url": "https://github.com/agones-dev/agones",
+    "clomonitor_name": "agones",
+    "dev_stats_url": "https://agones.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/agonesdev"
+  },
+  {
     "project_name": "Armada",
     "display_name": "Armada",
+    "description": "Armada is a multi-Kubernetes cluster batch job scheduler",
     "repos": [
       {
         "owner": "armadaproject",
@@ -2722,7 +3032,7 @@
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2022-12-13",
-    "homepage_url": "https://capsule.clastix.io",
+    "homepage_url": "https://projectcapsule.dev",
     "repo_url": "https://github.com/projectcapsule/capsule",
     "clomonitor_name": "capsule",
     "summary_business_use_case": "Within a singular cluster, the Capsule Controller seamlessly consolidates multiple namespaces into an efficient construct known as a \"Tenant\". This tenant acts as a unified group of Kubernetes Namespaces. Inside each tenant, users possess the autonomy to establish their own namespaces and utilize the entirety of designated resources. This design facilitates the creation of a multi-tenant ecosystem within a single Kubernetes cluster.  Not only can tenants be distinctly separated for enhanced operational management, but it also ensures the cluster remains singular, streamlining  maintenance processes. The end result? Heightened operational efficiency for administrators and significant cost savings for the business.",
@@ -2739,6 +3049,7 @@
   {
     "project_name": "Clusternet",
     "display_name": "Clusternet",
+    "description": "[CNCF Sandbox Project] Managing your Kubernetes clusters (including public, private, edge, etc.) as easily as visiting the Internet",
     "repos": [
       {
         "owner": "clusternet",
@@ -2780,6 +3091,32 @@
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "Cozystack",
+    "display_name": "Cozystack",
+    "description": "Cozystack is a free PaaS platform and framework for building private clouds and providing users/customers with managed Kubernetes, KubeVirt-based VMs, databases as a service, NATS, message brokers, etc. with GPU support in VMs and Kubernetes clusters.",
+    "repos": [
+      {
+        "owner": "cozystack",
+        "name": "cozystack",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2025-03-04",
+    "homepage_url": "https://cozystack.io",
+    "repo_url": "https://github.com/cozystack/cozystack",
+    "clomonitor_name": "cozystack",
+    "summary_business_use_case": "With Cozystack managed service providers, hosting providers, data centers could offer their customers  different managed services like Kubernetes, VMs, databases to compete with hyperscalers like AWS and GCP. Banks, fintechs and other organizations use Cozystack for building clouds on bare metal to achieve digital sovereignty  and take back control on their data. AI oriented companies could use it for running AI workloads in K8s clusters and VMs as well.",
+    "summary_personas": "Cloud Architects, Platform Engineers, DevOps Engineers, SRE Engineers, Kubernetes Architects, System Administrators, Developers.",
+    "summary_tags": "bare metal, platform, cloud, private cloud, managed services, managed Kubernetes, KubeVirt",
+    "summary_use_case": "Provides users with managed services and ready-to-use dev environments.",
+    "dev_stats_url": "https://cozystack.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0
   },
   {
     "project_name": "Crossplane",
@@ -2858,6 +3195,7 @@
     "homepage_url": "https://fluid-cloudnative.github.io/",
     "repo_url": "https://github.com/fluid-cloudnative/fluid",
     "clomonitor_name": "fluid",
+    "dev_stats_url": "https://fluid.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2865,8 +3203,8 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/870"
   },
   {
-    "project_name": "hami",
-    "display_name": "hami",
+    "project_name": "HAMi",
+    "display_name": "HAMi",
     "description": "Heterogeneous AI Computing Virtualization Middleware",
     "repos": [
       {
@@ -2875,13 +3213,15 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2024-08-21",
+    "date_incubating": "2026-07-02",
     "homepage_url": "https://project-hami.github.io/HAMi/",
     "repo_url": "https://github.com/Project-HAMi/HAMi",
     "clomonitor_name": "hami",
+    "dev_stats_url": "https://hami.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -2889,6 +3229,7 @@
   {
     "project_name": "Karmada",
     "display_name": "Karmada",
+    "description": "Open, Multi-Cloud, Multi-Cluster Kubernetes Orchestration",
     "repos": [
       {
         "owner": "karmada-io",
@@ -2896,11 +3237,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2021-09-14",
     "date_incubating": "2023-12-12",
+    "date_graduated": "2026-09-03",
     "homepage_url": "https://karmada.io/",
     "repo_url": "https://github.com/karmada-io/karmada",
     "clomonitor_name": "karmada",
@@ -2936,6 +3278,7 @@
     "repo_url": "https://github.com/kcp-dev/kcp",
     "clomonitor_name": "kcp",
     "summary_tags": "kcp,cloud,orchestration,control-plane,multitenancy",
+    "dev_stats_url": "https://kcp.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -2944,6 +3287,7 @@
   {
     "project_name": "k0s",
     "display_name": "k0s",
+    "description": "k0s is a CNCF-certified lightweight, Kubernetes distribution with zero dependencies and zero opinion.",
     "repos": [
       {
         "owner": "k0sproject",
@@ -2960,14 +3304,37 @@
     "blog_url": "https://medium.com/k0sproject",
     "clomonitor_name": "k0s",
     "summary_tags": "k0s,cloud,orchestration,control-plane,multitenancy",
+    "dev_stats_url": "https://k0s.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://x.com/k0sproject"
   },
   {
+    "project_name": "K2s",
+    "display_name": "K2s",
+    "description": "K2s is a lightweight Kubernetes distribution for running mixed Windows and Linux workloads, with strong support for offline and air-gapped environments.",
+    "repos": [
+      {
+        "owner": "k2s-project",
+        "name": "k2s",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://k2s-project.github.io/k2s/",
+    "repo_url": "https://github.com/k2s-project/k2s",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "KEDA",
     "display_name": "KEDA",
+    "description": "KEDA is a Kubernetes-based Event Driven Autoscaling component. It provides event driven scale for any container running in Kubernetes",
     "repos": [
       {
         "owner": "kedacore",
@@ -2993,6 +3360,29 @@
     "latest_audit_vendor": "Trail of Bits",
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/kedaorg"
+  },
+  {
+    "project_name": "KAI Scheduler",
+    "display_name": "KAI Scheduler",
+    "description": "KAI Scheduler is a robust, efficient, and scalable Kubernetes scheduler that optimizes GPU resource allocation for AI workloads in large-scale clusters.",
+    "repos": [
+      {
+        "owner": "kai-scheduler",
+        "name": "KAI-Scheduler",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Scheduling & Orchestration",
+    "date_accepted": "2025-12-21",
+    "homepage_url": "https://kai-scheduler.dev",
+    "repo_url": "https://github.com/kai-scheduler/KAI-Scheduler",
+    "clomonitor_name": "kai-scheduler",
+    "dev_stats_url": "https://kaischeduler.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "Knative",
@@ -3046,6 +3436,7 @@
     "homepage_url": "https://koordinator.sh",
     "repo_url": "https://github.com/koordinator-sh/koordinator",
     "clomonitor_name": "koordinator",
+    "dev_stats_url": "https://koordinator.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/alibaba-cloud"
@@ -3086,11 +3477,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2023-07-25",
     "date_incubating": "2023-07-25",
+    "date_graduated": "2026-07-24",
     "homepage_url": "https://kubeflow.org",
     "repo_url": "https://github.com/kubeflow/kubeflow",
     "blog_url": "https://blog.kubeflow.org",
@@ -3118,10 +3510,12 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://kubefleet.dev/",
     "repo_url": "https://github.com/kubefleet-dev/kubefleet",
+    "clomonitor_name": "kubefleet",
     "summary_business_use_case": "Streamlines resource management across multiple Kubernetes clusters, enhancing operational efficiency and enabling  teams to effectively manage Kubernetes native configurations at scale, with support for intelligent scheduling and staged rollouts.",
     "summary_personas": "Platform Engineers, DevOps Engineers, Kubernetes Administrators",
     "summary_tags": "multi-cluster, kubernetes, orchestration, fleet management",
     "summary_use_case": "KubeFleet provides orchestration and coordination of applications across a fleet of Kubernetes clusters, enabling  users to create resources on a hub cluster and selectively propagate them to managed clusters based on various criteria.",
+    "dev_stats_url": "https://kubefleet.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -3158,6 +3552,7 @@
   {
     "project_name": "KubeSlice",
     "display_name": "KubeSlice",
+    "description": "Applications provided by Avesha Systems, ready to launch on Kubernetes using Kubernetes Helm",
     "repos": [
       {
         "owner": "kubeslice",
@@ -3173,6 +3568,7 @@
     "repo_url": "https://github.com/kubeslice/kubeslice",
     "clomonitor_name": "kubeslice",
     "summary_tags": "kubeslice,networking,multi-cloud,multi-cluster,service mesh,control-plane,multitenancy",
+    "dev_stats_url": "https://kubeslice.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3181,6 +3577,7 @@
   {
     "project_name": "KubeStellar",
     "display_name": "KubeStellar",
+    "description": "KubeStellar - a flexible solution for challenges associated with multi-cluster configuration management for edge, multi-cloud, and hybrid cloud",
     "repos": [
       {
         "owner": "kubestellar",
@@ -3196,6 +3593,7 @@
     "repo_url": "https://github.com/kubestellar/kubestellar",
     "clomonitor_name": "kubestellar",
     "summary_tags": "kubestellar,cloud,orchestration,control-plane,multitenancy",
+    "dev_stats_url": "https://kubestellar.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3228,6 +3626,7 @@
   {
     "project_name": "Open Cluster Management",
     "display_name": "Open Cluster Management",
+    "description": "A lightweight, open standard for multi-cluster Kubernetes management built on a hub-spoke architecture.",
     "repos": [
       {
         "owner": "open-cluster-management-io",
@@ -3235,13 +3634,15 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Orchestration & Management",
     "subcategory": "Scheduling & Orchestration",
     "date_accepted": "2021-11-09",
+    "date_incubating": "2026-11-04",
     "homepage_url": "https://open-cluster-management.io/",
     "repo_url": "https://github.com/open-cluster-management-io/ocm",
     "clomonitor_name": "ocm",
+    "dev_stats_url": "https://openclustermanagement.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3252,6 +3653,7 @@
   {
     "project_name": "OpenFunction",
     "display_name": "OpenFunction",
+    "description": "Cloud Native Function-as-a-Service Platform (CNCF Sandbox Project)",
     "repos": [
       {
         "owner": "OpenFunction",
@@ -3284,6 +3686,7 @@
   {
     "project_name": "Serverless Devs",
     "display_name": "Serverless Devs",
+    "description": "Serverless Devs developer tool ( Serverless Devs 开发者工具 )",
     "repos": [
       {
         "owner": "serverless-devs",
@@ -3298,6 +3701,7 @@
     "homepage_url": "https://www.serverless-devs.com/",
     "repo_url": "https://github.com/serverless-devs/serverless-devs",
     "clomonitor_name": "serverless-devs",
+    "dev_stats_url": "https://serverlessdevs.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -3305,6 +3709,7 @@
   {
     "project_name": "Volcano",
     "display_name": "Volcano",
+    "description": "A Kubernetes native system for high-performance workloads",
     "repos": [
       {
         "owner": "volcano-sh",
@@ -3329,6 +3734,7 @@
   {
     "project_name": "wasmCloud",
     "display_name": "wasmCloud",
+    "description": "wasmCloud is an open source Cloud Native Computing Foundation (CNCF) project that enables teams to build, manage, and scale polyglot apps across any cloud, K8s, or edge.",
     "repos": [
       {
         "owner": "wasmCloud",
@@ -3345,6 +3751,7 @@
     "repo_url": "https://github.com/wasmCloud/wasmCloud",
     "clomonitor_name": "wasm-cloud",
     "summary_tags": "webassembly,cloud,application,orchestration,wasm,nats",
+    "dev_stats_url": "https://wasmcloud.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3353,6 +3760,7 @@
   {
     "project_name": "CoreDNS",
     "display_name": "CoreDNS",
+    "description": "CoreDNS is a DNS server. It is written in Go. It can be used in a multitude of environments because of its flexibility.",
     "repos": [
       {
         "owner": "coredns",
@@ -3414,6 +3822,7 @@
   {
     "project_name": "k8gb",
     "display_name": "k8gb",
+    "description": "A cloud native Kubernetes Global Balancer",
     "repos": [
       {
         "owner": "k8gb-io",
@@ -3421,10 +3830,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "Orchestration & Management",
     "subcategory": "Coordination & Service Discovery",
     "date_accepted": "2021-03-30",
+    "date_incubating": "2026-07-18",
     "homepage_url": "https://www.k8gb.io",
     "repo_url": "https://github.com/k8gb-io/k8gb",
     "clomonitor_name": "k8gb",
@@ -3486,8 +3896,6 @@
     "date_archived": "2025-09-19",
     "homepage_url": "https://www.xline.cloud",
     "repo_url": "https://github.com/xline-kv/Xline",
-    "clomonitor_name": "xline",
-    "dev_stats_url": "https://xline.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/beijing-datenlord-technology"
@@ -3495,6 +3903,7 @@
   {
     "project_name": "gRPC",
     "display_name": "gRPC",
+    "description": "A high performance, open source universal RPC framework.",
     "repos": [
       {
         "owner": "grpc",
@@ -3507,7 +3916,7 @@
     "subcategory": "Remote Procedure Call",
     "date_accepted": "2017-02-16",
     "date_incubating": "2017-02-16",
-    "homepage_url": "https://grpc.io/",
+    "homepage_url": "https://grpc.io",
     "repo_url": "https://github.com/grpc/grpc",
     "blog_url": "http://www.grpc.io/blog/",
     "clomonitor_name": "grpc",
@@ -3573,6 +3982,7 @@
   {
     "project_name": "Contour",
     "display_name": "Contour",
+    "description": "Contour is an open source Kubernetes ingress controller providing the control plane for the Envoy edge and service proxy",
     "repos": [
       {
         "owner": "projectcontour",
@@ -3599,6 +4009,7 @@
   {
     "project_name": "Envoy",
     "display_name": "Envoy",
+    "description": "Envoy is an open source edge and service proxy, designed for cloud-native applications",
     "repos": [
       {
         "owner": "envoyproxy",
@@ -3648,6 +4059,7 @@
   {
     "project_name": "MetalLB",
     "display_name": "MetalLB",
+    "description": "A network load-balancer implementation for Kubernetes using standard routing protocols",
     "repos": [
       {
         "owner": "metallb",
@@ -3686,13 +4098,11 @@
     "date_archived": "2025-05-22",
     "homepage_url": "https://openelb.github.io",
     "repo_url": "https://github.com/openelb/openelb",
-    "clomonitor_name": "openelb",
     "summary_integrations": "Kubernetes, Docker, Helm, Prometheus, gobgp",
     "summary_personas": "Developers, Platform engineers",
     "summary_tags": "OpenELB, LoadBalancer, Kubernetes",
     "summary_use_case": "In cloud-based Kubernetes clusters, Services are usually exposed by using load balancers provided by cloud vendors. However, cloud-based load balancers are unavailable in bare-metal environments. OpenELB allows users to create LoadBalancer Services in bare-metal, edge, and virtualization environments for external access, and provides the same user experience as cloud-based load balancers.",
     "summary_release_rate": "1 times per year (each quarter)",
-    "dev_stats_url": "https://openelb.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3700,8 +4110,32 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/1071"
   },
   {
+    "project_name": "Praxis",
+    "display_name": "Praxis",
+    "description": "The cloud and AI-native proxy server and framework.",
+    "repos": [
+      {
+        "owner": "praxis-proxy",
+        "name": "praxis",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "Service Proxy",
+    "date_accepted": "2026-09-29",
+    "homepage_url": "https://praxis.fast",
+    "repo_url": "https://github.com/praxis-proxy/praxis",
+    "clomonitor_name": "praxis",
+    "dev_stats_url": "https://praxis.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "Easegress",
     "display_name": "Easegress",
+    "description": "A Cloud Native traffic orchestration system",
     "repos": [
       {
         "owner": "easegress-io",
@@ -3713,9 +4147,10 @@
     "category": "Orchestration & Management",
     "subcategory": "API Gateway",
     "date_accepted": "2023-12-19",
-    "homepage_url": "https://megaease.com/easegress",
+    "homepage_url": "https://megaease.cn/easegress/",
     "repo_url": "https://github.com/easegress-io/easegress",
     "clomonitor_name": "easegress",
+    "dev_stats_url": "https://easegress.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3724,6 +4159,7 @@
   {
     "project_name": "Emissary-Ingress",
     "display_name": "Emissary-Ingress",
+    "description": "open source Kubernetes-native API gateway for microservices built on the Envoy Proxy",
     "repos": [
       {
         "owner": "emissary-ingress",
@@ -3751,6 +4187,29 @@
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
+    "project_name": "Higress",
+    "display_name": "Higress",
+    "description": "An AI-native API gateway built on Envoy for ingress, microservice, and LLM traffic",
+    "repos": [
+      {
+        "owner": "higress-group",
+        "name": "higress",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Orchestration & Management",
+    "subcategory": "API Gateway",
+    "date_accepted": "2026-03-15",
+    "homepage_url": "https://higress.io",
+    "repo_url": "https://github.com/higress-group/higress",
+    "clomonitor_name": "higress",
+    "dev_stats_url": "https://higress.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "Kgateway",
     "display_name": "Kgateway",
     "description": "An Envoy-powered, Kubernetes-native API Gateway that integrates Kubernetes Gateway API with a control plane for API connectivity in any cloud environment.",
@@ -3768,9 +4227,11 @@
     "homepage_url": "https://kgateway.dev/",
     "repo_url": "https://github.com/kgateway-dev/kgateway",
     "blog_url": "https://kgateway.dev/blog",
+    "clomonitor_name": "kgateway",
     "summary_personas": "Platform Engineers, DevOps Engineers, SREs, API Managers",
     "summary_tags": "API Gateway, Envoy, Kubernetes, Gateway API, Cloud Native",
     "summary_use_case": "Kgateway is the most mature and widely deployed Envoy-based gateway in the market today. Built on open source  and open standards, kgateway integrates Kubernetes Gateway API with a control plane that scales from lightweight  microgateway deployments between services, to massively parallel centralized gateways handling billions of API calls,  to advanced AI gateway use cases for safety, security, and governance when integrating applications with third-party LLMs.  kgateway brings omni-directional API connectivity to any cloud and any environment. ",
+    "dev_stats_url": "https://kgateway.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -3793,6 +4254,7 @@
     "homepage_url": "https://kuadrant.io",
     "repo_url": "https://github.com/kuadrant/kuadrant-operator",
     "clomonitor_name": "kuadrant",
+    "dev_stats_url": "https://kuadrant.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -3816,7 +4278,7 @@
     "repo_url": "https://github.com/aeraki-mesh/aeraki",
     "blog_url": "https://www.aeraki.net/blog/",
     "clomonitor_name": "aeraki-mesh",
-    "summary_business_use_case": "While service mesh becomes an important infrastructure for microservices, many(if not all) service mesh implementations mainly focus on HTTP protocols and treat other protocols as plain TCP traffic. This is an obstacle for a lot of organizations when they try to leverage service mesh's promised capablities to simplify their microservice development and operation. Aeraki Mesh solve this problem by providing a common layer-7 service mesh framework both in data plane and control plane, which is built on top of Envoy and Istio and can work with them together very well.",
+    "summary_business_use_case": "While service mesh becomes an important infrastructure for microservices, many(if not all) service mesh implementations mainly focus on HTTP protocols and treat other protocols as plain TCP traffic. This is an obstacle for a lot of organizations when they try to leverage service mesh's promised capabilities to simplify their microservice development and operation. Aeraki Mesh solve this problem by providing a common layer-7 service mesh framework both in data plane and control plane, which is built on top of Envoy and Istio and can work with them together very well.",
     "summary_integrations": "Istio, Envoy",
     "summary_personas": "SREs, DevOps Engineers, Architects",
     "summary_tags": "Service Mesh",
@@ -3882,6 +4344,7 @@
     "homepage_url": "https://kmesh.net",
     "repo_url": "https://github.com/kmesh-net/kmesh",
     "clomonitor_name": "kmesh",
+    "dev_stats_url": "https://kmesh.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -3890,6 +4353,7 @@
   {
     "project_name": "Kuma",
     "display_name": "Kuma",
+    "description": "The universal Envoy service mesh for distributed service connectivity",
     "repos": [
       {
         "owner": "kumahq",
@@ -3971,8 +4435,6 @@
     "homepage_url": "https://merbridge.io/",
     "repo_url": "https://github.com/merbridge/merbridge",
     "blog_url": "https://merbridge.io/blog/",
-    "clomonitor_name": "merbridge",
-    "dev_stats_url": "https://merbridge.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -4020,6 +4482,7 @@
     "homepage_url": "https://sermant.io/",
     "repo_url": "https://github.com/sermant-io/Sermant",
     "clomonitor_name": "sermant",
+    "dev_stats_url": "https://sermant.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -4065,8 +4528,6 @@
     "date_archived": "2025-09-16",
     "homepage_url": "https://smp-spec.io/",
     "repo_url": "https://github.com/service-mesh-performance/service-mesh-performance",
-    "clomonitor_name": "smp",
-    "dev_stats_url": "https://servicemeshperformance.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -4075,7 +4536,7 @@
   {
     "project_name": "CloudNativePG",
     "display_name": "CloudNativePG",
-    "description": "CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreSQL databases within Kubernetes environments, covering the entire operational lifecycle from initial deployment to ongoing maintenance",
+    "description": "The most popular Kubernetes Operator for PostgreSQL.",
     "repos": [
       {
         "owner": "cloudnative-pg",
@@ -4084,10 +4545,11 @@
         "branch": "main"
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "App Definition and Development",
     "subcategory": "Database",
     "date_accepted": "2025-01-21",
+    "date_incubating": "2026-11-02",
     "homepage_url": "https://www.cloudnative-pg.io/",
     "repo_url": "https://github.com/cloudnative-pg/cloudnative-pg",
     "documentation_url": "https://cloudnative-pg.io/docs/",
@@ -4099,6 +4561,35 @@
     "security_audit_count": 0,
     "twitter": "https://x.com/CloudNativePg",
     "default_branch": "main"
+  },
+  {
+    "project_name": "OpenEverest",
+    "display_name": "OpenEverest",
+    "description": "The open-source platform for automated database provisioning and management. It supports multiple database technologies and can be hosted on any Kubernetes infrastructure, in the cloud or on-premises.",
+    "repos": [
+      {
+        "owner": "openeverest",
+        "name": "openeverest",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Database",
+    "date_accepted": "2026-03-15",
+    "homepage_url": "https://openeverest.io/",
+    "repo_url": "https://github.com/openeverest/openeverest",
+    "blog_url": "https://openeverest.io/blog/",
+    "clomonitor_name": "openeverest",
+    "summary_business_use_case": "Organizations use OpenEverest to standardize database operations across clouds and on-premises. It reduces operational overhead by automating backups, failover, scaling, and patching — allowing small teams to manage hundreds of database instances reliably and securely.",
+    "summary_integrations": "Kubernetes, MySQL, PostgreSQL, MongoDB, MSSQL, Percona XtraDB, Prometheus, Grafana, S3, Azure Blob, GCS",
+    "summary_personas": "Platform Engineers, SREs, DevOps Engineers, Database Administrators",
+    "summary_tags": "database, operators, kubernetes, mysql, postgresql, mssql, mongodb, provisioning, day-2-operations",
+    "summary_use_case": "OpenEverest automates database lifecycle management on Kubernetes. It provisions, monitors, backs up, and manages databases (MySQL, PostgreSQL, MongoDB, MSSQL) with operator-based Day-2 operations, enabling self-service database infrastructure for engineering teams.",
+    "dev_stats_url": "https://openeverest.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "openGemini",
@@ -4118,13 +4609,16 @@
     "homepage_url": "https://www.opengemini.org",
     "repo_url": "https://github.com/openGemini/openGemini",
     "clomonitor_name": "opengemini",
+    "dev_stats_url": "https://opengemini.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/OpenGemini"
   },
   {
     "project_name": "SchemaHero",
     "display_name": "SchemaHero",
+    "description": "A Kubernetes operator for declarative database schema management (gitops for database schemas)",
     "repos": [
       {
         "owner": "schemahero",
@@ -4232,6 +4726,33 @@
     "twitter": "https://twitter.com/vitessio"
   },
   {
+    "project_name": "Apicurio Registry",
+    "display_name": "Apicurio Registry",
+    "description": "Apicurio Registry is an open-source registry for API and schema artifacts (OpenAPI, AsyncAPI, Avro, Protobuf, JSON Schema, GraphQL and more) and AI agent artifacts (A2A Agent Cards, MCP tool definitions, prompt templates, model schemas), with immutable versioning, validity and compatibility rules, role-based access control, and standards-based discovery through AI Catalog and ARD well-known endpoints.",
+    "repos": [
+      {
+        "owner": "Apicurio",
+        "name": "apicurio-registry",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Streaming & Messaging",
+    "date_accepted": "2026-03-12",
+    "homepage_url": "https://www.apicur.io",
+    "repo_url": "https://github.com/Apicurio/apicurio-registry",
+    "clomonitor_name": "apicurio-registry",
+    "summary_personas": "Platform Engineers, API Developers, Data Engineers, Developers",
+    "summary_tags": "API, Schema Registry, Kafka, AI, Agentic AI, MCP, A2A",
+    "summary_use_case": "Apicurio Registry gives teams one governed source of truth for API contracts, event schemas and AI agent definitions: publish, version and validate artifacts, enforce compatibility rules, and expose them to serializers, gateways, IDEs and agent catalogs through standard discovery endpoints.",
+    "dev_stats_url": "https://apicurioregistry.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/apicurio"
+  },
+  {
     "project_name": "CloudEvents",
     "display_name": "CloudEvents",
     "description": "Standardizing common eventing metadata and their location to help with event identification and routing.",
@@ -4282,15 +4803,18 @@
     "subcategory": "Streaming & Messaging",
     "date_accepted": "2025-01-21",
     "homepage_url": "https://drasi.io",
-    "repo_url": "http://github.com/drasi-project/drasi-platform",
+    "repo_url": "https://github.com/drasi-project/drasi-platform",
+    "clomonitor_name": "drasi",
+    "dev_stats_url": "https://drasi.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/drasi_project"
   },
   {
     "project_name": "NATS",
     "display_name": "NATS",
-    "description": "NATS.io is a connective technology for distributed systems and is a perfect fit to connect devices, edge, cloud or hybrid deployments. True multi-tenancy makes NATS ideal for SaaS and self-healing and scaling technology allows for topology changes anytime with zero downtime.",
+    "description": "Real-Time Communication Fabric for Distributed Agents and Applications. NATS unifies messaging, streaming, and state into one real-time system — connecting services, devices, and AI agents from cloud to edge.",
     "repos": [
       {
         "owner": "nats-io",
@@ -4383,11 +4907,12 @@
         "primary": false
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "App Definition and Development",
     "subcategory": "Streaming & Messaging",
     "date_accepted": "2018-03-15",
     "date_incubating": "2018-03-15",
+    "date_graduated": "2026-11-02",
     "homepage_url": "https://nats.io/",
     "repo_url": "https://github.com/nats-io/nats-server",
     "url_for_bestpractices": "https://github.com/nats-io",
@@ -4395,7 +4920,7 @@
     "summary_business_use_case": "NATS is used to develop & deploy globally distributed Edge & Multi-cloud applications as part of a digital transformation or modernization initiative. Users may deploy NATS as part of a private cloud, hybrid , or SaaS model. Applications can be developed locally and then be scaled from single node, to clusters, to global superclusters independently of cloud providers, geography or requirements for additional infrastructure such as load balancers, firewalls, etc... All with a zero trust security model and integrated multi-tenant platform capabilities",
     "summary_integrations": "Docker, Kubernetes, K3S, WASMCloud, CloudEvents, Helm, Argo, DAPR, Prometheus, Benthos",
     "summary_personas": "Developers, Architects, Engineers, Platform teams, Cloud Architects",
-    "summary_tags": "Edge, Muli-cloud, Messaging, Streaming Data, PubSub, KeyValue, Microservices, Kubernetes",
+    "summary_tags": "Edge, Multi-cloud, Messaging, Streaming Data, PubSub, KeyValue, Microservices, Kubernetes",
     "summary_use_case": "The NATS Server acts as a central nervous system for building distributed applications. Client APIs are provided in over 40 languages and frameworks including Go, Java, JavaScript/TypeScript, Python, C, .Net, and Rust. NATS supports multiple microservices patterns including PubSub, Request-Reply, KeyValue and Object store via a simple API.\n",
     "dev_stats_url": "https://nats.devstats.cncf.io/",
     "has_security_audits": true,
@@ -4423,8 +4948,6 @@
     "homepage_url": "https://cncf.pravega.io",
     "repo_url": "https://github.com/pravega/pravega",
     "blog_url": "https://blog.pravega.io/",
-    "clomonitor_name": "pravega",
-    "dev_stats_url": "https://pravega.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -4435,6 +4958,7 @@
   {
     "project_name": "Strimzi",
     "display_name": "Strimzi",
+    "description": "Apache Kafka running on Kubernetes",
     "repos": [
       {
         "owner": "strimzi",
@@ -4466,6 +4990,7 @@
   {
     "project_name": "Tremor",
     "display_name": "Tremor",
+    "description": "An early-stage event processing system for unstructured data with rich support for structural pattern-matching, filtering and transformation",
     "repos": [
       {
         "owner": "tremor-rs",
@@ -4492,6 +5017,7 @@
   {
     "project_name": "Artifact Hub",
     "display_name": "Artifact Hub",
+    "description": "Artifact Hub is a web-based application that enables finding, installing, and publishing Cloud Native packages",
     "repos": [
       {
         "owner": "artifacthub",
@@ -4518,6 +5044,7 @@
   {
     "project_name": "Backstage",
     "display_name": "Backstage",
+    "description": "Backstage is an open platform for building developer portals",
     "repos": [
       {
         "owner": "backstage",
@@ -4549,6 +5076,7 @@
   {
     "project_name": "Buildpacks",
     "display_name": "Buildpacks",
+    "description": "Cloud Native Buildpacks transform your application source code into images that can run on any cloud",
     "repos": [
       {
         "owner": "buildpacks",
@@ -4556,11 +5084,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2018-10-03",
     "date_incubating": "2020-11-18",
+    "date_graduated": "2026-07-17",
     "homepage_url": "https://buildpacks.io/",
     "repo_url": "https://github.com/buildpacks/pack",
     "clomonitor_name": "buildpacks",
@@ -4610,7 +5139,7 @@
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2025-10-08",
-    "homepage_url": "https://github.com/project-dalec/dalec",
+    "homepage_url": "https://project-dalec.github.io/dalec/",
     "repo_url": "https://github.com/project-dalec/dalec",
     "clomonitor_name": "dalec",
     "dev_stats_url": "https://dalec.devstats.cncf.io/",
@@ -4638,11 +5167,11 @@
     "repo_url": "https://github.com/dapr/dapr",
     "blog_url": "https://blog.dapr.io/posts",
     "clomonitor_name": "dapr",
-    "summary_business_use_case": "Deliver distributed system applications in half the time. Dapr provides APIs that abstract away the complexity of common challenges developers encounter regularly when building distributed applications. These API building blocks can be leveraged as the need arises - use one, several, or all to develop applications faster and deliver solutions on time. Dapr leverages proven practices for distributed application development that enable developers to build resilient, secured systems. By using Dapr in your application, you adopt these best practices without having to spend time solving common challenges.",
+    "summary_business_use_case": "Teams ship reliable business processes and AI agents faster, without building their own durability, security, or messaging layers. Workflows recover from failures on their own, so orders, onboarding, approvals, and agent tasks run to completion. Workload identity and access policies control which applications may call which workflows. Vendor-neutral components avoid infrastructure lock-in, and the same code runs on any cloud, on- premises, or air-gapped.",
     "summary_integrations": "Kubernetes, Docker, Open Telemetry, gRPC, CloudEvents, spiffe, Knative, Helm, Prometheus, Cert Manager",
     "summary_personas": "Developers, Platform engineers",
-    "summary_tags": "Developer APIs, Distributed Systems, Microservices, HTTP, gRPC, Go, Java, Python, .NET, Javascript, C++, Rust, CLI",
-    "summary_use_case": "The Distributed Application Runtime (Dapr) provides APIs that simplify microservice architecture development and increases developer productivity. Whether your communication pattern is service-to-service invocation or pub/sub messaging, Dapr helps you write resilient and secured microservices. By letting Dapr’s sidecar take care of the complex challenges such as service discovery, message broker integration, encryption, observability, and secret management, developers can focus on business logic and keep their code simple.",
+    "summary_tags": "Durable execution, Workflows, AI agents, Developer APIs, Distributed Systems, Microservices, HTTP, gRPC, Go, Java, Python, .NET, Javascript, C++, Rust, CLI",
+    "summary_use_case": "Dapr is a runtime for durable execution, AI agents, and secure distributed applications. Its workflow engine runs long-running business logic and agents as ordinary code, persists progress, and resumes after crashes, restarts, and deployments. Sidecar APIs add service invocation with mTLS, state, pub/sub, actors, secrets, jobs, and LLM calls over HTTP and gRPC from any language, on Kubernetes, VMs, the edge, or a laptop.",
     "summary_release_rate": "4 times per year (each quarter)",
     "dev_stats_url": "https://dapr.devstats.cncf.io/",
     "has_security_audits": true,
@@ -4655,6 +5184,7 @@
   {
     "project_name": "Devfile",
     "display_name": "Devfile",
+    "description": "An open standard defining containerized development environments that enables developer tools to simplify and accelerate workflows",
     "repos": [
       {
         "owner": "devfile",
@@ -4670,6 +5200,7 @@
     "repo_url": "https://github.com/devfile/api",
     "clomonitor_name": "devfile",
     "summary_tags": "Kubernetes, Application Lifecycle, Developer Environment, Containers",
+    "dev_stats_url": "https://devfile.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -4677,6 +5208,7 @@
   {
     "project_name": "DevSpace",
     "display_name": "DevSpace",
+    "description": "Client-Only Developer Tool for Cloud-Native Development with Kubernetes",
     "repos": [
       {
         "owner": "devspace-sh",
@@ -4691,6 +5223,7 @@
     "homepage_url": "https://devspace.sh",
     "repo_url": "https://github.com/devspace-sh/devspace",
     "clomonitor_name": "devspace",
+    "dev_stats_url": "https://devspace.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -4699,6 +5232,7 @@
   {
     "project_name": "Helm",
     "display_name": "Helm",
+    "description": "The Kubernetes Package Manager",
     "repos": [
       {
         "owner": "helm",
@@ -4726,6 +5260,7 @@
   {
     "project_name": "ko",
     "display_name": "ko",
+    "description": "ko is a tool to simplify building Go container images",
     "repos": [
       {
         "owner": "ko-build",
@@ -4748,6 +5283,7 @@
   {
     "project_name": "Konveyor",
     "display_name": "Konveyor",
+    "description": "Documentation for Konveyor Community",
     "repos": [
       {
         "owner": "konveyor",
@@ -4790,7 +5326,6 @@
     "date_archived": "2024-01-31",
     "homepage_url": "https://docs.rs/crate/krator/latest",
     "repo_url": "https://github.com/krator-rs/krator",
-    "dev_stats_url": "https://krator.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -4798,6 +5333,7 @@
   {
     "project_name": "KubeVela",
     "display_name": "KubeVela",
+    "description": "Make shipping applications more enjoyable",
     "repos": [
       {
         "owner": "kubevela",
@@ -4831,6 +5367,7 @@
   {
     "project_name": "KubeVirt",
     "display_name": "KubeVirt",
+    "description": "Kubernetes Virtualization API and runtime in order to define and manage virtual machines",
     "repos": [
       {
         "owner": "kubevirt",
@@ -4838,11 +5375,12 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2019-09-06",
     "date_incubating": "2022-04-19",
+    "date_graduated": "2026-11-04",
     "homepage_url": "https://kubevirt.io/",
     "repo_url": "https://github.com/kubevirt/kubevirt",
     "clomonitor_name": "kubevirt",
@@ -4858,6 +5396,7 @@
   {
     "project_name": "KUDO",
     "display_name": "KUDO",
+    "description": "Kubernetes Universal Declarative Operator",
     "repos": [
       {
         "owner": "kudobuilder",
@@ -4881,6 +5420,7 @@
   {
     "project_name": "Microcks",
     "display_name": "Microcks",
+    "description": "The open source, cloud native tool for API Mocking and Testing",
     "repos": [
       {
         "owner": "microcks",
@@ -4888,10 +5428,11 @@
         "primary": true
       }
     ],
-    "maturity": "sandbox",
+    "maturity": "incubating",
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2023-06-22",
+    "date_incubating": "2026-05-03",
     "homepage_url": "https://microcks.io",
     "repo_url": "https://github.com/microcks/microcks",
     "blog_url": "https://microcks.io/blog/",
@@ -4925,6 +5466,8 @@
     "date_accepted": "2025-05-13",
     "homepage_url": "https://github.com/modelpack/model-spec",
     "repo_url": "https://github.com/modelpack/model-spec",
+    "clomonitor_name": "modelpack",
+    "dev_stats_url": "https://modelpack.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
   },
@@ -4946,8 +5489,6 @@
     "homepage_url": "https://nocalhost.dev",
     "repo_url": "https://github.com/nocalhost/nocalhost",
     "blog_url": "https://nocalhost.dev/blog",
-    "clomonitor_name": "nocalhost",
-    "dev_stats_url": "https://nocalhost.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -4955,6 +5496,7 @@
   {
     "project_name": "Operator Framework",
     "display_name": "Operator Framework",
+    "description": "An open source toolkit to manage Kubernetes native applications, called Operators in an effective, automated, and scalable way. Provides managing controllers and developer tooling",
     "repos": [
       {
         "owner": "operator-framework",
@@ -4974,6 +5516,33 @@
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "ORAS",
+    "display_name": "ORAS",
+    "description": "ORAS is the tool for working with OCI Artifacts",
+    "repos": [
+      {
+        "owner": "oras-project",
+        "name": "oras",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Application Definition & Image Build",
+    "date_accepted": "2021-07-13",
+    "homepage_url": "https://oras.land/",
+    "repo_url": "https://github.com/oras-project/oras",
+    "blog_url": "https://oras.land/blog/",
+    "clomonitor_name": "oras",
+    "dev_stats_url": "https://oras.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/orasproject",
+    "annual_review_date": "2022-10-14",
+    "annual_review_url": "https://github.com/cncf/toc/pull/943"
   },
   {
     "project_name": "Podman Desktop",
@@ -5006,6 +5575,7 @@
   {
     "project_name": "Porter",
     "display_name": "Porter",
+    "description": "Porter enables you to package your application artifact, client tools, configuration and deployment logic together as a versioned bundle that you can distribute, and install with a single command",
     "repos": [
       {
         "owner": "getporter",
@@ -5077,7 +5647,8 @@
     "summary_use_case": "Score is a developer-centric and platform-agnostic workload specification. It ensures consistent configuration between local and remote environments.",
     "dev_stats_url": "https://score.devstats.cncf.io/",
     "has_security_audits": false,
-    "security_audit_count": 0
+    "security_audit_count": 0,
+    "twitter": "https://twitter.com/score_dev"
   },
   {
     "project_name": "sealer",
@@ -5096,8 +5667,6 @@
     "date_archived": "2025-05-20",
     "homepage_url": "http://sealer.cool/",
     "repo_url": "https://github.com/sealerio/sealer",
-    "clomonitor_name": "sealer",
-    "dev_stats_url": "https://sealer.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5106,11 +5675,12 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/1041"
   },
   {
-    "project_name": "Serverless Workflow",
-    "display_name": "Serverless Workflow",
+    "project_name": "Open Workflow Specification",
+    "display_name": "Open Workflow Specification",
+    "description": "A vendor-neutral, open-source DSL for defining and orchestrating workflows across distributed systems.",
     "repos": [
       {
-        "owner": "serverlessworkflow",
+        "owner": "open-workflow-specification",
         "name": "specification",
         "primary": true
       }
@@ -5119,10 +5689,10 @@
     "category": "App Definition and Development",
     "subcategory": "Application Definition & Image Build",
     "date_accepted": "2020-07-14",
-    "homepage_url": "https://serverlessworkflow.io",
-    "repo_url": "https://github.com/serverlessworkflow/specification",
-    "clomonitor_name": "serverless-workflow",
-    "dev_stats_url": "https://serverlessworkflow.devstats.cncf.io/",
+    "homepage_url": "https://open-workflow-specification.org",
+    "repo_url": "https://github.com/open-workflow-specification/specification",
+    "clomonitor_name": "openworkflow",
+    "dev_stats_url": "https://openworkflow.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5133,6 +5703,7 @@
   {
     "project_name": "Shipwright",
     "display_name": "Shipwright",
+    "description": "Community documentation for Shipwright",
     "repos": [
       {
         "owner": "shipwright-io",
@@ -5147,6 +5718,7 @@
     "homepage_url": "https://shipwright.io",
     "repo_url": "https://github.com/shipwright-io/build",
     "clomonitor_name": "shipwright",
+    "dev_stats_url": "https://shipwrightcncf.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5170,12 +5742,15 @@
     "homepage_url": "https://stackerbuild.io",
     "repo_url": "https://github.com/project-stacker/stacker",
     "clomonitor_name": "stacker",
+    "dev_stats_url": "https://stacker.devstats.cncf.io/",
     "has_security_audits": false,
-    "security_audit_count": 0
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "Telepresence",
     "display_name": "Telepresence",
+    "description": "Local development against a remote Kubernetes or OpenShift cluster",
     "repos": [
       {
         "owner": "telepresenceio",
@@ -5228,6 +5803,27 @@
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
+    "project_name": "VMAPI",
+    "display_name": "VMAPI",
+    "description": "Provider-neutral Kubernetes APIs and core controllers for virtual machine lifecycle management",
+    "repos": [
+      {
+        "owner": "vm-api",
+        "name": "vm-api",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Application Definition & Image Build",
+    "date_accepted": "2026-10-28",
+    "homepage_url": "https://github.com/vm-api/vm-api",
+    "repo_url": "https://github.com/vm-api/vm-api",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "xRegistry",
     "display_name": "xRegistry",
     "description": "The xRegistry project defines an abstract model for managing metadata about resources and provides a REST-based interface to discover, create, modify and delete those resources.",
@@ -5258,7 +5854,8 @@
     "dev_stats_url": "https://xregistry.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/xregistryio"
   },
   {
     "project_name": "Argo",
@@ -5319,6 +5916,7 @@
   {
     "project_name": "Flux",
     "display_name": "Flux",
+    "description": "Open and extensible continuous delivery solution for Kubernetes. Powered by GitOps Toolkit",
     "repos": [
       {
         "owner": "fluxcd",
@@ -5369,13 +5967,11 @@
     "date_archived": "2025-09-03",
     "homepage_url": "https://www.keptn.sh",
     "repo_url": "https://github.com/keptn/lifecycle-toolkit",
-    "clomonitor_name": "keptn",
     "summary_business_use_case": "Engineering teams want to have flexibility and choose the best tool for their needs, creating complex pipelines that are hard to control and maintain. Using Keptn, teams can focus on the application code and forget about Deployment complexity and tool integration. Similarly, SREs can enforce their SLOs/SLAs at the application and microservice levels.",
     "summary_integrations": "Any containerized application, OpenTelemetry, Prometheus",
     "summary_personas": "SREs, DevOps & Platform Engineers, Architects, Developers",
     "summary_tags": "Application, Container, Microservices, Security, GitOps, Kubernetes, Helm, Observability, CI/CD, SLI, SLO, SLA, Observability",
     "summary_use_case": "Keptn supports teams that build their next generation platform on Kubernetes by solving the following 3 major challenges:\n1: Tame observability tool complexity: Keptn unifies access to ALL observability data through a single metrics server\n2: Remove complex delivery pipeline logic: Keptn provides deployment lifecycle tasks natively in Kubernetes\n3: Root cause for deploy change impact: Keptn emits end-2-end telemetry data to understand and troubleshoot deployments",
-    "dev_stats_url": "https://keptn.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5384,6 +5980,7 @@
   {
     "project_name": "OpenGitOps",
     "display_name": "OpenGitOps",
+    "description": "OpenGitOps is a set of open-source standards, best practices, and community-focused education to help organizations adopt a structured, standardized approach to implementing GitOps",
     "repos": [
       {
         "owner": "open-gitops",
@@ -5398,14 +5995,42 @@
     "homepage_url": "https://opengitops.dev/",
     "repo_url": "https://github.com/open-gitops/project",
     "clomonitor_name": "open-gitops",
+    "dev_stats_url": "https://gitopswg.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
     "twitter": "https://twitter.com/opengitops"
   },
   {
+    "project_name": "OpenChoreo",
+    "display_name": "OpenChoreo",
+    "description": "A developer platform for Kubernetes that delivers higher-level abstractions with a Backstage-powered portal, CI/CD, GitOps, and built-in observability.",
+    "repos": [
+      {
+        "owner": "openchoreo",
+        "name": "openchoreo",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "App Definition and Development",
+    "subcategory": "Continuous Integration & Delivery",
+    "date_accepted": "2026-01-06",
+    "homepage_url": "https://openchoreo.dev",
+    "repo_url": "https://github.com/openchoreo/openchoreo",
+    "blog_url": "https://openchoreo.dev/blog/",
+    "url_for_bestpractices": "https://www.bestpractices.dev/en/projects/11819",
+    "clomonitor_name": "openchoreo",
+    "dev_stats_url": "https://openchoreo.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://x.com/openchoreo"
+  },
+  {
     "project_name": "OpenKruise",
     "display_name": "OpenKruise",
+    "description": "Automate application management on Kubernetes",
     "repos": [
       {
         "owner": "openkruise",
@@ -5421,6 +6046,7 @@
     "homepage_url": "https://openkruise.io/",
     "repo_url": "https://github.com/openkruise/kruise",
     "clomonitor_name": "open-kruise",
+    "dev_stats_url": "https://openkruise.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5453,6 +6079,36 @@
     "twitter": "https://twitter.com/pipecd_dev"
   },
   {
+    "project_name": "Tekton",
+    "display_name": "Tekton",
+    "description": "A powerful and flexible open source framework for creating continuous integration and delivery (CI/CD) systems that allow developers to build, test, and deploy across multiple cloud providers and on-premises systems by abstracting away the underlying implementation details.",
+    "repos": [
+      {
+        "owner": "tektoncd",
+        "name": "pipeline",
+        "primary": true
+      }
+    ],
+    "maturity": "incubating",
+    "category": "App Definition and Development",
+    "subcategory": "Continuous Integration & Delivery",
+    "date_accepted": "2026-03-13",
+    "date_incubating": "2026-03-13",
+    "homepage_url": "https://tekton.dev",
+    "repo_url": "https://github.com/tektoncd/pipeline",
+    "blog_url": "https://tekton.dev/blog/",
+    "clomonitor_name": "tekton",
+    "summary_integrations": "Argo CD (GitOps), SPIFFE/SPIRE (identity), Sigstore via Tekton Chains (signing and verification), CloudEvents, OpenTelemetry and Prometheus (metrics and tracing), Helm (Tekton Operator), ArtifactHub (Tekton Catalog)",
+    "summary_personas": "Developers, DevOps Engineers, Platform Engineers, SREs",
+    "summary_tags": "CI/CD, Kubernetes-native, pipelines, supply chain security, GitOps",
+    "summary_use_case": "Tekton is a Kubernetes-native framework for creating CI/CD systems. It provides Kubernetes Custom Resources for defining pipelines, tasks, and triggers, giving teams a standard, portable interface to build, test, and deploy across multiple cloud providers and on-premises systems.",
+    "dev_stats_url": "https://tekton.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/tektoncd"
+  },
+  {
     "project_name": "werf",
     "display_name": "werf",
     "description": "werf is a solution for implementing efficient and consistent software delivery to Kubernetes. It covers the entire CI/CD lifecycle and all related artifacts, glues commonly used tools (Git, Docker/Buildah, Helm, K8s) and facilitates best practices.",
@@ -5480,6 +6136,7 @@
   {
     "project_name": "Kube-burner",
     "display_name": "Kube-burner",
+    "description": "Kubernetes performance and scale test orchestration framework written in golang",
     "repos": [
       {
         "owner": "kube-burner",
@@ -5576,29 +6233,34 @@
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
-    "project_name": "Cozystack",
-    "display_name": "Cozystack",
-    "description": "Cozystack is a free PaaS platform and framework for building private clouds and providing users/customers with managed Kubernetes,  KubeVirt-based VMs, databases as a service, NATS, message brokers, etc. with GPU support in VMs and Kubernetes clusters.",
+    "project_name": "KubeElasti",
+    "display_name": "KubeElasti",
+    "description": "Auto scale-to-zero pods when idle and scale up pods when traffic arrives, without losing any requests. KubeElasti uses a smart proxy that queues incoming requests while scaling up targets, ensuring no request loss. It works with existing Kubernetes services and deployments without requiring code changes.",
     "repos": [
       {
-        "owner": "cozystack",
-        "name": "cozystack",
+        "owner": "KubeElasti",
+        "name": "KubeElasti",
         "primary": true
       }
     ],
     "maturity": "sandbox",
-    "category": "Platform",
-    "subcategory": "PaaS/Container Service",
-    "date_accepted": "2025-03-04",
-    "homepage_url": "https://cozystack.io",
-    "repo_url": "https://github.com/cozystack/cozystack",
-    "summary_business_use_case": "With Cozystack managed service providers, hosting providers, data centers could offer their customers  different managed services like Kubernetes, VMs, databases to compete with hyperscalers like AWS and GCP. Banks, fintechs and other organizations use Cozystack for building clouds on bare metal to achieve digital sovereignty  and take back control on their data. AI oriented companies could use it for running AI workloads in K8s clusters and VMs as well.",
-    "summary_personas": "Cloud Architects, Platform Engineers, DevOps Engineers, SRE Engineers, Kubernetes Architects, System Administrators, Developers.",
-    "summary_tags": "bare metal, platform, cloud, private cloud, managed services, managed Kubernetes, KubeVirt",
-    "summary_use_case": "Provides users with managed services and ready-to-use dev environments.",
-    "dev_stats_url": "https://cozystack.devstats.cncf.io/",
+    "category": "Serverless",
+    "subcategory": "Installable Platform",
+    "date_accepted": "2026-01-03",
+    "homepage_url": "https://kubeelasti.dev",
+    "repo_url": "https://github.com/KubeElasti/KubeElasti",
+    "blog_url": "https://kubeelasti.dev",
+    "clomonitor_name": "kubeelasti",
+    "summary_business_use_case": "Reduce Kubernetes infrastructure and compute costs by eliminating the expense of idle services that run continuously with no traffic. KubeElasti lets teams safely scale services to zero during low-traffic periods without compromising availability, since requests are queued and replayed on reactivation. This is especially valuable for large clusters with many intermittently-used services, dev/staging environments, and long-tail internal APIs.",
+    "summary_integrations": "Kubernetes, HPA, KEDA, Prometheus, Grafana, Argo Rollouts, Deployment, StatefulSet, any Ingress controller or Service Mesh that works at the Kubernetes Service level, supporting both North-South and East-West cluster-local traffic.",
+    "summary_personas": "SREs, Platform Engineers, DevOps Engineers, Cloud Architects, Kubernetes Operators, FinOps practitioners",
+    "summary_tags": "scale-to-zero, autoscaling, serverless, kubernetes, cost optimization, request proxy, HPA, KEDA, cloud native, kubeelasti, deployment, statefulset, argo rollouts",
+    "summary_use_case": "Provide Kubernetes-native scale-to-zero for any service, automatically scaling workloads down to zero replicas during periods of no traffic and back up to one replica the moment traffic arrives. A built-in proxy queues and holds incoming requests for scaled-down services so no request is lost while the service is reactivated. It complements existing autoscalers (HPA, KEDA) which handle scaling from 1 to n replicas.",
+    "summary_release_rate": "Regular minor and patch releases; multiple releases per quarter.",
+    "dev_stats_url": "https://kubeelasti.devstats.cncf.io/",
     "has_security_audits": false,
-    "security_audit_count": 0
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "SlimFaaS",
@@ -5617,6 +6279,8 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://github.com/SlimPlanet/SlimFaas",
     "repo_url": "https://github.com/SlimPlanet/SlimFaas",
+    "clomonitor_name": "slimfaas",
+    "dev_stats_url": "https://slimfaas.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -5650,6 +6314,7 @@
   {
     "project_name": "Chaos Mesh",
     "display_name": "Chaos Mesh",
+    "description": "A Chaos Engineering Platform for Kubernetes",
     "repos": [
       {
         "owner": "chaos-mesh",
@@ -5664,8 +6329,16 @@
     "date_incubating": "2022-02-16",
     "homepage_url": "https://chaos-mesh.org/",
     "repo_url": "https://github.com/chaos-mesh/chaos-mesh",
+    "documentation_url": "https://chaos-mesh.org/docs/",
     "blog_url": "https://chaos-mesh.org/blog/",
+    "url_for_bestpractices": "https://www.bestpractices.dev/projects/3680",
     "clomonitor_name": "chaos-mesh",
+    "summary_business_use_case": "Find resilience gaps before they cause outages and validate recovery procedures before deploying changes to critical services.",
+    "summary_integrations": "Kubernetes, Helm, Prometheus",
+    "summary_personas": "Site reliability engineers, platform engineers, DevOps engineers, application developers",
+    "summary_tags": "chaos engineering, fault injection, resilience testing, Kubernetes",
+    "summary_use_case": "Chaos Mesh helps teams verify how Kubernetes workloads recover from failures. Teams can run controlled experiments for pod failures, network delays, and resource pressure to test recovery before production incidents.",
+    "summary_release_rate": "Patch releases as needed.",
     "dev_stats_url": "https://chaosmesh.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -5677,6 +6350,7 @@
   {
     "project_name": "Chaosblade",
     "display_name": "Chaosblade",
+    "description": "An easy to use and powerful chaos engineering experiment toolkit.",
     "repos": [
       {
         "owner": "chaosblade-io",
@@ -5691,6 +6365,7 @@
     "homepage_url": "https://chaosblade.io/",
     "repo_url": "https://github.com/chaosblade-io/chaosblade",
     "clomonitor_name": "chaos-blade",
+    "dev_stats_url": "https://chaosblade.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -5701,6 +6376,7 @@
   {
     "project_name": "Litmus",
     "display_name": "Litmus",
+    "description": "Litmus is an open source Chaos Engineering platform that enables teams to identify weaknesses & potential outages in infrastructures by inducing chaos tests in a controlled way",
     "repos": [
       {
         "owner": "litmuschaos",
@@ -5764,13 +6440,16 @@
     "homepage_url": "https://www.opencost.io/",
     "repo_url": "https://github.com/opencost/opencost",
     "clomonitor_name": "opencost",
+    "dev_stats_url": "https://opencost.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/open_cost"
   },
   {
     "project_name": "Cortex",
     "display_name": "Cortex",
+    "description": "A multitenant, horizontally scalable Prometheus as a Service",
     "repos": [
       {
         "owner": "cortexproject",
@@ -5800,6 +6479,7 @@
   {
     "project_name": "Fluentd",
     "display_name": "Fluentd",
+    "description": "Fluentd is an open source data collector for unified logging layer",
     "repos": [
       {
         "owner": "fluent",
@@ -5889,6 +6569,7 @@
     "homepage_url": "https://holmesgpt.dev",
     "repo_url": "https://github.com/HolmesGPT/holmesgpt",
     "clomonitor_name": "holmesgpt",
+    "dev_stats_url": "https://holmesgpt.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
@@ -5919,6 +6600,7 @@
   {
     "project_name": "Jaeger",
     "display_name": "Jaeger",
+    "description": "Jaeger: open source, end-to-end distributed tracing. Monitor and troubleshoot transactions in complex distributed systems",
     "repos": [
       {
         "owner": "jaegertracing",
@@ -5936,7 +6618,7 @@
     "repo_url": "https://github.com/jaegertracing/jaeger",
     "blog_url": "https://medium.com/jaegertracing/",
     "clomonitor_name": "jaeger",
-    "summary_business_use_case": "Monitoring and troubleshooting distributed workflows; root cause localization; understanding service dependncies; latency and performance optimization.",
+    "summary_business_use_case": "Monitoring and troubleshooting distributed workflows; root cause localization; understanding service dependencies; latency and performance optimization.",
     "summary_integrations": "OpenTelemetry, Prometheus, multiple [storage backends](https://www.jaegertracing.io/docs/latest/deployment/#span-storage-backends).",
     "summary_personas": "Developers, SREs, Platform Engineers, Network Engineers",
     "summary_tags": "monitoring, observability, tracing",
@@ -5953,6 +6635,7 @@
   {
     "project_name": "K8sGPT",
     "display_name": "K8sGPT",
+    "description": "Giving Kubernetes Superpowers to everyone",
     "repos": [
       {
         "owner": "k8sgpt-ai",
@@ -5967,14 +6650,16 @@
     "homepage_url": "https://www.k8sgpt.ai",
     "repo_url": "https://github.com/k8sgpt-ai/k8sgpt",
     "clomonitor_name": "k8sgpt",
+    "dev_stats_url": "https://k8sgpt.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/k8sgpt"
   },
   {
     "project_name": "Kepler",
     "display_name": "Kepler",
-    "description": "Kepler (Kubernetes-based Efficient Power Level Exporter) uses eBPF to probe energy related system stats and exports as Prometheus metrics.",
+    "description": "Kepler (Kubernetes-based Efficient Power Level Exporter) is a Prometheus exporter that measures energy consumption at the Pod and Node level by reading hardware sensors, attributing it to containers, and giving per-workload visibility into where energy goes. Let's make every watt matter.",
     "repos": [
       {
         "owner": "sustainable-computing-io",
@@ -5991,7 +6676,7 @@
     "clomonitor_name": "kepler",
     "summary_integrations": "Kubernetes, Prometheus.",
     "summary_personas": "Developers, SREs, Sustainability Officers, IT Managers",
-    "summary_tags": "sustainability, power monitoring, observability, metrics, ebpf, machine learning",
+    "summary_tags": "sustainability, power monitoring, observability, metrics, machine learning",
     "summary_use_case": "Enabling workload power monitoring for cloud-native systems.",
     "dev_stats_url": "https://kepler.devstats.cncf.io/",
     "has_security_audits": false,
@@ -6001,6 +6686,7 @@
   {
     "project_name": "Kuberhealthy",
     "display_name": "Kuberhealthy",
+    "description": "A Kubernetes operator for running synthetic checks as pods. Works great with Prometheus!",
     "repos": [
       {
         "owner": "kuberhealthy",
@@ -6015,15 +6701,18 @@
     "homepage_url": "https://github.com/kuberhealthy/kuberhealthy",
     "repo_url": "https://github.com/kuberhealthy/kuberhealthy",
     "clomonitor_name": "kuberhealthy",
+    "dev_stats_url": "https://kuberhealthy.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/kuberhealthy",
     "annual_review_date": "2022-06-09",
     "annual_review_url": "https://github.com/cncf/toc/pull/848"
   },
   {
     "project_name": "Logging Operator Kube Logging",
     "display_name": "Logging Operator (Kube Logging)",
+    "description": "Logging operator for Kubernetes",
     "repos": [
       {
         "owner": "kube-logging",
@@ -6062,7 +6751,6 @@
     "date_archived": "2024-07-02",
     "homepage_url": "https://openmetrics.io/",
     "repo_url": "https://github.com/OpenObservability/OpenMetrics",
-    "dev_stats_url": "https://openmetrics.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -6071,6 +6759,7 @@
   {
     "project_name": "OpenTelemetry",
     "display_name": "OpenTelemetry",
+    "description": "High-quality, ubiquitous, and portable telemetry to enable effective observability",
     "repos": [
       {
         "owner": "open-telemetry",
@@ -6078,13 +6767,16 @@
         "primary": true
       }
     ],
-    "maturity": "incubating",
+    "maturity": "graduated",
     "category": "Observability and Analysis",
     "subcategory": "Observability",
     "date_accepted": "2019-05-07",
     "date_incubating": "2021-08-26",
+    "date_graduated": "2026-05-11",
     "homepage_url": "https://opentelemetry.io/",
     "repo_url": "https://github.com/open-telemetry/community",
+    "documentation_url": "https://opentelemetry.io/docs/",
+    "blog_url": "https://blog.opentelemetry.io/",
     "clomonitor_name": "open-telemetry",
     "summary_business_use_case": "OpenTelemetry makes performance telemetry for observability a built-in feature of cloud-native systems. It provides a standard set of APIs, SDKs, data models, and tooling to create and capture this telemetry data, then export it to a variety of open source or commercial analysis backends.",
     "summary_integrations": "Prometheus, Jaeger, [and many more.](https://opentelemetry.io/ecosystem/)",
@@ -6095,8 +6787,7 @@
     "dev_stats_url": "https://opentelemetry.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
-    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
-    "twitter": "https://twitter.com/opentelemetry"
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "OpenTracing",
@@ -6185,6 +6876,7 @@
   {
     "project_name": "Prometheus",
     "display_name": "Prometheus",
+    "description": "The Prometheus monitoring system and time series database",
     "repos": [
       {
         "owner": "prometheus",
@@ -6232,7 +6924,6 @@
     "date_archived": "2024-10-24",
     "homepage_url": "https://skooner.io/",
     "repo_url": "https://github.com/skooner-k8s/skooner",
-    "clomonitor_name": "skooner",
     "has_security_audits": false,
     "security_audit_count": 0,
     "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
@@ -6242,6 +6933,7 @@
   {
     "project_name": "Thanos",
     "display_name": "Thanos",
+    "description": "Open source, highly available Prometheus setup with long term storage capabilities",
     "repos": [
       {
         "owner": "thanos-io",
@@ -6273,6 +6965,7 @@
   {
     "project_name": "Trickster",
     "display_name": "Trickster",
+    "description": "Open Source HTTP Reverse Proxy Cache and Time Series Dashboard Accelerator",
     "repos": [
       {
         "owner": "trickstercache",
@@ -6295,6 +6988,29 @@
     "annual_review_url": "https://github.com/cncf/toc/pull/852"
   },
   {
+    "project_name": "Spin",
+    "display_name": "Spin",
+    "description": "Spin is a framework for building serverless applications in WebAssembly.",
+    "repos": [
+      {
+        "owner": "spinframework",
+        "name": "spin",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Wasm",
+    "subcategory": "Application Frameworks",
+    "date_accepted": "2025-01-21",
+    "homepage_url": "https://spinframework.dev",
+    "repo_url": "https://github.com/spinframework/spin",
+    "clomonitor_name": "spin",
+    "dev_stats_url": "https://spin.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
     "project_name": "SpinKube",
     "display_name": "SpinKube",
     "description": "Open source platform for efficiently running (containerless) Spin-based WebAssembly (Wasm) applications on Kubernetes.",
@@ -6311,6 +7027,7 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://www.spinkube.dev/",
     "repo_url": "https://github.com/spinframework/spin-operator",
+    "clomonitor_name": "spinkube",
     "dev_stats_url": "https://spinkube.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0,
@@ -6333,8 +7050,53 @@
     "date_accepted": "2025-01-21",
     "homepage_url": "https://github.com/container2wasm/container2wasm",
     "repo_url": "https://github.com/container2wasm/container2wasm",
+    "clomonitor_name": "container2wasm",
+    "dev_stats_url": "https://container2wasm.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
+  },
+  {
+    "project_name": "Hive Commons",
+    "display_name": "Hive Commons",
+    "description": "Kubernetes-native orchestration for fleets of AI coding agents that autonomously maintain software repositories.",
+    "repos": [
+      {
+        "owner": "hivecommons",
+        "name": "hive",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "AI Agent",
+    "subcategory": "Workflow Orchestration",
+    "date_accepted": "2026-09-29",
+    "homepage_url": "https://hivecommons.dev",
+    "repo_url": "https://github.com/hivecommons/hive",
+    "clomonitor_name": "hive",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "AI Runway",
+    "display_name": "AI Runway",
+    "description": "AI Runway provides a web UI and a unified Kubernetes CRD to deploy AI models across multiple inference engines and providers.",
+    "repos": [
+      {
+        "owner": "ai-runway",
+        "name": "airunway",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Inference",
+    "subcategory": "Framework",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://ai-runway.github.io/airunway/",
+    "repo_url": "https://github.com/ai-runway/airunway",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   },
   {
     "project_name": "KAITO",
@@ -6348,11 +7110,12 @@
       }
     ],
     "maturity": "sandbox",
-    "category": "CNAI",
-    "subcategory": "ML Serving",
+    "category": "Inference",
+    "subcategory": "Framework",
     "date_accepted": "2024-10-17",
     "homepage_url": "https://kaito-project.netlify.app/",
     "repo_url": "https://github.com/kaito-project/kaito",
+    "clomonitor_name": "kaito",
     "dev_stats_url": "https://kaito.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
@@ -6369,15 +7132,109 @@
       }
     ],
     "maturity": "incubating",
-    "category": "CNAI",
-    "subcategory": "ML Serving",
+    "category": "Inference",
+    "subcategory": "Framework",
     "date_accepted": "2025-09-29",
     "date_incubating": "2025-09-29",
     "homepage_url": "https://kserve.github.io/website/",
     "repo_url": "https://github.com/kserve/kserve",
     "blog_url": "https://kserve.github.io/website/blog",
+    "clomonitor_name": "kserve",
     "dev_stats_url": "https://kserve.devstats.cncf.io/",
     "has_security_audits": false,
     "security_audit_count": 0
+  },
+  {
+    "project_name": "llm-d",
+    "display_name": "llm-d",
+    "description": "llm-d is a Kubernetes-native, high-performance distributed LLM inference framework built on vLLM and the Kubernetes Gateway API Inference Extension, providing intelligent inference scheduling, prefix-cache-aware routing, prefill/decode disaggregation, hierarchical KV offloading, and traffic- and hardware-aware autoscaling across NVIDIA, AMD, Intel, and Google TPU accelerators.",
+    "repos": [
+      {
+        "owner": "llm-d",
+        "name": "llm-d",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Inference",
+    "subcategory": "Framework",
+    "date_accepted": "2026-03-12",
+    "homepage_url": "https://llm-d.ai/",
+    "repo_url": "https://github.com/llm-d/llm-d",
+    "clomonitor_name": "llm-d",
+    "dev_stats_url": "https://llmd.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation",
+    "twitter": "https://twitter.com/_llm_d_"
+  },
+  {
+    "project_name": "OpenRL",
+    "display_name": "OpenRL",
+    "description": "OpenRL is a self-hosted, Kubernetes-native post-training (SFT and RL) API for LLMs, compatible with the Tinker SDK.",
+    "repos": [
+      {
+        "owner": "openrl-dev",
+        "name": "openrl",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "Training",
+    "subcategory": "Post Training",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://openrl.dev/",
+    "repo_url": "https://github.com/openrl-dev/openrl",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "KubeRay",
+    "display_name": "KubeRay",
+    "description": "A toolkit to run Ray applications on Kubernetes",
+    "repos": [
+      {
+        "owner": "kuberay-project",
+        "name": "kuberay",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "AI Native Infra",
+    "subcategory": "Orchestration and Scheduling",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://github.com/kuberay-project/kuberay",
+    "repo_url": "https://github.com/kuberay-project/kuberay",
+    "clomonitor_name": "kuberay",
+    "dev_stats_url": "https://kuberay.devstats.cncf.io/",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
+  },
+  {
+    "project_name": "MatrixHub",
+    "display_name": "MatrixHub",
+    "description": "MatrixHub is an open-source, self-hosted, Hugging Face-compatible AI model registry and distribution layer for enterprise inference. It accelerates vLLM and SGLang on Kubernetes with pull-once-serve-all caching, air-gapped delivery, RBAC and multi-tenancy, and cross-region replication.",
+    "repos": [
+      {
+        "owner": "matrixhub-ai",
+        "name": "matrixhub",
+        "primary": true
+      }
+    ],
+    "maturity": "sandbox",
+    "category": "AI Native Infra",
+    "subcategory": "Model Asset and Registry",
+    "date_accepted": "2026-09-28",
+    "homepage_url": "https://matrixhub.ai",
+    "repo_url": "https://github.com/matrixhub-ai/matrixhub",
+    "clomonitor_name": "matrixhub",
+    "summary_personas": "Platform Engineers, ML Infrastructure Engineers, SREs, AI Operations Teams",
+    "summary_tags": "registry, models, huggingface, inference, vllm, sglang, kubernetes, helm, cache, replication",
+    "summary_use_case": "Private, governed distribution of large models to GPU clusters running Hugging Face-compatible inference runtimes, with intranet caching, air-gapped import/export, and cross-region sync.",
+    "has_security_audits": false,
+    "security_audit_count": 0,
+    "crunchbase": "https://www.crunchbase.com/organization/cloud-native-computing-foundation"
   }
 ]
