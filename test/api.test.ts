@@ -79,6 +79,13 @@ describe('fetchRepositoryExtendedInfo', () => {
         assert.equal(calls.length, 1);
     });
 
+    test('retries an HTTP 5xx once it succeeds', async () => {
+        const gatewayTimeout = new ClientError({ status: 504, headers: new Headers() }, REQUEST);
+        const { client, calls } = stubClient([gatewayTimeout, DATA]);
+        assert.equal(await fetchRepositoryExtendedInfo(client, VARS, false), DATA);
+        assert.equal(calls.length, 2);
+    });
+
     test('returns null without retrying on other errors', async () => {
         const { client, calls } = stubClient([forbiddenAt(['repository', 'securityPolicy'])]);
         assert.equal(await fetchRepositoryExtendedInfo(client, VARS, false), null);
