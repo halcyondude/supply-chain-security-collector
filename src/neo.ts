@@ -3,7 +3,7 @@
 
 import 'dotenv/config';
 import chalk from 'chalk';
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos } from './api';
@@ -68,6 +68,15 @@ function filterByMaturity(
   });
 }
 
+/** commander parser for a 0-1 ratio. */
+function parseRatio(value: string): number {
+  const ratio = Number(value);
+  if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1) {
+    throw new InvalidArgumentError('Expected a ratio between 0 and 1.');
+  }
+  return ratio;
+}
+
 async function main() {
   // Parse CLI arguments
   const program = new Command();
@@ -83,6 +92,7 @@ async function main() {
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
     .option('--scan-orgs', 'Scan all GitHub orgs found in input data for repo discovery', false)
+    .option('--min-success-rate <ratio>', 'Fail if fewer than this share (0-1) of repos fetch successfully for any query; a run with no successes always fails', parseRatio, 0)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
@@ -97,6 +107,7 @@ async function main() {
     analyze: runAnalysis,
     persistFiles,
     scanOrgs,
+    minSuccessRate,
     verbose
   } = options;
 
@@ -228,6 +239,10 @@ async function main() {
     // Output summary for this query
     console.log(chalk.gray('\n' + '─'.repeat(50)));
     console.log(chalk.bold(`📈 ${queryName}: ${chalk.green(successCount.toString())} success, ${chalk.red(failureCount.toString())} failed`));
+    if (repositories.length > 0 && (successCount === 0 || successCount / repositories.length < minSuccessRate)) {
+      // Bad token, outage or schema drift. Fail so CI doesn't publish a partial dataset.
+      throw new Error(`${queryName}: ${successCount}/${repositories.length} repos succeeded (minimum ${minSuccessRate}); see the request errors above`);
+    }
     allResponses = allResponses.concat(queryResponses);
     responseMetadata = responseMetadata.concat(queryMetadata);
   }
@@ -243,9 +258,8 @@ async function main() {
       console.error(chalk.red('\n❌ Database creation failed:'), error);
       throw error;
     }
-  } else if (repositories.length > 0) {
-    // Every request failed (bad token, outage). Exit non-zero so CI doesn't publish an empty dataset.
-    throw new Error(`No data collected for ${repositories.length} repositories; see the request errors above`);
+  } else {
+    console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
   }
 
   // Org-level scanning: discover all repos across orgs present in the input data
