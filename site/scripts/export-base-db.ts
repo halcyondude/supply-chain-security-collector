@@ -166,7 +166,7 @@ async function main() {
       );
     }
   } finally {
-    await conn.close();
+    conn.closeSync();
   }
 }
 

@@ -243,8 +243,9 @@ async function main() {
       console.error(chalk.red('\n❌ Database creation failed:'), error);
       throw error;
     }
-  } else {
-    console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
+  } else if (repositories.length > 0) {
+    // Every request failed (bad token, outage). Exit non-zero so CI doesn't publish an empty dataset.
+    throw new Error(`No data collected for ${repositories.length} repositories; see the request errors above`);
   }
 
   // Org-level scanning: discover all repos across orgs present in the input data
