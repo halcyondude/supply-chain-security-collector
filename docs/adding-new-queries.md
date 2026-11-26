@@ -189,7 +189,7 @@ const queryFunctions: Record<string, QueryFunction> = {
 
 #### 5b. Add Normalization Logic in `ArtifactWriter.ts`
 
-Update the `createNormalizedTables` function:
+`writeArtifacts()` loads the raw responses, then calls `createNormalizedTables()`, which dispatches on the query name. Add an import, a branch, and a table-writing function:
 
 ```typescript
 // 1. Import your types and normalizer at the top
@@ -200,27 +200,20 @@ import {
 } from './normalizers/GetRepoDataMetricsNormalizer';
 
 // 2. Add an else-if branch in createNormalizedTables()
-async function createNormalizedTables(
-    con: DuckDBConnection, 
-    responses: unknown[], 
-    queryName: string,
-    outputDir: string
-) {
-    console.log(`  Query type: ${queryName}`);
-    
-    if (queryName === 'GetRepoDataExtendedInfo') {
-        await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir);
-    } else if (queryName === 'GetRepoDataArtifacts') {
-        await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
-    } else if (queryName === 'GetRepoDataMetrics') {  // Add this
-        await createTablesForMetrics(con, responses as GetRepoDataMetricsQuery[], outputDir);
-    } else {
-        console.warn(`  ⚠️  Unknown query type: ${queryName}. Skipping normalization.`);
-    }
+//    (existing signature: con, responses, queryName, outputDir, responseMetadata?, persistFiles = true)
+if (queryName === 'GetRepoDataExtendedInfo') {
+    await createTablesForExtendedInfoQuery(con, responses as GetRepoDataExtendedInfoQuery[], outputDir, responseMetadata, persistFiles);
+} else if (queryName === 'GetRepoDataArtifacts') {
+    await createTablesForArtifactsQuery(con, responses as GetRepoDataArtifactsQuery[], outputDir);
+} else if (queryName === 'GetRepoDataMetrics') {  // Add this
+    await createTablesForMetricsQuery(con, responses as GetRepoDataMetricsQuery[], outputDir);
+} else {
+    console.warn(`  ⚠️  Unknown query type: ${queryName}. Skipping normalization.`);
 }
 
-// 3. Create the table creation function
-async function createTablesForMetrics(
+// 3. Create the table creation function. Follow createTablesForArtifactsQuery():
+//    write temp JSON, load via read_json(), delete the temp file.
+async function createTablesForMetricsQuery(
     con: DuckDBConnection,
     responses: GetRepoDataMetricsQuery[],
     outputDir: string
@@ -228,26 +221,22 @@ async function createTablesForMetrics(
     const normalized = normalizeGetRepoDataMetrics(responses);
     console.log(getMetricsStats(normalized));
 
-    if (normalized.base_repositories.length > 0) {
-        await createTableFromArray(con, 'base_repositories', normalized.base_repositories);
-        console.log('  ✓ base_repositories');
-    }
+    const tempPath = path.join(outputDir, 'temp_repositories.json');
+    fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
+    await con.run(`
+        CREATE TABLE base_repositories AS
+        SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+    `);
+    fs.unlinkSync(tempPath);
+    console.log(`  ✅ Created table: base_repositories (${normalized.base_repositories.length} rows)`);
 }
-
-// Helper: write temp JSON, load via read_json(), delete temp file
-// (pattern used throughout ArtifactWriter.ts)
-const tempPath = path.join(outputDir, `temp_base_repositories.json`);
-fs.writeFileSync(tempPath, JSON.stringify(normalized.base_repositories));
-await con.run(`
-    CREATE TABLE base_repositories AS
-    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
-`);
-fs.unlinkSync(tempPath);
 ```
+
+The normalizer above is illustrative. The real ones (`src/normalizers/GetRepoDataArtifactsNormalizer.ts`, `GetRepoDataExtendedInfoNormalizer.ts`) return several `base_*` arrays with `repository_id`-style foreign keys; copy their structure rather than this example. If your query also writes `base_repositories`, it will collide with the other queries' tables, so check the table names first.
 
 #### 5c. Export Parquet Files (automatic)
 
-The `exportTablesToParquet()` function automatically exports all tables in the database to Parquet files. No code changes needed.
+`exportTablesToParquet()` exports every base table in the database to `parquet/` after normalization. No code changes needed.
 
 ---
 
@@ -288,6 +277,10 @@ npm run collect -- --input input/repos.json --queries GetRepoDataExtendedInfo Ge
 npm run collect -- --input input/repos.json --queries GetRepoDataMetrics --parallel --analyze
 ```
 
+### `GetOrgRepos` is internal
+
+`src/graphql/GetOrgRepos.graphql` is not a registered query. It is not in the `queryFunctions` map and cannot be passed to `--queries`. `neo.ts` calls it directly through `fetchOrgRepos()` (in `api.ts`) to enumerate each CNCF project's GitHub org, then `writeOrgRepoArtifacts()` appends the result to the existing database as `base_org_repos`. Don't use it as a template for a query that should be selectable from the CLI.
+
 ## Output Structure
 
 Each run produces a flat output directory named after the input file:
@@ -300,6 +293,7 @@ output/<input-name>/
       base_*.parquet
       agg_*.parquet
       raw_*.parquet
+    files/                              # persisted workflows, SECURITY.md etc. (--persist-files)
     raw-responses.<QueryName>.jsonl     # API audit trail
   current -> <timestamp>/              # symlink to latest
 ```
