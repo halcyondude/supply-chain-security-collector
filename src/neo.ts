@@ -6,9 +6,9 @@ import chalk from 'chalk';
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos } from './api';
+import { createApiClient, fetchRepositoryArtifacts, fetchRepositoryExtendedInfo, fetchOrgRepos, fetchDotProjectData } from './api';
 import { appendRawResponse } from './rawResponseWriter';
-import { writeArtifacts, writeOrgRepoArtifacts } from './ArtifactWriter';
+import { writeArtifacts, writeOrgRepoArtifacts, writeDotProjectArtifacts } from './ArtifactWriter';
 import type { RepositoryTarget, ProjectMetadata } from './config';
 import { normalizeGetOrgRepos, getOrgReposNormalizationStats } from './normalizers/GetOrgReposNormalizer';
 import { SecurityAnalyzer } from './SecurityAnalyzer';
@@ -83,6 +83,7 @@ async function main() {
     .option('--analyze', 'Run security analysis after data collection', false)
     .option('--persist-files', 'Persist downloaded files (SECURITY.md, security-insights.yml) to disk', true)
     .option('--scan-orgs', 'Scan all GitHub orgs found in input data for repo discovery', false)
+    .option('--dot-project', 'Fetch .project metadata (project.yaml) for each org via GraphQL and write to DuckDB', false)
     .option('-v, --verbose', 'Verbose output', false)
     .parse(process.argv);
 
@@ -97,6 +98,7 @@ async function main() {
     analyze: runAnalysis,
     persistFiles,
     scanOrgs,
+    dotProject: fetchDotProject,
     verbose
   } = options;
 
@@ -245,6 +247,98 @@ async function main() {
     }
   } else {
     console.log(chalk.yellow('\n⚠  No data collected for any query, skipping database creation'));
+  }
+
+  // .project metadata: fetch project.yaml from <org>/.project.
+  //
+  // The canonical .project repo lives in the org of a project's PRIMARY repo.
+  // We probe, in priority order:
+  //   1. each project's primary-repo org (the canonical .project location)
+  //   2. all other repo-owner orgs (covers multi-org projects / non-primary orgs)
+  // Ordering primary orgs first means the canonical org is probed even for
+  // projects whose non-primary repos live under different/legacy orgs.
+  if (fetchDotProject && allResponses.length > 0) {
+    console.log(chalk.gray('\n' + '─'.repeat(50)));
+    console.log(chalk.bold.cyan('\n📋 Fetching .project metadata...\n'));
+
+    // Build an ordered, de-duplicated org list: canonical (primary) orgs first.
+    const seenOrgs = new Set<string>();
+    const orderedOrgs: string[] = [];
+    const addOrg = (org: string) => {
+      if (!org || seenOrgs.has(org)) return;
+      seenOrgs.add(org);
+      orderedOrgs.push(org);
+    };
+
+    // Pass 1: canonical .project org = org of each project's primary repo.
+    // rawInput carries the rich ProjectMetadata (with the `primary` flag);
+    // normalizedInput has already been flattened and lost per-project grouping.
+    for (const item of rawInput) {
+      if ('repos' in item && Array.isArray((item as ProjectMetadata).repos)) {
+        const project = item as ProjectMetadata;
+        const primary = project.repos.find(r => r.primary) ?? project.repos[0];
+        if (primary) addOrg(primary.owner);
+      }
+    }
+    // Pass 2: all remaining orgs from the scanned repos (fallback coverage).
+    for (const item of normalizedInput) {
+      addOrg(item.repo.owner);
+    }
+
+    console.log(chalk.cyan(`  Unique orgs to probe: ${orderedOrgs.length} (canonical/primary orgs first)`));
+
+    // Fetch <org>/.project in small batches with an inter-batch delay,
+    // mirroring build-repo-list.ts (BATCH_SIZE=8, BATCH_DELAY_MS=600) to avoid
+    // hammering the GraphQL API across a ~250-org sweep.
+    const dotProjectResults: Array<{ org: string; data: import('./api').GetDotProjectDataResponse }> = [];
+    let dotProjectFound = 0;
+    let dotProjectMissing = 0;
+
+    const DP_BATCH_SIZE = 8;
+    const DP_BATCH_DELAY_MS = 600;
+
+    for (let i = 0; i < orderedOrgs.length; i += DP_BATCH_SIZE) {
+      const batch = orderedOrgs.slice(i, i + DP_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (org) => {
+          const data = await fetchDotProjectData(client, org, verbose);
+          return { org, data };
+        })
+      );
+
+      for (const { org, data } of batchResults) {
+        if (data && data.repository !== null) {
+          dotProjectResults.push({ org, data });
+          dotProjectFound++;
+          if (!verbose) {
+            console.log(chalk.green(`  ✓ ${org}/.project`));
+          }
+        } else {
+          dotProjectMissing++;
+          if (verbose) {
+            console.log(chalk.gray(`  ○ ${org}/.project: not found (skipped)`));
+          }
+        }
+      }
+
+      if (i + DP_BATCH_SIZE < orderedOrgs.length) {
+        await new Promise(resolve => setTimeout(resolve, DP_BATCH_DELAY_MS));
+      }
+    }
+
+    console.log(chalk.gray(`\n  Found: ${dotProjectFound}, Missing/skipped: ${dotProjectMissing}`));
+
+    if (dotProjectResults.length > 0) {
+      try {
+        await writeDotProjectArtifacts(dotProjectResults, timestampedDir);
+        console.log(chalk.green('  ✓ .project tables written to database'));
+      } catch (error) {
+        console.error(chalk.red('\n❌ .project write failed:'), error);
+        throw error;
+      }
+    } else {
+      console.log(chalk.yellow('  ⚠ No .project repos found for any org in this scan'));
+    }
   }
 
   // Org-level scanning: discover all repos across orgs present in the input data
