@@ -5,7 +5,7 @@
 | Version | Date | Summary |
 |---------|------|---------|
 | 1.0 | 2026-07-16 | Initial report. Baseline scan of all 236 CNCF projects; SBOM prevalence, format split, per-maturity table. |
-| 1.1 | 2026-11-26 | Review fixes. All figures re-verified against the committed Parquet; corrected the "unknown format" share; reconciled 13 vs 14 and the April deck's maturity denominators; added status note and diagrams; fixed data path and links. |
+| 1.1 | 2026-11-26 | Review fixes. All figures re-verified against the committed Parquet; corrected the "unknown format" share; reconciled 13 vs 14 and the April deck's maturity denominators; added status note and diagrams; fixed data path and links. Withdrew CI-tool figures (workflow index bug). |
 
 ---
 
@@ -51,7 +51,7 @@ The scan covered:
 | Release assets classified | 39,304 |
 | CI workflows parsed | 2,784 |
 
-The tool collects from the GitHub GraphQL API: release assets (SBOMs, `.sig` files, attestations, cosign bundles), GitHub Actions workflow files (tool references via full-text search), branch protection rules, and `SECURITY-INSIGHTS.yml`. Per repo it emits a normalized set of booleans — does this project publish an SBOM, sign releases, attach attestations, and which tools does its CI reference — plus per-project and per-maturity rollups. Output is DuckDB + Parquet, so anyone can re-run the numbers in this report with a single SQL query. There's also a [live in-browser explorer](https://halcyondude.github.io/supply-chain-security-collector/) (DuckDB-WASM, no backend) if you'd rather click than write SQL.
+The tool collects from the GitHub GraphQL API: release assets (SBOMs, `.sig` files, attestations, cosign bundles), GitHub Actions workflow files (tool references via full-text search; see the caveat under Tooling signal), branch protection rules, and `SECURITY-INSIGHTS.yml`. Per repo it emits a normalized set of booleans — does this project publish an SBOM, sign releases, attach attestations, and which tools does its CI reference — plus per-project and per-maturity rollups. Output is DuckDB + Parquet, so anyone can re-run the numbers in this report with a single SQL query. There's also a [live in-browser explorer](https://halcyondude.github.io/supply-chain-security-collector/) (DuckDB-WASM, no backend) if you'd rather click than write SQL.
 
 ## 4. What we found — the baseline
 
@@ -97,21 +97,9 @@ All 2,402 SBOM artifacts found in release assets, by format (a repo can appear i
 
 Among classified SBOMs, **SPDX outnumbers CycloneDX ~36:1 by artifact count** (1,057 vs 29). That ratio is artifact-skewed — a few SPDX-heavy projects attach many SBOMs per release — so read it alongside the **per-repo** count: **19 repos publish SPDX, 3 publish CycloneDX** (roughly 6:1 by project). Either way, SPDX is the de facto ecosystem default; CycloneDX presence is real but small. The large "unknown" bucket is itself a **findability** finding: more than half of SBOM-like artifacts (1,316 of 2,402) don't announce their format in a way a scanner can cheaply detect — which means any downstream aggregator (including GUAC) has to open and sniff files rather than trust naming conventions.
 
-### Tooling signal
+### Tooling signal (withdrawn pending re-collection)
 
-What GitHub Actions workflows reference, across the 236 primary repos (workflow text only, so a floor):
-
-| Tool | Repos (workflow-declared) |
-|------|---------------------------|
-| CodeQL | 80 |
-| GoReleaser | 22 |
-| Trivy | 19 |
-| Dependabot | 8 |
-| Renovate | 5 |
-| Syft | 1 |
-| cosign | 1 |
-
-Two things to note. First, **code scanning (CodeQL, 80) is far more adopted than supply-chain artifact tooling** — the ecosystem is better at scanning its own source than at emitting verifiable build outputs. Second, workflow-declared cosign shows only 1, but **36 projects have signature artifacts** in releases. That gap is expected: signing often happens via GoReleaser config or reusable actions that don't grep as literal `cosign` in a workflow file. Don't read the "1" as "one project signs" — read the 36.
+Earlier drafts had a table of CI tools referenced in GitHub Actions (CodeQL, GoReleaser, Trivy, cosign, ...). **Those figures are withdrawn.** A bug in `sql/models/00_initialize_indexes.sql` rebuilds the `base_workflows` full-text index on `filename` right after building it on `content`, so tool detection only ever matched workflow *file names*, and hyphenated names (`docker-scout`, `slsa-github-generator`) also false-positive. The "cosign in CI: 1 repo" figure was an artifact of this bug. Release-asset findings (SBOM, signature, attestation) do not use that index and are unaffected. Corrected CI-tool figures will follow a fixed, fresh collection.
 
 ### A data-correction note, in the open
 
@@ -275,13 +263,13 @@ SELECT
   (SELECT COUNT(*) FROM 'base_release_assets.parquet') AS assets,      -- 39304
   (SELECT COUNT(*) FROM 'base_workflows.parquet') AS workflows;        -- 2784
 
--- Tool adoption (workflow-declared)
+-- Tool adoption (workflow-declared) -- WITHDRAWN: index bug, see 'Tooling signal'
 SELECT SUM(uses_codeql::int) AS codeql, SUM(uses_goreleaser::int) AS goreleaser,
   SUM(uses_trivy::int) AS trivy, SUM(uses_dependabot::int) AS dependabot,
   SUM(uses_renovate::int) AS renovate, SUM(uses_syft::int) AS syft,
   SUM(uses_cosign::int) AS cosign
 FROM 'agg_repo_summary.parquet';
--- codeql 80, goreleaser 22, trivy 19, dependabot 8, renovate 5, syft 1, cosign 1
+-- values not reported: detection matched filenames only
 
 -- The rollup bug: buggy rollup says 24, per-repo truth is 23 (CubeFS signs)
 SELECT COUNT(*) FROM 'agg_cncf_project_summary.parquet'
