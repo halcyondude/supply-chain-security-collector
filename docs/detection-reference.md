@@ -9,9 +9,9 @@ This document provides a comprehensive catalog of all supply chain security tool
 | **SBOM Formats**                         |       |        |          |        |                                                   |
 | SPDX                                     | ✅    | ✅      | Artifact | FTS    | `spdx`                                            |
 | CycloneDX                                | ✅    | ✅      | Artifact | FTS    | `cyclonedx OR cdx`                                |
-| SWID Tags                                | ✅     | ❌     | Artifact | FTS    | `swid OR swidtag`                                 |
+| SWID Tags                                | ✅     | ✅     | Artifact | FTS    | `swid OR swidtag`                                 |
 | **Signatures & Attestations**            |        |        |          |        |                                                   |
-| Standard Signatures (.sig, .asc, .pem)   | ✅     | ✅      | Artifact | REGEXP | `(?i)\\.(sig\|asc\|pem\|pub)$`                    |
+| Standard Signatures (.sig, .asc, .pem)   | ✅     | ✅      | Artifact | REGEXP | `(?i)\.(sig\|asc\|pem\|pub)$`                      |
 | Generic Attestations                     | ✅     | ✅      | Artifact | FTS    | `attestation`                                     |
 | VEX Documents                            | ✅     | ✅      | Artifact | FTS    | `vex`                                             |
 | SLSA Provenance                          | ✅     | ✅      | Artifact | FTS    | `provenance OR slsa OR intoto`                    |
@@ -19,13 +19,13 @@ This document provides a comprehensive catalog of all supply chain security tool
 | In-toto Layouts                          | ✅     | ✅      | Artifact | FTS    | `layout`                                          |
 | Sigstore Bundles                         | ✅     | ✅      | Artifact | REGEXP | `(?i)\.bundle$`                                   |
 | Container Attestations                   | ✅     | ✅      | Artifact | FTS    | `cosign OR rekor OR fulcio`                       |
-| License Files                            | ✅     | ✅      | Artifact | FTS    | `license OR copying OR notice`                    |
+| License Files                            | ✅     | ❌      | Artifact | FTS    | `license OR copying OR notice`                    |
 | **SBOM Generation Tools**                |        |        |          |        |                                                   |
 | Syft                                     | ✅     | ✅      | CI       | FTS    | `syft`                                            |
 | Trivy                                    | ✅     | ✅      | CI       | FTS    | `trivy`                                           |
 | CycloneDX Generator                      | ✅     | ✅      | CI       | FTS    | `cdxgen`                                          |
 | SPDX SBOM Generator                      | ✅     | ✅      | CI       | FTS    | `spdx-sbom-generator`                             |
-| Tern                                     | ✅     | ✅      | CI       | FTS    | `tern-tools OR tern`                              |
+| Tern                                     | ✅     | ✅      | CI       | FTS    | `tern`                                            |
 | Bomber                                   | ❌     | ❌      | CI       | FTS    | `devops-kung-fu bomber`                           |
 | OSS Review Toolkit (ORT)                 | ❌     | ❌      | CI       | FTS    | `oss-review-toolkit OR ort-project`               |
 | **Signing & Attestation Tools**          |        |        |          |        |                                                   |
@@ -40,9 +40,9 @@ This document provides a comprehensive catalog of all supply chain security tool
 | Anchore/Grype                            | ✅     | ✅      | CI       | FTS    | `anchore OR grype`                                |
 | Trivy                                    | ✅     | ✅      | CI       | FTS    | `trivy`                                           |
 | Clair                                    | ✅     | ✅      | CI       | FTS    | `clair`                                           |
-| Docker Scout                             | ✅     | ✅      | CI       | FTS    | `docker scout`                                    |
-| Twistlock                                | ✅     | ❌      | CI       | FTS    | `twistlock`                                       |
-| Aqua                                     | ✅     | ❌      | CI       | FTS    | `aqua`                                            |
+| Docker Scout                             | ✅     | ✅      | CI       | FTS    | `docker-scout`                                    |
+| Twistlock                                | ✅     | ✅      | CI       | FTS    | `twistlock`                                       |
+| Aqua                                     | ✅     | ✅      | CI       | FTS    | `aqua`                                            |
 | **Dependency Scanners**                  |        |        |          |        |                                                   |
 | Dependabot                               | ✅     | ✅      | CI       | FTS    | `dependabot`                                      |
 | Renovate                                 | ✅     | ✅      | CI       | FTS    | `renovate`                                        |
@@ -52,9 +52,9 @@ This document provides a comprehensive catalog of all supply chain security tool
 | CodeQL                                   | ✅     | ✅      | CI       | FTS    | `codeql`                                          |
 | Semgrep                                  | ✅     | ✅      | CI       | FTS    | `semgrep`                                         |
 | Bandit                                   | ✅     | ✅      | CI       | FTS    | `bandit`                                          |
-| ESLint Security                          | ✅     | ❌      | CI       | FTS    | `eslint-security`                                 |
+| ESLint Security                          | ✅     | ✅      | CI       | FTS    | `eslint-security`                                 |
 | **Build & Release Tools**                |        |        |          |        |                                                   |
-| GoReleaser                               | ✅     | ✅      | CI       | FTS    | `goreleaser`                                      |
+| GoReleaser                               | ✅     | ✅      | CI       | FTS    | `goreleaser-action`                               |
 | **License & Compliance**                 |        |        |          |        |                                                   |
 | Scancode                                 | ❌     | ❌      | CI       | FTS    | `scancode`                                        |
 | Licensee                                 | ❌     | ❌      | CI       | FTS    | `licensee`                                        |
@@ -67,7 +67,7 @@ This document provides a comprehensive catalog of all supply chain security tool
 - ✅ = Fully functional
 - ❌ = Not yet implemented
 - **Query** = Can detect in SQL queries
-- **Report** = Included in generated reports
+- **Report** = Included in the markdown report from `npm run report` (`src/ReportGenerator.ts`). Tool detections all appear in the tool adoption table, which is built from `agg_tool_summary`; artifact types appear in the SBOM and advanced-artifact tables
 - **Source** = Where the pattern is matched (Artifact = release assets, CI = workflow files)
 - **Method** = Search method used (FTS = Full-Text Search, REGEXP = Regular Expression)
 - **Pattern** = Search pattern used for detection
@@ -84,23 +84,24 @@ This document provides a comprehensive catalog of all supply chain security tool
 - **REGEXP (Regular Expression)**: Uses DuckDB's `REGEXP_MATCHES()` function
   - Best for: exact pattern matching, file extensions, structural patterns
   - Used when precision is critical (e.g., `.sig` vs `signature`)
-  - Syntax: `(?i)` = case-insensitive, `\\.` = literal dot, `$` = end of string
-  - Example: `REGEXP_MATCHES(name, '(?i)\\.sig$')`
+  - Syntax: `(?i)` = case-insensitive, `\.` = literal dot, `$` = end of string
+  - Example: `REGEXP_MATCHES(name, '(?i)\.sig$')`
 
 **Pattern Syntax by Method:**
 
 FTS Patterns:
 - Simple terms: `cosign`, `trivy`, `sbom`
 - Boolean OR: `spdx OR cyclonedx`, `anchore OR grype`
-- Boolean AND: `docker AND scout` (implicit with space in phrase search)
+- Multiple terms are OR'd by default (`match_bm25` is called without `conjunctive`), so `OR` is a readability convention
+- The default tokenizer splits on non-letters, so a hyphenated pattern like `docker-scout` or `goreleaser-action` is matched as separate terms and can over-match
 - Case-insensitive by default
 
 REGEXP Patterns:
 - `(?i)` = Case-insensitive flag
-- `\\.` = Literal dot/period (double backslash for SQL escaping)
+- `\.` = Literal dot/period (single backslash; the SQL strings are not escaped)
 - `$` = End of string anchor
 - `|` = Alternation (e.g., `sig|asc|pem`)
-- `\\b` = Word boundary (when needed for precision)
+- `\b` = Word boundary (when needed for precision)
 
 ---
 
@@ -233,7 +234,7 @@ CASE WHEN fts_main_base_release_assets.match_bm25(ra.id, 'cyclonedx OR cdx') IS 
 
 ### SWID Tags
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Software Identification (SWID) tags are an ISO/IEC 19770-2 standard for software identification. Used primarily in enterprise and government environments for software inventory and compliance.
 
@@ -333,7 +334,7 @@ fts_main_base_release_assets.match_bm25(ra.id, 'vex') IS NOT NULL
 
 ### SLSA Provenance
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Supply-chain Levels for Software Artifacts (SLSA) provenance attestations provide tamper-resistant evidence of build processes and artifact origins.
 
@@ -357,7 +358,7 @@ fts_main_base_release_assets.match_bm25(ra.id, 'provenance OR slsa OR intoto') I
 
 ### In-toto Links
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** In-toto link files record metadata about supply chain steps, including inputs, outputs, and commands executed. Part of the in-toto supply chain integrity framework.
 
@@ -381,7 +382,7 @@ fts_main_base_release_assets.match_bm25(ra.id, 'link') IS NOT NULL
 
 ### In-toto Layouts
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** In-toto layout files define the expected supply chain steps, their sequence, and the authorized functionaries. They serve as policies for supply chain verification.
 
@@ -405,7 +406,7 @@ fts_main_base_release_assets.match_bm25(ra.id, 'layout') IS NOT NULL
 
 ### Sigstore Bundles
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Sigstore bundles contain signatures, certificates, and transparency log entries in a single file. Part of the Sigstore ecosystem for keyless signing.
 
@@ -428,7 +429,7 @@ REGEXP_MATCHES(ra.name, '(?i)\.bundle$') as is_sigstore_bundle
 
 ### Container Attestations
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Attestations specifically for container images, including signatures and security assessments. Often created by container signing tools.
 
@@ -754,7 +755,7 @@ fts_main_base_workflows.match_bm25(w.id, 'slsa-github-generator') IS NOT NULL
 
 ### Notation
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Notation is a CNCF project for signing and verifying artifacts stored in OCI registries. Focuses on container image and artifact signing.
 
@@ -878,6 +879,8 @@ fts_main_base_workflows.match_bm25(w.id, 'anchore') IS NOT NULL
 fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL
 ```
 
+In the SQL, `anchore` is tagged `vulnerability-scanner` and `grype` is tagged `container-scanner`.
+
 **Generated Artifacts:**
 - Vulnerability reports (JSON, table, SARIF)
 - SBOM-enriched vulnerability data
@@ -904,6 +907,8 @@ fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL
 fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL
 ```
 
+In `02_workflow_tool_detection.sql`, `trivy` is tagged `sbom-generator` and `container-scanner`. There is no `vulnerability-scanner` row for it.
+
 **Generated Artifacts:**
 - Vulnerability reports (JSON, SARIF, table)
 - License compliance reports
@@ -922,7 +927,7 @@ fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL
 
 ### Clair
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Clair is an open source vulnerability scanner for container images. Originally created by CoreOS, now part of the Quay registry ecosystem.
 
@@ -949,7 +954,7 @@ fts_main_base_workflows.match_bm25(w.id, 'clair') IS NOT NULL
 
 ### Docker Scout
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Docker Scout is Docker's official security scanning service for container images. Provides vulnerability analysis and recommendations.
 
@@ -960,6 +965,8 @@ fts_main_base_workflows.match_bm25(w.id, 'clair') IS NOT NULL
 -- FTS-based detection for Docker Scout in workflow content
 fts_main_base_workflows.match_bm25(w.id, 'docker-scout') IS NOT NULL
 ```
+
+Tagged `container-scanner` in the SQL.
 
 **Generated Artifacts:**
 - Vulnerability reports
@@ -976,7 +983,7 @@ fts_main_base_workflows.match_bm25(w.id, 'docker-scout') IS NOT NULL
 
 ### Twistlock
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Twistlock (now part of Palo Alto Prisma Cloud) is an enterprise container security platform.
 
@@ -997,7 +1004,7 @@ fts_main_base_workflows.match_bm25(w.id, 'twistlock') IS NOT NULL
 
 ### Aqua
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** Aqua Security provides container and cloud security scanning capabilities.
 
@@ -1079,7 +1086,7 @@ fts_main_base_workflows.match_bm25(w.id, 'renovate') IS NOT NULL
 
 ### WhiteSource
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** WhiteSource (now Mend) is an enterprise software composition analysis platform for managing open source components.
 
@@ -1100,7 +1107,7 @@ fts_main_base_workflows.match_bm25(w.id, 'whitesource') IS NOT NULL
 
 ### FOSSA
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** FOSSA is an enterprise platform for open source management, license compliance, and vulnerability scanning.
 
@@ -1212,7 +1219,7 @@ fts_main_base_workflows.match_bm25(w.id, 'bandit') IS NOT NULL
 
 ### ESLint Security
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** ESLint security plugins that add security-focused linting rules for JavaScript and TypeScript code.
 
@@ -1235,7 +1242,7 @@ fts_main_base_workflows.match_bm25(w.id, 'eslint-security') IS NOT NULL
 
 ### GoReleaser
 
-**Status:** ✅ Implemented, ❌ Not Reported
+**Status:** ✅ Implemented, ✅ Reported
 
 **Description:** GoReleaser is a release automation tool for Go projects that builds, packages, and publishes releases with various integrations.
 
@@ -1380,23 +1387,24 @@ REGEXP_MATCHES(ra.name, '(?i)\.rego$') as is_rego_policy
 - **Artifact Detection:** `sql/models/01_artifact_analysis.sql`
 - **Tool Detection:** `sql/models/02_workflow_tool_detection.sql`
 - **Summary Aggregation:** `sql/models/03_repository_security_summary.sql`
-- **Report Generation:** `src/report.ts`
+- **Summary Views:** `sql/models/04_summary_views.sql`
+- **Report Generation:** `src/ReportGenerator.ts`
 
 ### Adding New Detections
 
 1. **For Artifacts:** Add detection pattern to `01_artifact_analysis.sql`
 2. **For Tools:** Add tool case to appropriate category in `02_workflow_tool_detection.sql`
 3. **For Aggregation:** Add boolean column to `03_repository_security_summary.sql`
-4. **For Reporting:** Add query and display logic to `src/report.ts`
+4. **For Reporting:** Tool detections show up automatically via `agg_tool_summary`. New artifact types need a column in `agg_advanced_artifacts` (`04_summary_views.sql`) and a row in `src/ReportGenerator.ts`
 
 ### Testing New Detections
 
 1. Run analysis: `npm run collect -- --input INPUT --queries GetRepoDataExtendedInfo --analyze`
 2. Check detection: `npm run analyze -- --database DB_PATH`
-3. Verify reporting: `npm run report -- --database DB_PATH --format markdown`
+3. Verify reporting: `npm run report -- --database DB_PATH`
 
 ---
 
-**Last Updated:** October 12, 2025
+**Last Updated:** November 26, 2026
 **Document Version:** 1.0
 **Next Review:** When adding new tool categories or major framework updates
