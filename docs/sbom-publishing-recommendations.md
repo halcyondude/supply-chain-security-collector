@@ -1,8 +1,10 @@
 # SBOM publishing recommendations for CNCF projects
 
-**Publish one signed, graph-shaped SBOM per shipped artifact, name it so its format is obvious, and say where it is in `SECURITY-INSIGHTS.yml`.**
+**On every tagged release, publish a project-wide SPDX JSON SBOM plus one per shipped artifact, with a dependency graph and a signature, name them so their format is obvious, and say where they are in `SECURITY-INSIGHTS.yml`.**
 
 This is the output the [Supply Chain Security Insights initiative](https://github.com/cncf/toc/issues/1709) said it would produce: "a set of recommendations for consistently publishing and discovering SBOMs for CNCF projects" (TAG-SC, 2026-01-28). It is written for TAG Security & Compliance and project maintainers, as input to the "SBOM and SLSA Build Provenance generation" section of [cncf/toc#2186](https://github.com/cncf/toc/issues/2186).
+
+Alignment: CNCF's own SBOM pipeline, [cncf/sbom](https://github.com/cncf/sbom/blob/e74ea3b262c828a0c26664a3f037dc91b5035010/README.md#best-practice-for-projects-publishing-their-own-sbom), imports a project's release SBOM in preference to its own scan when it meets that pipeline's best-practice rules. These recommendations are written to satisfy those rules; where they add something (per-artifact SBOMs, signing, Security Insights), it is additive, not a substitute.
 
 Data: the collector's CNCF landscape run (236 primary repos, 4,169 releases, 39,304 release assets, published as Parquet in [`site/public/data`](../site/public/data)). **Every number is a lower bound**: we see GitHub release assets and Actions workflow files only, not OCI registries, the GitHub Attestations API, package registries or non-GitHub CI ([known gaps](presentations/2026-04-08-tag-sc/known-gaps-analysis.md)).
 
@@ -38,11 +40,11 @@ Two things the data cannot show, recorded in the [initiative's final report](htt
 - **Why:** 22 suffixes are in use (`.sbom`, `-sbom.spdx`, `.spdx-sbom.json`, `.tar.gz.sbom`...). In 55% of files the format can only be found by downloading and parsing.
 - **Minimum:** `kubewarden-1.4.0.spdx.json`, `kubewarden-1.4.0.cdx.json`.
 
-### 3. One SBOM per shipped artifact, named after it, never archived
+### 3. A project-wide SBOM, plus one per shipped artifact, never archived
 
-- **What:** for each binary, archive or image you ship, publish `<artifact-file-name>.spdx.json` next to it. Don't tar SBOMs up.
-- **Why:** 22 of 38 publishers already ship more than one SBOM per release; the ones that do it best (e.g. NATS, 14 per release) pair each SBOM with its artifact by name. Five repos ship `sbom.tar.gz`, which a collector cannot read without downloading and unpacking it, and then cannot tie back to an artifact.
-- **Minimum:** `foo_1.4.0_linux_amd64.tar.gz` → `foo_1.4.0_linux_amd64.tar.gz.spdx.json`. With GoReleaser (its default name is `<artifact>.sbom.json`, the most common suffix we saw):
+- **What:** attach one project-wide SPDX 2.3 JSON document describing the release as a whole (source tree or source tarball), with no OS/arch tokens in its name. In addition, for each binary, archive or image you ship, publish `<artifact-file-name>.spdx.json` next to it. Don't tar SBOMs up.
+- **Why:** 22 of 38 publishers already ship more than one SBOM per release; the ones that do it best (e.g. NATS, 14 per release) pair each SBOM with its artifact by name. Five repos ship `sbom.tar.gz`, which a collector cannot read without downloading and unpacking it, and then cannot tie back to an artifact. cncf/sbom imports only the largest project-wide document per release, tells it apart from per-binary files by the absence of OS/arch tokens, and ignores `sbom.tar.gz`, tag-value `.spdx` and XML ([rules 1, 2, 6](https://github.com/cncf/sbom/blob/e74ea3b262c828a0c26664a3f037dc91b5035010/README.md#best-practice-for-projects-publishing-their-own-sbom)); per-artifact SBOMs alone leave the project being re-scanned.
+- **Minimum:** `foo_1.4.0_sbom.spdx.json` (project-wide, as `fluxcd/flux2` does), plus `foo_1.4.0_linux_amd64.tar.gz` → `foo_1.4.0_linux_amd64.tar.gz.spdx.json`. With GoReleaser for the per-artifact files (its default name is `<artifact>.sbom.json`, the most common suffix we saw):
 
   ```yaml
   sboms:
@@ -54,7 +56,7 @@ Two things the data cannot show, recorded in the [initiative's final report](htt
 
 - **What:** the SBOM records who depends on whom: SPDX `relationships` (`DEPENDS_ON`, `CONTAINS`) or the CycloneDX `dependencies` array.
 - **Why:** this was blocking problem 1 in the final report. The initiative's two target questions (CVE impact and dependency "blast radius", [#1873](https://github.com/cncf/toc/issues/1873)) need edges. A flat list answers "is X present", not "what breaks if X changes".
-- **Minimum:** generate from the build (module graph or lock file), not from a scan of the finished binary alone; check in CI that the file has edges beyond the root `DESCRIBES`:
+- **Minimum:** generate from the source tree or build (module graph or lock file), not from a scan of the finished binary alone. Include a `DESCRIBES` root (documents without one are dropped by cncf/sbom), `licenseDeclared` as well as `licenseConcluded`, per-package checksums, and build/test dependencies typed as `BUILD_DEPENDENCY_OF` / `TEST_DEPENDENCY_OF` rather than dropped ([rules 3, 5](https://github.com/cncf/sbom/blob/e74ea3b262c828a0c26664a3f037dc91b5035010/README.md#best-practice-for-projects-publishing-their-own-sbom)). Check in CI that the file has edges beyond the root:
 
   ```bash
   jq '[.relationships[] | select(.relationshipType=="DEPENDS_ON")] | length' foo.spdx.json   # > 0
@@ -92,8 +94,8 @@ Two things the data cannot show, recorded in the [initiative's final report](htt
 
 ### 7. For images, attach the SBOM to the image and say so
 
-- **What:** attach the image SBOM to the image digest in the registry, and list the registry under `repository.release.distribution-points` in Security Insights.
-- **Why:** the largest projects publish this way (Kubernetes at `sbom.k8s.io` and `registry.k8s.io`, metal3 on quay.io) and are invisible to a GitHub-only collector ([known gaps](presentations/2026-04-08-tag-sc/known-gaps-analysis.md)). Without the declaration, a collector has to guess registries.
+- **What:** in addition to the GitHub release assets (recommendation 3), attach the image SBOM to the image digest in the registry, and list the registry under `repository.release.distribution-points` in Security Insights.
+- **Why:** the largest projects publish this way (Kubernetes at `sbom.k8s.io` and `registry.k8s.io`, metal3 on quay.io) and are invisible to a GitHub-only collector ([known gaps](presentations/2026-04-08-tag-sc/known-gaps-analysis.md)). Without the declaration, a collector has to guess registries. A registry-only SBOM is not enough: cncf/sbom reads `releases/tags/<tag>` only ([rule 7](https://github.com/cncf/sbom/blob/e74ea3b262c828a0c26664a3f037dc91b5035010/README.md#best-practice-for-projects-publishing-their-own-sbom)).
 - **Minimum:** `cosign attest --type spdxjson --predicate img.spdx.json <image>@sha256:<digest>`; consumers find it with `cosign tree` or `oras discover`.
 
 ## Discovery contract
@@ -101,7 +103,7 @@ Two things the data cannot show, recorded in the [initiative's final report](htt
 What a collector should do, in order, and what a project can rely on being found if it follows the recommendations above.
 
 1. **Read Security Insights.** Look for `SECURITY-INSIGHTS.yml` in the repo root, then `.github/`, matching case-insensitively (both spellings occur). Take SBOM entries from `repository.release.attestations[]` whose `predicate-uri` is `https://spdx.dev/Document` or `https://cyclonedx.org/bom` (2.x), or `dependencies.sbom[].sbom-file` (1.0.0). Note `distribution-points` for step 4.
-2. **Scan release assets** of the latest release, then older ones. Match `\.(spdx|cdx)\.json$` first; fall back to `\.(spdx|cyclonedx|sbom)(\.json)?$`.
+2. **Scan release assets** of the latest release, then older ones. Match `\.(spdx|cdx)\.json$` first; fall back to cncf/sbom's rule, a name containing `spdx`, `cdx`, `cyclonedx` or `bom` and ending in `.json`, so both pipelines see the same files. Treat a name with no OS/arch token as the project-wide document.
 3. **Sniff, don't trust names.** Fetch the first bytes: SPDX JSON has `spdxVersion`, CycloneDX JSON has `"bomFormat": "CycloneDX"`. Record format, spec version, package count and edge count (recommendation 4).
 4. **Ask the registry** for each image in `distribution-points`: OCI referrers or cosign attestations on the digest.
 5. **Ask GitHub** for artifact attestations on the release artifacts.
