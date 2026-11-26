@@ -20,6 +20,8 @@ interface GraphBuildResult {
     graphDbPath: string;
     nodeCount: number;
     relCount: number;
+    /** Tables whose load failed (missing source tables are skipped, not failures). */
+    failures: string[];
 }
 
 /**
@@ -31,6 +33,7 @@ export class GraphBuilder {
     private graphDbPath: string;
     private duckDb?: DuckDBInstance;
     private duckCon?: DuckDBConnection;
+    private failures: string[] = [];
 
     constructor(duckDbPath: string, graphDbPath?: string) {
         this.duckDbPath = duckDbPath;
@@ -57,33 +60,19 @@ export class GraphBuilder {
     }
 
     /**
-     * Query DuckDB and return rows as arrays
+     * Export a source query to a temp Parquet file and return its path and row count.
+     *
+     * Parquet (not CSV) is the bulk-load format: values carry their types, and
+     * text with quotes, commas or newlines (e.g. release names) needs no escaping.
+     * Column order is preserved, which LadybugDB uses to map node properties and
+     * the FROM/TO keys of relationship tables.
      */
-    private async queryDuck(sql: string): Promise<unknown[][]> {
-        const result = await this.duckCon!.run(sql);
-        return await result.getRows();
-    }
-
-    /**
-     * Write rows to a temp CSV, return the path.
-     * LadybugDB COPY FROM CSV is the fastest bulk load path.
-     */
-    private writeTempCsv(headers: string[], rows: unknown[][]): string {
-        const tmpPath = path.join(os.tmpdir(), `lbug_${Date.now()}_${Math.random().toString(36).slice(2)}.csv`);
-        const escapeCsv = (val: unknown): string => {
-            if (val === null || val === undefined) return '';
-            const s = String(val);
-            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-                return '"' + s.replace(/"/g, '""') + '"';
-            }
-            return s;
-        };
-        const lines = [headers.map(escapeCsv).join(',')];
-        for (const row of rows) {
-            lines.push(row.map(escapeCsv).join(','));
-        }
-        fs.writeFileSync(tmpPath, lines.join('\n'), 'utf-8');
-        return tmpPath;
+    private async exportTempParquet(sourceQuery: string): Promise<{ path: string; rows: number }> {
+        const tmpPath = path.join(os.tmpdir(), `lbug_${Date.now()}_${Math.random().toString(36).slice(2)}.parquet`);
+        const result = await this.duckCon!.run(
+            `COPY (${sourceQuery}) TO '${tmpPath.replace(/'/g, "''")}' (FORMAT PARQUET)`
+        );
+        return { path: tmpPath, rows: Number(result.rowsChanged) };
     }
 
     /**
@@ -93,6 +82,7 @@ export class GraphBuilder {
         await this.connectDuck();
         let totalNodes = 0;
         let totalRels = 0;
+        this.failures = [];
 
         // Remove existing graph DB directory (LadybugDB uses a directory)
         if (fs.existsSync(this.graphDbPath)) {
@@ -103,22 +93,31 @@ export class GraphBuilder {
 
         const graphDb = new lbug.Database(this.graphDbPath);
         const graphCon = new lbug.Connection(graphDb);
+        try {
+            // Create node tables and load data
+            for (const nodeDef of NODE_TABLES) {
+                totalNodes += await this.createAndLoadNodeTable(graphCon, nodeDef);
+            }
 
-        // Create node tables and load data
-        for (const nodeDef of NODE_TABLES) {
-            const count = await this.createAndLoadNodeTable(graphCon, nodeDef);
-            totalNodes += count;
+            // Create relationship tables and load data
+            for (const relDef of REL_TABLES) {
+                totalRels += await this.createAndLoadRelTable(graphCon, relDef);
+            }
+        } finally {
+            // Release the on-disk lock so the graph can be reopened (e.g. by graph:query).
+            await graphCon.close();
+            await graphDb.close();
         }
 
-        // Create relationship tables and load data
-        for (const relDef of REL_TABLES) {
-            const count = await this.createAndLoadRelTable(graphCon, relDef);
-            totalRels += count;
+        const result = { graphDbPath: this.graphDbPath, nodeCount: totalNodes, relCount: totalRels, failures: [...this.failures] };
+        if (result.failures.length > 0) {
+            // A partial graph answers Cypher queries wrongly (e.g. every project looks unsigned
+            // when HAS_ASSET is empty), so a failed load must fail the build.
+            throw new Error(`failed to load ${result.failures.join(', ')} (${totalNodes} nodes, ${totalRels} relationships loaded)`);
         }
 
         console.log(chalk.green.bold(`\n✅ Graph built: ${totalNodes} nodes, ${totalRels} relationships\n`));
-
-        return { graphDbPath: this.graphDbPath, nodeCount: totalNodes, relCount: totalRels };
+        return result;
     }
 
     private async createAndLoadNodeTable(graphCon: LbugConnection, def: NodeTableDef): Promise<number> {
@@ -139,27 +138,22 @@ export class GraphBuilder {
 
             await graphCon.query(`CREATE NODE TABLE IF NOT EXISTS ${def.name}(${colDefs})`);
 
-            // Extract data from DuckDB
-            const rows = await this.queryDuck(def.sourceQuery);
-            if (rows.length === 0) {
-                console.log(chalk.gray(`  ⓘ ${def.name}: 0 nodes (empty source)`));
-                return 0;
-            }
-
-            // Write to temp CSV and COPY into graph
-            const headers = def.columns.map(c => c.name);
-            const tmpCsv = this.writeTempCsv(headers, rows);
+            const tmp = await this.exportTempParquet(def.sourceQuery);
             try {
-                await graphCon.query(`COPY ${def.name} FROM '${tmpCsv}' (header=true)`);
-                console.log(chalk.green(`  ✓ ${def.name}: ${rows.length} nodes`));
+                if (tmp.rows === 0) {
+                    console.log(chalk.gray(`  ⓘ ${def.name}: 0 nodes (empty source)`));
+                    return 0;
+                }
+                await graphCon.query(`COPY ${def.name} FROM '${tmp.path}'`);
+                console.log(chalk.green(`  ✓ ${def.name}: ${tmp.rows} nodes`));
+                return tmp.rows;
             } finally {
-                fs.unlinkSync(tmpCsv);
+                fs.rmSync(tmp.path, { force: true });
             }
-
-            return rows.length;
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            console.log(chalk.yellow(`  ⚠ ${def.name}: ${msg.substring(0, 120)}`));
+            console.log(chalk.red(`  ✗ ${def.name}: ${msg.substring(0, 200)}`));
+            this.failures.push(def.name);
             return 0;
         }
     }
@@ -182,27 +176,22 @@ export class GraphBuilder {
                 `CREATE REL TABLE IF NOT EXISTS ${def.name}(FROM ${def.from} TO ${def.to}${extraCols})`
             );
 
-            // Extract relationship data from DuckDB
-            const rows = await this.queryDuck(def.sourceQuery);
-            if (rows.length === 0) {
-                console.log(chalk.gray(`  ⓘ ${def.name}: 0 relationships (empty source)`));
-                return 0;
-            }
-
-            // Write to temp CSV and COPY
-            const headers = ['from', 'to', ...def.columns.map(c => c.name)];
-            const tmpCsv = this.writeTempCsv(headers, rows);
+            const tmp = await this.exportTempParquet(def.sourceQuery);
             try {
-                await graphCon.query(`COPY ${def.name} FROM '${tmpCsv}' (header=true)`);
-                console.log(chalk.green(`  ✓ ${def.name}: ${rows.length} relationships`));
+                if (tmp.rows === 0) {
+                    console.log(chalk.gray(`  ⓘ ${def.name}: 0 relationships (empty source)`));
+                    return 0;
+                }
+                await graphCon.query(`COPY ${def.name} FROM '${tmp.path}'`);
+                console.log(chalk.green(`  ✓ ${def.name}: ${tmp.rows} relationships`));
+                return tmp.rows;
             } finally {
-                fs.unlinkSync(tmpCsv);
+                fs.rmSync(tmp.path, { force: true });
             }
-
-            return rows.length;
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            console.log(chalk.yellow(`  ⚠ ${def.name}: ${msg.substring(0, 120)}`));
+            console.log(chalk.red(`  ✗ ${def.name}: ${msg.substring(0, 200)}`));
+            this.failures.push(def.name);
             return 0;
         }
     }
