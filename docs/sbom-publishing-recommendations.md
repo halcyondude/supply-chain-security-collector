@@ -113,7 +113,7 @@ What a collector should do, in order, and what a project can rely on being found
 ```mermaid
 flowchart LR
     subgraph project["project release pipeline"]
-        B["build artifacts"] --> S["generate SBOM<br/>per artifact, with graph"]
+        B["build artifacts"] --> S["generate SBOMs<br/>project-wide + per artifact,<br/>with graph"]
         S --> G["sign SBOM<br/>cosign / attest-sbom"]
         G --> R["GitHub release<br/>&lt;artifact&gt;.spdx.json<br/>+ .sigstore.json"]
         G --> O["OCI registry<br/>attestation on image digest"]
