@@ -1,8 +1,7 @@
 // This script fetches the CNCF landscape YAML and generates input files for Sandbox, Incubation, and Graduated projects.
 // It is intended to be run with: npx ts-node scripts/fetch-cncf-landscape.ts
-// Requires: node-fetch and yaml (install with npm install node-fetch@2 yaml)
+// Requires: Node 22+ (global fetch) and yaml
 
-import fetch from 'node-fetch';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';

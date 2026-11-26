@@ -1,5 +1,4 @@
 {
-
   "name": "supply-chain-security-collector",
   "version": "1.0.0",
   "description": "Generic GraphQL data collection tool with DuckDB storage and Parquet export",
@@ -39,31 +38,30 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@duckdb/node-api": "^1.4.1-r.1",
-    "apache-arrow": "^21.1.0",
-    "chalk": "4.1.2",
-    "cli-table3": "^0.6.5",
-    "commander": "^14.0.1",
-    "dotenv": "^16.3.1",
-    "duckdb": "^1.1.3",
-    "graphql": "^16.8.1",
+    "@duckdb/node-api": "1.5.6-r.2",
+    "chalk": "^6.0.1",
+    "commander": "^15.1.0",
+    "dotenv": "^18.0.10",
+    "graphql": "^16.15.0",
     "graphql-request": "^6.1.0",
     "lbug": "^0.14.3",
-    "node-cache": "^5.1.2",
-    "yaml": "^2.8.3"
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "5.0.0",
-    "@graphql-codegen/client-preset": "4.1.0",
-    "@graphql-codegen/typescript": "4.0.1",
-    "@graphql-codegen/typescript-graphql-request": "^7.0.0",
-    "@graphql-codegen/typescript-operations": "4.0.1",
-    "@types/node": "^20.8.9",
-    "@types/node-fetch": "^2.6.13",
-    "@typescript-eslint/eslint-plugin": "^8.43.0",
-    "@typescript-eslint/parser": "^8.43.0",
-    "eslint": "^9.35.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^5.2.2"
+    "@graphql-codegen/cli": "^8.0.0",
+    "@graphql-codegen/client-preset": "^7.0.0",
+    "@graphql-typed-document-node/core": "^3.2.0",
+    "@types/node": "^22.20.5",
+    "@typescript-eslint/eslint-plugin": "^8.72.2",
+    "@typescript-eslint/parser": "^8.72.2",
+    "eslint": "^10.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "~6.0.3"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "overrides": {
+    "minimatch": "^11.0.8"
   }
 }
