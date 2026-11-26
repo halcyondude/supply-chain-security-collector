@@ -1,0 +1,21 @@
+query GetDotProjectData($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    __typename
+    id
+    nameWithOwner
+    projectYaml: object(expression: "HEAD:project.yaml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+    maintainersYaml: object(expression: "HEAD:maintainers.yaml") {
+      ... on Blob {
+        __typename
+        id
+        text
+      }
+    }
+  }
+}

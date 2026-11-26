@@ -7,14 +7,21 @@ import chalk from 'chalk';
 import type { GetRepoDataArtifactsQuery, GetRepoDataExtendedInfoQuery } from './generated/graphql';
 import type { OrgRepo, ProjectMetadata, RepositoryTarget } from './config';
 import { installAndLoadExtensions } from './duckdb-extensions';
-import { 
-    normalizeGetRepoDataArtifacts, 
-    getNormalizationStats as getArtifactsStats 
+import {
+    normalizeGetRepoDataArtifacts,
+    getNormalizationStats as getArtifactsStats
 } from './normalizers/GetRepoDataArtifactsNormalizer';
-import { 
-    normalizeGetRepoDataExtendedInfo, 
-    getNormalizationStats as getExtendedStats 
+import {
+    normalizeGetRepoDataExtendedInfo,
+    getNormalizationStats as getExtendedStats
 } from './normalizers/GetRepoDataExtendedInfoNormalizer';
+import {
+    parseDotProject,
+    mergeDotProjectResults,
+    getDotProjectStats,
+    type DotProjectNormalized,
+} from './normalizers/DotProjectNormalizer';
+import type { GetDotProjectDataResponse } from './api';
 
 /**
  * Write artifacts to database and Parquet files
@@ -667,6 +674,169 @@ export async function writeOrgRepoArtifacts(
             con.closeSync();
         } catch (error) {
             console.warn('Warning: Could not properly close database connection:', error);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// .project data writer
+// ---------------------------------------------------------------------------
+
+/**
+ * DuckDB table schemas for empty .project tables.
+ * Mirrors the DotProjectNormalizer record shapes exactly.
+ */
+const DOT_PROJECT_TABLE_SCHEMAS = {
+    dot_project: `
+        org TEXT NOT NULL,
+        source_url TEXT NOT NULL,
+        schema_version TEXT,
+        slug TEXT,
+        name TEXT,
+        description TEXT,
+        type TEXT,
+        project_lead TEXT,
+        repository_count INTEGER,
+        website TEXT,
+        current_maturity TEXT,
+        current_maturity_date TEXT,
+        audit_count INTEGER,
+        security_policy_path TEXT,
+        security_threat_model_path TEXT,
+        security_contact_email TEXT,
+        security_advisory_url TEXT,
+        landscape_category TEXT,
+        landscape_subcategory TEXT,
+        package_managers_json TEXT,
+        fetched_at TIMESTAMP
+    `,
+    dot_project_repositories: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        repo_url TEXT NOT NULL,
+        repo_owner TEXT,
+        repo_name TEXT
+    `,
+    dot_project_maturity_log: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        phase TEXT,
+        date TEXT,
+        issue TEXT
+    `,
+    dot_project_audits: `
+        org TEXT NOT NULL,
+        position INTEGER NOT NULL,
+        date TEXT,
+        type TEXT,
+        url TEXT
+    `,
+} as const;
+
+/**
+ * Processes GetDotProjectData GraphQL responses and writes four .project tables
+ * to an existing DuckDB database.  Follows the same temp-JSON + read_json()
+ * pattern used throughout ArtifactWriter.
+ *
+ * Tables written:
+ *   dot_project              — one row per org that has a .project repo
+ *   dot_project_repositories — one row per URL in repositories[]
+ *   dot_project_maturity_log — one row per maturity_log entry
+ *   dot_project_audits       — one row per audits[] entry
+ *
+ * Called from neo.ts after the main scan is complete (analogous to writeOrgRepoArtifacts).
+ *
+ * @param dotProjectResponses - Raw GraphQL responses from fetchDotProjectData (non-null only)
+ * @param outputDir           - Timestamped run directory that already contains database.db
+ */
+export async function writeDotProjectArtifacts(
+    dotProjectResponses: Array<{ org: string; data: GetDotProjectDataResponse }>,
+    outputDir: string
+): Promise<void> {
+    const dbPath = path.join(outputDir, 'database.db');
+    const db = await DuckDBInstance.create(dbPath);
+    const con = await db.connect();
+
+    try {
+        await installAndLoadExtensions(con);
+
+        console.log(chalk.cyan('\n📋 Processing .project data...'));
+
+        // Parse and normalize all responses
+        const parseResults = dotProjectResponses.map(({ org, data }) => {
+            const repo = data.repository;
+            if (!repo) return null;
+
+            const projectYamlBlob = repo.projectYaml;
+            if (
+                !projectYamlBlob ||
+                projectYamlBlob.__typename !== 'Blob' ||
+                !projectYamlBlob.text
+            ) {
+                // Repo exists but no project.yaml — unusual, skip
+                console.log(chalk.gray(`  ○ ${org}/.project: repo exists but no project.yaml`));
+                return null;
+            }
+
+            const sourceUrl = `https://github.com/${repo.nameWithOwner}/blob/HEAD/project.yaml`;
+            const result = parseDotProject(org, projectYamlBlob.text, sourceUrl);
+
+            if (!result) {
+                console.log(chalk.yellow(`  ⚠ ${org}/.project: project.yaml parse error`));
+                return null;
+            }
+
+            const maturity = result.dot_project[0]?.current_maturity ?? 'unknown';
+            console.log(chalk.green(`  ✓ ${org}/.project: ${maturity} (${result.dot_project_repositories.length} repos)`));
+            return result;
+        });
+
+        const normalized: DotProjectNormalized = mergeDotProjectResults(parseResults);
+        console.log(chalk.gray('\n' + getDotProjectStats(normalized)));
+
+        // Helper: write one table using temp-JSON + read_json() (or explicit schema if empty)
+        const writeTable = async (
+            tableName: keyof typeof DOT_PROJECT_TABLE_SCHEMAS,
+            data: unknown[]
+        ) => {
+            if (data.length > 0) {
+                const tempPath = path.join(outputDir, `temp_${tableName}.json`);
+                fs.writeFileSync(tempPath, JSON.stringify(data));
+                await con.run(`
+                    CREATE TABLE ${tableName} AS
+                    SELECT * FROM read_json('${tempPath}', format='array', auto_detect=true, union_by_name=true)
+                `);
+                fs.unlinkSync(tempPath);
+            } else {
+                await con.run(`CREATE TABLE ${tableName} (${DOT_PROJECT_TABLE_SCHEMAS[tableName]})`);
+            }
+            console.log(`  ✅ Created table: ${tableName} (${data.length} rows)`);
+        };
+
+        await writeTable('dot_project', normalized.dot_project);
+        await writeTable('dot_project_repositories', normalized.dot_project_repositories);
+        await writeTable('dot_project_maturity_log', normalized.dot_project_maturity_log);
+        await writeTable('dot_project_audits', normalized.dot_project_audits);
+
+        // Export new tables to Parquet (appends alongside existing parquet/ files)
+        const parquetDir = path.join(outputDir, 'parquet');
+        fs.mkdirSync(parquetDir, { recursive: true });
+
+        for (const tableName of Object.keys(DOT_PROJECT_TABLE_SCHEMAS) as Array<keyof typeof DOT_PROJECT_TABLE_SCHEMAS>) {
+            const parquetPath = path.join(parquetDir, `${tableName}.parquet`);
+            await con.run(`
+                COPY ${tableName} TO '${parquetPath}'
+                (FORMAT PARQUET, COMPRESSION 'ZSTD', ROW_GROUP_SIZE 100000)
+            `);
+        }
+        console.log(chalk.green('  ✓ Exported .project tables to Parquet'));
+
+        await con.run('CHECKPOINT');
+    } finally {
+        try {
+            con.closeSync();
+        } catch (error) {
+            console.warn('Warning: Could not properly close .project database connection:', error);
         }
     }
 }
