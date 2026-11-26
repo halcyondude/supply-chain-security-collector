@@ -1,167 +1,72 @@
 -- ============================================================================
 -- Workflow Tool Detection Model
 -- ============================================================================
--- Analyzes GitHub Actions workflow files to detect CI/CD security tools:
--- - SBOM generators (Syft, Trivy, CycloneDX Generator)
--- - Signing tools (Cosign, Sigstore, SLSA Generator)
--- - GoReleaser
--- - Security scanners (vulnerability, dependency, code, container)
--- 
--- Uses Full-Text Search (FTS) for efficient tool detection in workflow content.
--- 
--- Depends on: base_workflows table, FTS index on content
--- Creates: agg_workflow_tools table
+-- Detects CI/CD security tools referenced in GitHub Actions workflow YAML.
+--
+-- Detection is data-driven: the catalog below lists each tool once, with the
+-- FTS terms that identify it. Every term must appear in the workflow
+-- content (conjunctive match), which matters because the FTS tokenizer splits
+-- hyphenated names: 'docker-scout' becomes 'docker' + 'scout', and an OR match
+-- would flag every workflow that mentions docker.
+--
+-- A workflow can match several tools in a category (e.g. syft and trivy);
+-- each match is its own row.
+--
+-- To add a tool: add a line to the catalog. agg_repo_summary only exposes
+-- uses_<tool> columns for tools listed in 03_repository_security_summary.sql.
+--
+-- Depends on: base_workflows, base_repositories, FTS index on base_workflows
+-- Creates: agg_workflow_tools
 -- ============================================================================
 
+-- One FTS lookup per catalog row. The terms must be a constant at each call
+-- site: passing them as a column (e.g. CROSS JOIN a catalog table) turns
+-- match_bm25 into a per-row correlated subquery and takes minutes, not ms.
+CREATE OR REPLACE TEMP MACRO workflow_tool_matches(category, tool, terms) AS TABLE
+    SELECT
+        w.id AS workflow_id,
+        w.repository_id,
+        SPLIT_PART(repo.nameWithOwner, '/', 1) AS owner,
+        repo.name AS repo,
+        repo.nameWithOwner AS nameWithOwner,
+        w.filename AS workflow_name,
+        category AS tool_category,
+        tool AS tool_name
+    FROM base_workflows w
+    JOIN base_repositories repo ON w.repository_id = repo.id
+    WHERE fts_main_base_workflows.match_bm25(w.id, terms, fields := 'content', conjunctive := 1) IS NOT NULL;
+
+-- Tool catalog: (tool_category, tool_name, FTS terms that must all appear).
 CREATE OR REPLACE TABLE agg_workflow_tools AS
--- SBOM Generators
-SELECT 
-    w.id as workflow_id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename as workflow_name,
-    'sbom-generator' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'syft') IS NOT NULL THEN 'syft'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL THEN 'trivy'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'cdxgen') IS NOT NULL THEN 'cdxgen'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'spdx-sbom-generator') IS NOT NULL THEN 'spdx-sbom-generator'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'tern') IS NOT NULL THEN 'tern'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'syft OR trivy OR cdxgen OR spdx-sbom-generator OR tern') IS NOT NULL
-
-UNION ALL
-
--- Signing Tools
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'signer' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'cosign') IS NOT NULL THEN 'cosign'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'sigstore') IS NOT NULL THEN 'sigstore'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'slsa-github-generator') IS NOT NULL THEN 'slsa-github-generator'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'notation') IS NOT NULL THEN 'notation'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'notaryproject') IS NOT NULL THEN 'notation'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'cosign OR sigstore OR slsa-github-generator OR notation OR notaryproject') IS NOT NULL
-
-UNION ALL
-
--- GoReleaser
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'goreleaser' as tool_category,
-    'goreleaser' as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'goreleaser-action') IS NOT NULL
-
-UNION ALL
-
--- Vulnerability Scanners
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'vulnerability-scanner' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'snyk') IS NOT NULL THEN 'snyk'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'anchore') IS NOT NULL THEN 'anchore'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'twistlock') IS NOT NULL THEN 'twistlock'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'aqua') IS NOT NULL THEN 'aqua'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'clair') IS NOT NULL THEN 'clair'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'snyk OR anchore OR twistlock OR aqua OR clair') IS NOT NULL
-
-UNION ALL
-
--- Dependency Scanners
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'dependency-scanner' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'dependabot') IS NOT NULL THEN 'dependabot'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'renovate') IS NOT NULL THEN 'renovate'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'whitesource') IS NOT NULL THEN 'whitesource'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'fossa') IS NOT NULL THEN 'fossa'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'dependabot OR renovate OR whitesource OR fossa') IS NOT NULL
-
-UNION ALL
-
--- Code Scanners
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'code-scanner' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'codeql') IS NOT NULL THEN 'codeql'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'semgrep') IS NOT NULL THEN 'semgrep'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'bandit') IS NOT NULL THEN 'bandit'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'eslint-security') IS NOT NULL THEN 'eslint-security'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'codeql OR semgrep OR bandit OR eslint-security') IS NOT NULL
-
-UNION ALL
-
--- Container Scanners
-SELECT 
-    w.id,
-    w.repository_id,
-    -- Repository identification
-    SPLIT_PART(repo.nameWithOwner, '/', 1) as owner,
-    repo.name as repo,
-    repo.nameWithOwner as nameWithOwner,
-    w.filename,
-    'container-scanner' as tool_category,
-    CASE 
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'docker-scout') IS NOT NULL THEN 'docker-scout'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'grype') IS NOT NULL THEN 'grype'
-        WHEN fts_main_base_workflows.match_bm25(w.id, 'trivy') IS NOT NULL THEN 'trivy'
-    END as tool_name
-FROM base_workflows w
-JOIN base_repositories repo ON w.repository_id = repo.id
-WHERE fts_main_base_workflows.match_bm25(w.id, 'docker-scout OR grype OR trivy') IS NOT NULL;
+SELECT DISTINCT * FROM (
+              FROM workflow_tool_matches('sbom-generator',        'syft',                  'syft')
+    UNION ALL FROM workflow_tool_matches('sbom-generator',        'trivy',                 'trivy')
+    UNION ALL FROM workflow_tool_matches('sbom-generator',        'cdxgen',                'cdxgen')
+    UNION ALL FROM workflow_tool_matches('sbom-generator',        'spdx-sbom-generator',   'spdx sbom generator')
+    UNION ALL FROM workflow_tool_matches('sbom-generator',        'tern',                  'tern')
+    UNION ALL FROM workflow_tool_matches('signer',                'cosign',                'cosign')
+    UNION ALL FROM workflow_tool_matches('signer',                'sigstore',              'sigstore')
+    UNION ALL FROM workflow_tool_matches('signer',                'slsa-github-generator', 'slsa github generator')
+    UNION ALL FROM workflow_tool_matches('signer',                'notation',              'notation')
+    UNION ALL FROM workflow_tool_matches('signer',                'notation',              'notaryproject')
+    UNION ALL FROM workflow_tool_matches('goreleaser',            'goreleaser',            'goreleaser')
+    UNION ALL FROM workflow_tool_matches('vulnerability-scanner', 'snyk',                  'snyk')
+    UNION ALL FROM workflow_tool_matches('vulnerability-scanner', 'anchore',               'anchore')
+    UNION ALL FROM workflow_tool_matches('vulnerability-scanner', 'twistlock',             'twistlock')
+    UNION ALL FROM workflow_tool_matches('vulnerability-scanner', 'aqua',                  'aqua')
+    UNION ALL FROM workflow_tool_matches('vulnerability-scanner', 'clair',                 'clair')
+    UNION ALL FROM workflow_tool_matches('dependency-scanner',    'dependabot',            'dependabot')
+    UNION ALL FROM workflow_tool_matches('dependency-scanner',    'renovate',              'renovate')
+    UNION ALL FROM workflow_tool_matches('dependency-scanner',    'whitesource',           'whitesource')
+    UNION ALL FROM workflow_tool_matches('dependency-scanner',    'fossa',                 'fossa')
+    UNION ALL FROM workflow_tool_matches('code-scanner',          'codeql',                'codeql')
+    UNION ALL FROM workflow_tool_matches('code-scanner',          'semgrep',               'semgrep')
+    UNION ALL FROM workflow_tool_matches('code-scanner',          'bandit',                'bandit')
+    UNION ALL FROM workflow_tool_matches('code-scanner',          'eslint-security',       'eslint plugin security')
+    UNION ALL FROM workflow_tool_matches('container-scanner',     'docker-scout',          'docker scout')
+    UNION ALL FROM workflow_tool_matches('container-scanner',     'grype',                 'grype')
+    UNION ALL FROM workflow_tool_matches('container-scanner',     'trivy',                 'trivy')
+);
 
 -- Create indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_workflow_repository ON agg_workflow_tools(repository_id);
