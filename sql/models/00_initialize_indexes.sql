@@ -15,12 +15,11 @@
 INSTALL fts;
 LOAD fts;
 
--- Full-Text Search Index on workflow content
--- Enables fast searching of workflow YAML for tool names, commands, etc.
-PRAGMA create_fts_index('base_workflows', 'id', 'content', overwrite=1);
-
--- Full-Text Search Index on workflow filenames
-PRAGMA create_fts_index('base_workflows', 'id', 'filename', overwrite=1);
+-- Full-Text Search Index on workflow content and filenames.
+-- DuckDB keeps ONE FTS index per table, and overwrite=1 replaces it, so every
+-- searchable column must be listed in a single PRAGMA. Callers pick a column
+-- with match_bm25(..., fields := 'content').
+PRAGMA create_fts_index('base_workflows', 'id', 'content', 'filename', overwrite=1);
 
 -- Full-Text Search Index on repository descriptions
 PRAGMA create_fts_index('base_repositories', 'id', 'description', 'nameWithOwner', overwrite=1);

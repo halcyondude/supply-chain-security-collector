@@ -453,6 +453,61 @@ async function createTablesForExtendedInfoQuery(
     }
 }
 
+/** Column name -> DuckDB type for base_cncf_projects (order is the table's column order). */
+const CNCF_PROJECT_COLUMNS = {
+    project_name: 'VARCHAR',
+    display_name: 'VARCHAR',
+    description: 'VARCHAR',
+    maturity: 'VARCHAR',
+    category: 'VARCHAR',
+    subcategory: 'VARCHAR',
+    date_accepted: 'DATE',
+    date_incubating: 'DATE',
+    date_graduated: 'DATE',
+    date_archived: 'DATE',
+    homepage_url: 'VARCHAR',
+    repo_url: 'VARCHAR',
+    package_manager_url: 'VARCHAR',
+    docker_url: 'VARCHAR',
+    documentation_url: 'VARCHAR',
+    blog_url: 'VARCHAR',
+    url_for_bestpractices: 'VARCHAR',
+    clomonitor_name: 'VARCHAR',
+    summary_business_use_case: 'VARCHAR',
+    summary_integrations: 'VARCHAR',
+    summary_personas: 'VARCHAR',
+    summary_tags: 'VARCHAR',
+    summary_use_case: 'VARCHAR',
+    summary_release_rate: 'VARCHAR',
+    dev_stats_url: 'VARCHAR',
+    has_security_audits: 'BOOLEAN',
+    security_audit_count: 'BIGINT',
+    latest_audit_date: 'DATE',
+    latest_audit_vendor: 'VARCHAR',
+    crunchbase: 'VARCHAR',
+    twitter: 'VARCHAR',
+    parent_project: 'VARCHAR',
+    tag_associations: 'VARCHAR',
+    annual_review_date: 'DATE',
+    annual_review_url: 'VARCHAR',
+    license: 'VARCHAR',
+    default_branch: 'VARCHAR',
+} as const;
+
+/** Column name -> DuckDB type for base_cncf_project_repos. */
+const CNCF_PROJECT_REPO_COLUMNS = {
+    project_name: 'VARCHAR',
+    owner: 'VARCHAR',
+    name: 'VARCHAR',
+    primary: 'BOOLEAN',
+    branch: 'VARCHAR',
+} as const;
+
+/** Render a column map as a DuckDB struct literal for read_json(columns=...). */
+function duckdbColumnsStruct(columns: Record<string, string>): string {
+    return '{' + Object.entries(columns).map(([name, type]) => `'${name}': '${type}'`).join(', ') + '}';
+}
+
 /**
  * Create CNCF-specific tables from project metadata
  * Generates base_cncf_projects and base_cncf_project_repos tables
@@ -477,47 +532,14 @@ async function createCNCFTables(
         return; // No CNCF metadata
     }
     
-    // Create base_cncf_projects table
-    interface CNCFProject {
-        project_name: string;
-        display_name?: string;
-        description?: string;
-        maturity?: string;
-        category?: string;
-        subcategory?: string;
-        date_accepted?: string;
-        date_incubating?: string;
-        date_graduated?: string;
-        date_archived?: string;
-        homepage_url?: string;
-        repo_url?: string;
-        package_manager_url?: string;
-        docker_url?: string;
-        documentation_url?: string;
-        blog_url?: string;
-        url_for_bestpractices?: string;
-        clomonitor_name?: string;
-        summary_business_use_case?: string;
-        summary_integrations?: string;
-        summary_personas?: string;
-        summary_tags?: string;
-        summary_use_case?: string;
-        summary_release_rate?: string;
-        dev_stats_url?: string;
-        has_security_audits?: boolean;
-        security_audit_count?: number;
-        latest_audit_date?: string;
-        latest_audit_vendor?: string;
-        crunchbase?: string;
-        twitter?: string;
-        parent_project?: string;
-        tag_associations?: string;
-        annual_review_date?: string;
-        annual_review_url?: string;
-        license?: string;
-        default_branch?: string;
-    }
-    
+    // Create base_cncf_projects table.
+    // The schema is explicit: inferring it from JSON drops any column whose value
+    // is absent for every project (JSON.stringify omits undefined), and the SQL
+    // models then fail on the missing column.
+    type CNCFProject = { project_name: string } & {
+        [K in Exclude<keyof typeof CNCF_PROJECT_COLUMNS, 'project_name'>]?: string | number | boolean;
+    };
+
     const projectRecords: CNCFProject[] = projects.map(p => ({
         project_name: p.project_name,
         display_name: p.display_name,
@@ -561,8 +583,8 @@ async function createCNCFTables(
     const tempProjectsPath = path.join(outputDir, 'temp_cncf_projects.json');
     fs.writeFileSync(tempProjectsPath, JSON.stringify(projectRecords));
     await con.run(`
-        CREATE TABLE base_cncf_projects AS 
-        SELECT * FROM read_json('${tempProjectsPath}', format='array', auto_detect=true, union_by_name=true)
+        CREATE TABLE base_cncf_projects AS
+        SELECT * FROM read_json('${tempProjectsPath}', format='array', columns=${duckdbColumnsStruct(CNCF_PROJECT_COLUMNS)})
     `);
     fs.unlinkSync(tempProjectsPath);
     console.log(`  ✅ Created table: base_cncf_projects (${projectRecords.length} rows)`);
@@ -593,8 +615,8 @@ async function createCNCFTables(
     const tempReposPath = path.join(outputDir, 'temp_cncf_project_repos.json');
     fs.writeFileSync(tempReposPath, JSON.stringify(projectRepoRecords));
     await con.run(`
-        CREATE TABLE base_cncf_project_repos AS 
-        SELECT * FROM read_json('${tempReposPath}', format='array', auto_detect=true, union_by_name=true)
+        CREATE TABLE base_cncf_project_repos AS
+        SELECT * FROM read_json('${tempReposPath}', format='array', columns=${duckdbColumnsStruct(CNCF_PROJECT_REPO_COLUMNS)})
     `);
     fs.unlinkSync(tempReposPath);
     console.log(`  ✅ Created table: base_cncf_project_repos (${projectRepoRecords.length} rows)`);

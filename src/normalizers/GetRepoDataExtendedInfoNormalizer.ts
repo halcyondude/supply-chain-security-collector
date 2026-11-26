@@ -144,7 +144,7 @@ export function normalizeGetRepoDataExtendedInfo(
         }
         
         // Add additional branch protection rules
-        if (r.repository!.branchProtectionRules.nodes) {
+        if (r.repository!.branchProtectionRules?.nodes) {
             r.repository!.branchProtectionRules.nodes
                 .filter((rule: any): rule is NonNullable<typeof rule> => rule !== null)
                 .forEach((rule: any, idx: number) => {
