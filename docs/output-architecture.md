@@ -19,9 +19,9 @@ output/<input-name>/
       agg_*.parquet
       raw_*.parquet
     raw-responses.<QueryName>.jsonl     # API audit trail
-    security-insights-sboms.csv
-    security-insights-attestations.csv
-    files/                              # extracted workflow/insights files
+    security-insights-sboms.csv          # written by SecurityAnalyzer (--analyze)
+    security-insights-attestations.csv   # written by SecurityAnalyzer (--analyze)
+    files/                              # persisted workflows and SECURITY.md (--persist-files)
   current -> <timestamp>/              # symlink to latest
 ```
 
@@ -46,8 +46,7 @@ ISO 8601 with colons replaced: `2025-10-06T22-30-15`
 The `database.db` file is a fully-functional DuckDB database containing:
 - All `base_*` tables (normalized GraphQL data)
 - All `agg_*` tables (analysis results)
-- Full-text search indexes
-- Foreign key relationships
+- Full-text search indexes (created by `00_initialize_indexes.sql`)
 
 **Use this for:**
 - Interactive SQL queries
@@ -57,7 +56,7 @@ The `database.db` file is a fully-functional DuckDB database containing:
 
 ### Secondary: Parquet Files
 
-Parquet files are exports of all DuckDB tables for:
+Parquet files are exports of the DuckDB tables (`base_*`, `raw_*`, `agg_*`) for:
 - Portability (no DuckDB installation needed)
 - Language interop (Python, R, Spark, etc.)
 - Cloud storage (S3, GCS)
@@ -71,95 +70,15 @@ Parquet files are exports of all DuckDB tables for:
 - Handles relational data naturally
 - ZSTD compression for smaller files
 
-### Schema Metadata Preservation
+### Implementation
 
-We embed field descriptions from `{dataset}-schema.json` into the Parquet file's `KV_METADATA`.
+Writing is split across three modules:
 
-Example schema.json:
+1. `neo.ts` creates the run directory and the `current` symlink. `rawResponseWriter.ts` appends each API response to `raw-responses.<QueryName>.jsonl` as it arrives.
+2. `ArtifactWriter.ts` loads the raw responses into a `raw_<QueryName>` table, calls the query-specific normalizer, writes the `base_*` tables, persists files to `files/`, and exports every table to `parquet/`. Org scans append `base_org_repos` through `writeOrgRepoArtifacts()`.
+3. `SecurityAnalyzer.ts` runs the SQL models to create `agg_*` tables, exports them to `parquet/`, and writes the two Security Insights CSVs (`security-insights-sboms.csv`, `security-insights-attestations.csv`). These CSVs come from `SecurityAnalyzer`, not `ArtifactWriter`.
 
-```json
-```json
-{
-  "fields": {
-    "repository_name": {
-      "type": "string",
-      "description": "Name of the repository",
-      "category": "repository"
-    },
-    "artifact_is_sbom": {
-      "type": "boolean",
-      "description": "Boolean indicating if artifact is a Software Bill of Materials",
-      "category": "artifacts"
-    }
-  }
-}
-```
-
-Embedded in Parquet as KV_METADATA:
-
-```sql
-SELECT * FROM parquet_kv_metadata('graduated-analyzed.parquet');
-
--- Returns:
-key                         | value
----------------------------|----------------------------------------------
-schema_title                | GitHub Supply Chain Security Analysis Schema
-schema_version              | 1.0.0
-run_query_type              | GetRepoDataArtifacts
-run_timestamp               | 2025-10-06T22-30-15
-run_total_repos             | 210
-run_successful_repos        | 208
-run_failed_repos            | 2
-field_repository_name       | Name of the repository
-field_artifact_is_sbom      | Boolean indicating if artifact is a Software Bill of Materials
-...
-```
-
-### Implementation: `src/ArtifactWriter.ts`
-
-The Parquet writing logic is integrated into the main `ArtifactWriter.ts` module, which handles:
-
-1. Writing raw GraphQL responses to `raw-responses.jsonl` audit log
-2. Calling query-specific normalizers to produce flat, relational arrays
-3. Writing normalized data to DuckDB `base_*` tables
-4. Exporting all tables to Parquet files with metadata
-
-### DuckDB SQL Query
-
-```sql
-COPY (
-  SELECT * FROM read_json_auto('graduated-analyzed.json')
-) TO 'graduated-analyzed.parquet' (
-  FORMAT PARQUET,
-  COMPRESSION ZSTD,
-  ROW_GROUP_SIZE 100000,
-  KV_METADATA {
-    schema_title: 'GitHub Supply Chain Security Analysis Schema',
-    schema_version: '1.0.0',
-    run_query_type: 'GetRepoDataArtifacts',
-    run_timestamp: '2025-10-06T22-30-15',
-    field_repository_name: 'Name of the repository',
-    field_artifact_is_sbom: 'Boolean indicating if artifact is a Software Bill of Materials',
-    -- ... up to 50 field descriptions ...
-  }
-);
-```
-
-### Integration
-
-Automatically called by `generateReports()` in `src/report.ts`:
-
-```typescript
-// After JSON/CSV/schema generation:
-if (runMetadata) {
-  await generateParquetFiles(
-    basePathForParquet,
-    jsonPath,
-    schemaPath,
-    runMetadata
-  );
-}
-```
+Parquet files use ZSTD compression and `ROW_GROUP_SIZE 100000`. They carry no custom key-value metadata; field descriptions are not embedded.
 
 ---
 

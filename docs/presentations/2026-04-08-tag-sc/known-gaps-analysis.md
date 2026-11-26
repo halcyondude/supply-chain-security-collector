@@ -88,7 +88,7 @@ Sources: [actions/attest-build-provenance](https://github.com/actions/attest-bui
 
 ## coverage estimate
 
-### of the "198 projects with no observed artifacts," how many likely DO have supply chain practices invisible to our tool?
+### of the "178 projects with no observed artifacts," how many likely DO have supply chain practices invisible to our tool?
 
 | category | estimated count | confidence | reasoning |
 |----------|---------------:|------------|-----------|
@@ -100,7 +100,7 @@ Sources: [actions/attest-build-provenance](https://github.com/actions/attest-bui
 
 ### summary
 
-Of the ~198 projects where we observe zero supply chain artifacts, roughly **25-40 (13-20%)** likely have supply chain security practices that are invisible to our GitHub-only observation window. The remaining ~160 projects genuinely appear to lack supply chain artifact production in any channel.
+Of the 178 projects where we observe no supply chain artifacts (see the [findings report](cncf-supply-chain-findings.md)), roughly **25-40 (14-22%)** likely have supply chain security practices that are invisible to our GitHub-only observation window. The remaining ~140-150 projects genuinely appear to lack supply chain artifact production in any channel.
 
 The projects most affected by our blind spots are the biggest and most mature ones: **Kubernetes, Istio, Envoy, and Prometheus**. These are exactly the projects a CNCF audience would expect to see doing well -- and exactly the ones our tool undercounts.
 
@@ -120,4 +120,4 @@ When presenting findings, we need to say:
 
 ---
 
-*Generated 2026-03-30. Evidence gathered via web search; URLs verified at time of research. Some projects may have adopted or dropped practices since sources were published.*
+*Generated 2026-03-30. Evidence gathered via web search; URLs verified at time of research. Links were not re-checked in the 2026-11 docs audit (external hosts were unreachable from the audit environment). Some projects may have adopted or dropped practices since sources were published.*

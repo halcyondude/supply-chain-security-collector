@@ -32,6 +32,8 @@ orchestrator: Iris (dt-core:iris)
 
 # CNCF Supply Chain Security Presentation — Execution Plan
 
+> **Historical document.** This plan was written on 2026-03-30 for presentations on 2026-03-31 and 2026-04-02. Those dates have passed. Kept for provenance; for the current state see [PROJECT-HISTORY.md](../../PROJECT-HISTORY.md).
+
 ## Panel Consensus
 
 All four panelists converged on these points:
@@ -187,13 +189,15 @@ Mermaid flowchart — Today (manual) → Near-term (scheduled GitHub Action → 
 
 ## Execution Checklist
 
-- [ ] Fix `last: 5` → `first: 20` in GetRepoDataExtendedInfo.graphql
-- [ ] Re-run `npm test` to verify fix
-- [ ] Run full landscape (`npm start`)
-- [ ] Generate report from full landscape data
-- [ ] Review report for surprising findings (these become the presentation stats)
-- [ ] Render 3 Mermaid diagrams
-- [ ] Prepare 3-4 live DuckDB queries with expected outputs
-- [ ] Draft the "ask" slide
-- [ ] Rehearse the 5-minute demo flow
-- [ ] Proactively address Kubernetes/Prow edge case in speaker notes
+Status as of the November 2026 docs audit. N/A means the item was tied to the presentation itself and left no artifact in the repo.
+
+- [x] Fix `last: 5` → `first: 20` in GetRepoDataExtendedInfo.graphql (done; the legacy `GetRepoDataArtifacts.graphql` still uses `last: 5`)
+- [ ] ~~Re-run `npm test` to verify fix~~ N/A, superseded by the full landscape run
+- [x] Run full landscape (`npm start`)
+- [x] Generate report from full landscape data ([cncf-landscape-report.md](cncf-landscape-report.md))
+- [x] Review report for surprising findings ([cncf-supply-chain-findings.md](cncf-supply-chain-findings.md))
+- [x] Render 3 Mermaid diagrams (rendered as SVGs in `diagrams/`)
+- [ ] ~~Prepare 3-4 live DuckDB queries with expected outputs~~ N/A
+- [x] Draft the "ask" slide (slide 11 in `build-deck.cjs`)
+- [ ] ~~Rehearse the 5-minute demo flow~~ N/A
+- [x] Proactively address Kubernetes/Prow edge case (non-GitHub CI listed as not measured in the deck)
