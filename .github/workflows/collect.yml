@@ -9,6 +9,8 @@
 # (1,000 pts/h). One repo costs ~1 point, so either covers a full run.
 name: Collect landscape data
 on:
+  push:
+    branches: [ci/collect-run] # TEMPORARY: one-off run before this workflow reaches main
   workflow_dispatch:
   schedule:
     - cron: '17 6 * * 1' # Mondays 06:17 UTC
