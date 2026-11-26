@@ -35,7 +35,6 @@ const config: CodegenConfig = {
   schema: 'schema/github-v15.26.0.graphql',
   // We tell codegen to find all our operations in this directory.
   documents: ['src/graphql/**/*.graphql'],
-  prune: true,
   generates: {
     // We generate a single, cohesive set of artifacts here.
     'src/generated/': {
@@ -45,8 +44,12 @@ const config: CodegenConfig = {
           add: { content: '/* eslint-disable */' },
         },
       ],
-      // All plugin configurations go under the 'config' key.
+      presetConfig: {
+        gqlTagName: 'gql',
+      },
+      // Plugin configuration goes under the 'config' key.
       config: {
+        prune: true,
         avoidOptionals: true,
         strictScalars: true,
         enumsAsTypes: true,
@@ -55,7 +58,15 @@ const config: CodegenConfig = {
           DateTime: 'string',
           Date: 'string',
           URI: 'string',
-          // ... and other custom GitHub scalars
+          GitObjectID: 'string',
+          GitTimestamp: 'string',
+          HTML: 'string',
+          X509Certificate: 'string',
+          Base64String: 'string',
+          BigInt: 'string',
+          GitRefname: 'string',
+          GitSSHRemote: 'string',
+          PreciseDateTime: 'string',
         },
       },
     },
@@ -65,6 +76,8 @@ const config: CodegenConfig = {
 
 export default config;
 ```
+
+`strictScalars: true` makes codegen fail on any scalar that isn't mapped, so all 12 custom scalars used by the GitHub schema are listed (`DateTime`, `Date`, `URI`, `GitObjectID`, `GitTimestamp`, `HTML`, `X509Certificate`, `Base64String`, `BigInt`, `GitRefname`, `GitSSHRemote`, `PreciseDateTime`). All map to `string`.
 
 ---
 
@@ -107,7 +120,7 @@ npm run codegen -- --watch
 
 This is the most important step. **Do not write GraphQL strings in your application code.** Instead, import the generated `TypedDocumentNode` and pass it directly to the GraphQL client.
 
-**Correct Usage (`src/main.ts`):**
+**Correct Usage (see `src/api.ts`; the CLI entry point is `src/neo.ts`):**
 
 ```typescript
 // 1. Import the generated DocumentNode and any necessary types.
@@ -173,25 +186,27 @@ export async function fetchRepositoryExtendedInfo(
 
 ### Pattern 2: Normalizer (`src/normalizers/GetRepoDataExtendedInfoNormalizer.ts`)
 
-This shows how we transform typed GraphQL responses into flat relational arrays:
+This is a simplified sketch of how we transform typed GraphQL responses into flat relational arrays. The real function builds each array with `map`/loops and also fills the branch-protection and workflow tables; read the source for the full version.
 
 ```typescript
 import type { GetRepoDataExtendedInfoQuery } from '../generated/graphql';
 
 export interface GetRepoDataExtendedInfoNormalized {
-    base_repositories: RepositoryRow[];
-    base_releases: ReleaseRow[];
-    base_release_assets: ReleaseAssetRow[];
-    base_workflows: WorkflowRow[];
+    base_repositories: Repository[];
+    base_branch_protection_rules: BranchProtectionRule[];
+    base_releases: Release[];
+    base_release_assets: ReleaseAsset[];
+    base_workflows: Workflow[];
+    base_security_md: SecurityMarkdown[];
 }
 
 export function normalizeGetRepoDataExtendedInfo(
     responses: GetRepoDataExtendedInfoQuery[]
 ): GetRepoDataExtendedInfoNormalized {
-    const repositories: RepositoryRow[] = [];
-    const releases: ReleaseRow[] = [];
-    const releaseAssets: ReleaseAssetRow[] = [];
-    const workflows: WorkflowRow[] = [];
+    const repositories: Repository[] = [];
+    const releases: Release[] = [];
+    const releaseAssets: ReleaseAsset[] = [];
+    const workflows: Workflow[] = [];
 
     for (const response of responses) {
         const repo = response.repository;
@@ -228,7 +243,6 @@ export function normalizeGetRepoDataExtendedInfo(
                         
                         releaseAssets.push({
                             id: asset.id,
-                            repository_id: repo.id,
                             release_id: release.id,
                             name: asset.name,
                             // ... more fields
@@ -239,8 +253,14 @@ export function normalizeGetRepoDataExtendedInfo(
         }
     }
 
-    return { base_repositories: repositories, base_releases: releases, 
-             base_release_assets: releaseAssets, base_workflows: workflows };
+    return {
+        base_repositories: repositories,
+        base_branch_protection_rules: [],  // filled in the real function
+        base_releases: releases,
+        base_release_assets: releaseAssets,
+        base_workflows: workflows,
+        base_security_md: [],
+    };
 }
 ```
 
@@ -328,9 +348,10 @@ function normalize(responses: GetRepoDataExtendedInfoQuery[]) {
   return transformToFlatArrays(responses);
 }
 
-// 5. Load into DuckDB (src/ArtifactWriter.ts)
-const normalized = normalize([data]);
-await createTableFromArray(con, 'base_repositories', normalized.base_repositories);
+// 5. Load into DuckDB (src/ArtifactWriter.ts, via createNormalizedTables):
+//    each array is written to a temp JSON file and loaded with read_json()
+const normalized = normalizeGetRepoDataExtendedInfo([data]);
+// -> CREATE TABLE base_repositories AS SELECT * FROM read_json('temp_repositories.json', ...)
 ```
 
 This pattern ensures type safety from GraphQL query → API call → normalization → database, catching errors at compile time rather than runtime.
