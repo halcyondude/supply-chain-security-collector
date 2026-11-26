@@ -67,8 +67,9 @@ CREATE OR REPLACE TABLE agg_cncf_project_summary AS
         MIN(rs.first_release_with_sbom) as earliest_release_with_sbom
         
       FROM base_cncf_project_repos pr
-      LEFT JOIN base_repositories r ON pr.owner = SPLIT_PART(r.nameWithOwner, '/', 1) 
-                                     AND pr.name = SPLIT_PART(r.nameWithOwner, '/', 2)
+      -- GitHub owner/repo names are case-insensitive; landscape casing often
+      -- differs from the API's canonical nameWithOwner (e.g. cubeFS/cubefs).
+      LEFT JOIN base_repositories r ON LOWER(pr.owner || '/' || pr.name) = LOWER(r.nameWithOwner)
       LEFT JOIN agg_repo_summary rs ON r.id = rs.repository_id
       GROUP BY pr.project_name
     )

@@ -128,8 +128,7 @@ export const REL_TABLES: RelTableDef[] = [
         sourceQuery: `
             SELECT DISTINCT r.id, pr.project_name
             FROM base_cncf_project_repos pr
-            JOIN base_repositories r ON pr.owner = SPLIT_PART(r.nameWithOwner, '/', 1)
-                                     AND pr.name = SPLIT_PART(r.nameWithOwner, '/', 2)
+            JOIN base_repositories r ON LOWER(pr.owner || '/' || pr.name) = LOWER(r.nameWithOwner)
         `,
     },
     {
