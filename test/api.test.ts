@@ -3,7 +3,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ClientError, type GraphQLClient } from 'graphql-request';
 import {
-    BRANCH_PROTECTION_RULES_FIELD,
+    BRANCH_PROTECTION_FIELDS,
     fetchRepositoryExtendedInfo,
     isForbiddenOnlyAt,
 } from '../src/api';
@@ -45,14 +45,18 @@ function stubClient(outcomes: Array<unknown | Error>) {
 
 describe('isForbiddenOnlyAt', () => {
     test('true when every error is FORBIDDEN at the field', () => {
-        assert.equal(isForbiddenOnlyAt(forbiddenAt(['repository', BRANCH_PROTECTION_RULES_FIELD]), BRANCH_PROTECTION_RULES_FIELD), true);
+        assert.equal(isForbiddenOnlyAt(forbiddenAt(['repository', 'branchProtectionRules']), BRANCH_PROTECTION_FIELDS), true);
+    });
+    test('true for the default-branch rule and the rules list together', () => {
+        const err = forbiddenAt(['repository', 'defaultBranchRef', 'branchProtectionRule'], ['repository', 'branchProtectionRules']);
+        assert.equal(isForbiddenOnlyAt(err, BRANCH_PROTECTION_FIELDS), true);
     });
     test('false when another field is also forbidden', () => {
-        const err = forbiddenAt(['repository', BRANCH_PROTECTION_RULES_FIELD], ['repository', 'securityPolicy']);
-        assert.equal(isForbiddenOnlyAt(err, BRANCH_PROTECTION_RULES_FIELD), false);
+        const err = forbiddenAt(['repository', 'branchProtectionRules'], ['repository', 'securityPolicy']);
+        assert.equal(isForbiddenOnlyAt(err, BRANCH_PROTECTION_FIELDS), false);
     });
     test('false for non-GraphQL errors', () => {
-        assert.equal(isForbiddenOnlyAt(new Error('boom'), BRANCH_PROTECTION_RULES_FIELD), false);
+        assert.equal(isForbiddenOnlyAt(new Error('boom'), BRANCH_PROTECTION_FIELDS), false);
     });
 });
 
@@ -60,7 +64,7 @@ describe('fetchRepositoryExtendedInfo', () => {
     const DATA = repoResponse({ owner: VARS.owner, name: VARS.name });
 
     test('retries without branch protection rules when they are forbidden', async () => {
-        const { client, calls } = stubClient([forbiddenAt(['repository', BRANCH_PROTECTION_RULES_FIELD]), DATA]);
+        const { client, calls } = stubClient([forbiddenAt(['repository', 'branchProtectionRules']), DATA]);
         const result = await fetchRepositoryExtendedInfo(client, VARS, false);
         assert.equal(result, DATA);
         assert.deepEqual(
@@ -86,6 +90,7 @@ describe('normalizer without branch protection rules', () => {
     test('a response fetched with includeBranchProtectionRules=false normalizes', () => {
         const data = repoResponse({ owner: VARS.owner, name: VARS.name });
         delete data.repository!.branchProtectionRules;
+        delete data.repository!.defaultBranchRef!.branchProtectionRule;
         const normalized = normalizeGetRepoDataExtendedInfo([data]);
         assert.equal(normalized.base_repositories.length, 1);
     });

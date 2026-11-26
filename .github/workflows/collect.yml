@@ -7,9 +7,10 @@
 #
 # Token: COLLECTOR_TOKEN (read-only PAT, 5,000 pts/h) if set, else GITHUB_TOKEN
 # (1,000 pts/h). One repo costs ~1 point, so either covers a full run.
-# GITHUB_TOKEN can't list other repos' branch protection rules; the collector
-# retries those repos without them, so base_branch_protection_rules only has
-# default-branch rules unless COLLECTOR_TOKEN is set.
+# GITHUB_TOKEN can't read other repos' branch protection rules; the collector
+# retries those repos without them, so base_branch_protection_rules is empty
+# unless COLLECTOR_TOKEN is set. --min-success-rate stops a mostly failed run
+# from publishing.
 name: Collect landscape data
 on:
   push:
@@ -47,7 +48,7 @@ jobs:
       - name: Collect and analyze
         env:
           GITHUB_PERSONAL_ACCESS_TOKEN: ${{ secrets.COLLECTOR_TOKEN || github.token }}
-        run: npx ts-node src/neo.ts --input "$INPUT" --queries GetRepoDataExtendedInfo --analyze --parallel
+        run: npx ts-node src/neo.ts --input "$INPUT" --queries GetRepoDataExtendedInfo --analyze --parallel --min-success-rate 0.9
       - name: Build graph
         run: npm run graph -- --database "$OUTPUT_DIR/database.db"
       - name: Export explorer snapshot

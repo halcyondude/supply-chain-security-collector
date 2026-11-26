@@ -118,9 +118,9 @@ export async function fetchRepositoryExtendedInfo(
 
       return data;
     } catch (error: unknown) {
-      if (includeBranchProtectionRules && isForbiddenOnlyAt(error, BRANCH_PROTECTION_RULES_FIELD)) {
+      if (includeBranchProtectionRules && isForbiddenOnlyAt(error, BRANCH_PROTECTION_FIELDS)) {
         if (verbose) {
-          console.log(chalk.yellow(`[API] ${repoIdentifier}: no access to ${BRANCH_PROTECTION_RULES_FIELD}, retrying without it.`));
+          console.log(chalk.yellow(`[API] ${repoIdentifier}: no access to branch protection rules, retrying without them.`));
         }
         includeBranchProtectionRules = false;
         continue;
@@ -131,20 +131,24 @@ export async function fetchRepositoryExtendedInfo(
   }
 }
 
-/** Field that needs repo admin access; requested only when the token allows it. */
-export const BRANCH_PROTECTION_RULES_FIELD = 'branchProtectionRules';
+/**
+ * Fields that need repo admin access, gated by $includeBranchProtectionRules:
+ * repository.branchProtectionRules and repository.defaultBranchRef.branchProtectionRule.
+ */
+export const BRANCH_PROTECTION_FIELDS: readonly string[] = ['branchProtectionRules', 'branchProtectionRule'];
 
 /**
- * True when a request failed only because the token may not read `field`
- * (GraphQL FORBIDDEN errors whose path ends at that field).
+ * True when a request failed only because the token may not read `fields`
+ * (every GraphQL error is FORBIDDEN with a path ending at one of them).
  */
-export function isForbiddenOnlyAt(error: unknown, field: string): boolean {
+export function isForbiddenOnlyAt(error: unknown, fields: readonly string[]): boolean {
   if (!(error instanceof ClientError)) return false;
   const errors = error.response.errors;
   if (!errors || errors.length === 0) return false;
   return errors.every((e) => {
     const err = e as { type?: string; path?: ReadonlyArray<string | number> };
-    return err.type === 'FORBIDDEN' && err.path !== undefined && err.path[err.path.length - 1] === field;
+    const leaf = err.path?.[err.path.length - 1];
+    return err.type === 'FORBIDDEN' && typeof leaf === 'string' && fields.includes(leaf);
   });
 }
 

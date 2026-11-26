@@ -1,8 +1,8 @@
 query GetRepoDataExtendedInfo(
   $owner: String!
   $name: String!
-  # Listing branch protection rules needs admin access. Tokens without it
-  # (e.g. the Actions GITHUB_TOKEN) get FORBIDDEN; api.ts retries with false.
+  # Branch protection rules need admin access. Tokens without it (e.g. the
+  # Actions GITHUB_TOKEN) get FORBIDDEN; api.ts retries with false.
   $includeBranchProtectionRules: Boolean = true
 ) {
   repository(owner: $owner, name: $name) {
@@ -24,7 +24,7 @@ query GetRepoDataExtendedInfo(
       __typename
       id
       name
-      branchProtectionRule {
+      branchProtectionRule @include(if: $includeBranchProtectionRules) {
         __typename
         id
         allowsDeletions
