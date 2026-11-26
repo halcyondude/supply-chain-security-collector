@@ -73,35 +73,7 @@ export async function fetchRepositoryArtifacts(
 
     return data;
   } catch (error: unknown) {
-    console.error(chalk.red.bold(`[API] Request failed for ${repoIdentifier}.`));
-
-    // graphql-request throws an error with a .response property on GraphQL or HTTP errors
-    if (error instanceof ClientError) {
-      if (error.response.status !== undefined) {
-        console.error(chalk.red('  HTTP Status:'), error.response.status);
-      }
-      if (error.response.errors) {
-        console.error(chalk.red('  GraphQL Errors:'), JSON.stringify(error.response.errors, null, 2));
-      }
-      // Try to surface rate limit info if present
-      const { headers } = error.response;
-      if (headers && typeof (headers as Headers).get === 'function') {
-        const h = headers as Headers;
-        const remaining = h.get('x-ratelimit-remaining');
-        const reset = h.get('x-ratelimit-reset');
-        if (remaining !== null) {
-          console.error(chalk.yellow('  Rate Limit Remaining:'), remaining);
-        }
-        if (reset !== null) {
-          const resetTime = new Date(Number(reset) * 1000);
-          console.error(chalk.yellow('  Rate Limit Resets At:'), resetTime.toLocaleTimeString());
-        }
-      }
-    } else if (error instanceof Error) {
-      console.error(chalk.red('  Error Details:'), error.message);
-    } else {
-      console.error(chalk.red('  An unknown error occurred:'), error);
-    }
+    logRequestError(repoIdentifier, error);
     return null;
   }
 }
@@ -126,51 +98,85 @@ export async function fetchRepositoryExtendedInfo(
     console.log(chalk.gray(`[API] Fetching extended info for ${repoIdentifier}...`));
   }
 
-  try {
-    const data = await client.request<GetRepoDataExtendedInfoQuery>(GetRepoDataExtendedInfoDocument, variables);
+  let includeBranchProtectionRules = true;
+  for (;;) {
+    try {
+      const data = await client.request<GetRepoDataExtendedInfoQuery>(GetRepoDataExtendedInfoDocument, {
+        ...variables,
+        includeBranchProtectionRules,
+      });
 
-    if (verbose) {
-      console.log(chalk.green(`[API] Success for ${repoIdentifier}.`));
-    }
+      if (verbose) {
+        console.log(chalk.green(`[API] Success for ${repoIdentifier}.`));
+      }
 
-    // The GitHub API returns { repository: null } for non-existent or private repos.
-    if (data.repository === null) {
-      console.log(chalk.yellow(`[API] Repository not found or access denied for ${repoIdentifier}. Skipping.`));
+      // The GitHub API returns { repository: null } for non-existent or private repos.
+      if (data.repository === null) {
+        console.log(chalk.yellow(`[API] Repository not found or access denied for ${repoIdentifier}. Skipping.`));
+        return null;
+      }
+
+      return data;
+    } catch (error: unknown) {
+      if (includeBranchProtectionRules && isForbiddenOnlyAt(error, BRANCH_PROTECTION_RULES_FIELD)) {
+        if (verbose) {
+          console.log(chalk.yellow(`[API] ${repoIdentifier}: no access to ${BRANCH_PROTECTION_RULES_FIELD}, retrying without it.`));
+        }
+        includeBranchProtectionRules = false;
+        continue;
+      }
+      logRequestError(repoIdentifier, error);
       return null;
     }
+  }
+}
 
-    return data;
-  } catch (error: unknown) {
-    console.error(chalk.red.bold(`[API] Request failed for ${repoIdentifier}.`));
+/** Field that needs repo admin access; requested only when the token allows it. */
+export const BRANCH_PROTECTION_RULES_FIELD = 'branchProtectionRules';
 
-    // graphql-request throws an error with a .response property on GraphQL or HTTP errors
-    if (error instanceof ClientError) {
-      if (error.response.status !== undefined) {
-        console.error(chalk.red('  HTTP Status:'), error.response.status);
-      }
-      if (error.response.errors) {
-        console.error(chalk.red('  GraphQL Errors:'), JSON.stringify(error.response.errors, null, 2));
-      }
-      // Try to surface rate limit info if present
-      const { headers } = error.response;
-      if (headers && typeof (headers as Headers).get === 'function') {
-        const h = headers as Headers;
-        const remaining = h.get('x-ratelimit-remaining');
-        const reset = h.get('x-ratelimit-reset');
-        if (remaining !== null) {
-          console.error(chalk.yellow('  Rate Limit Remaining:'), remaining);
-        }
-        if (reset !== null) {
-          const resetTime = new Date(Number(reset) * 1000);
-          console.error(chalk.yellow('  Rate Limit Resets At:'), resetTime.toLocaleTimeString());
-        }
-      }
-    } else if (error instanceof Error) {
-      console.error(chalk.red('  Error Details:'), error.message);
-    } else {
-      console.error(chalk.red('  An unknown error occurred:'), error);
+/**
+ * True when a request failed only because the token may not read `field`
+ * (GraphQL FORBIDDEN errors whose path ends at that field).
+ */
+export function isForbiddenOnlyAt(error: unknown, field: string): boolean {
+  if (!(error instanceof ClientError)) return false;
+  const errors = error.response.errors;
+  if (!errors || errors.length === 0) return false;
+  return errors.every((e) => {
+    const err = e as { type?: string; path?: ReadonlyArray<string | number> };
+    return err.type === 'FORBIDDEN' && err.path !== undefined && err.path[err.path.length - 1] === field;
+  });
+}
+
+function logRequestError(repoIdentifier: string, error: unknown): void {
+  console.error(chalk.red.bold(`[API] Request failed for ${repoIdentifier}.`));
+
+  // graphql-request throws an error with a .response property on GraphQL or HTTP errors
+  if (error instanceof ClientError) {
+    if (error.response.status !== undefined) {
+      console.error(chalk.red('  HTTP Status:'), error.response.status);
     }
-    return null;
+    if (error.response.errors) {
+      console.error(chalk.red('  GraphQL Errors:'), JSON.stringify(error.response.errors, null, 2));
+    }
+    // Try to surface rate limit info if present
+    const { headers } = error.response;
+    if (headers && typeof (headers as Headers).get === 'function') {
+      const h = headers as Headers;
+      const remaining = h.get('x-ratelimit-remaining');
+      const reset = h.get('x-ratelimit-reset');
+      if (remaining !== null) {
+        console.error(chalk.yellow('  Rate Limit Remaining:'), remaining);
+      }
+      if (reset !== null) {
+        const resetTime = new Date(Number(reset) * 1000);
+        console.error(chalk.yellow('  Rate Limit Resets At:'), resetTime.toLocaleTimeString());
+      }
+    }
+  } else if (error instanceof Error) {
+    console.error(chalk.red('  Error Details:'), error.message);
+  } else {
+    console.error(chalk.red('  An unknown error occurred:'), error);
   }
 }
 

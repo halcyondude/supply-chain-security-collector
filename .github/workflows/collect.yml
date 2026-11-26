@@ -7,6 +7,9 @@
 #
 # Token: COLLECTOR_TOKEN (read-only PAT, 5,000 pts/h) if set, else GITHUB_TOKEN
 # (1,000 pts/h). One repo costs ~1 point, so either covers a full run.
+# GITHUB_TOKEN can't list other repos' branch protection rules; the collector
+# retries those repos without them, so base_branch_protection_rules only has
+# default-branch rules unless COLLECTOR_TOKEN is set.
 name: Collect landscape data
 on:
   push:
