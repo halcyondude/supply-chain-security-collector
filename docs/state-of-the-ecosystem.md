@@ -5,10 +5,13 @@
 | Version | Date | Summary |
 |---------|------|---------|
 | 1.0 | 2026-07-16 | Initial report. Baseline scan of all 236 CNCF projects; SBOM prevalence, format split, per-maturity table. |
+| 1.1 | 2026-11-26 | Review fixes. All figures re-verified against the committed Parquet; corrected the "unknown format" share; reconciled 13 vs 14 and the April deck's maturity denominators; added status note and diagrams; fixed data path and links. |
 
 ---
 
 *Deliverable for [cncf/toc#1874](https://github.com/cncf/toc/issues/1874) — "SCI: Assess the State of CNCF Project Artifacts" — under initiative [cncf/toc#1709](https://github.com/cncf/toc/issues/1709), TAG Security & Compliance. Co-led with Evan Anderson ([@evankanderson](https://github.com/evankanderson)). Board: [cncf/projects/80](https://github.com/orgs/cncf/projects/80/views/4).*
+
+> **Status (November 2026).** [#1874](https://github.com/cncf/toc/issues/1874) and [#1879](https://github.com/cncf/toc/issues/1879) closed on 2026-10-08. The initiative ([#1709](https://github.com/cncf/toc/issues/1709)) closed on 2026-11-04 with a final summary in [cncf/toc#2320](https://github.com/cncf/toc/pull/2320), which records the blocking problems found. The data and findings below stand. §6 and §7 are the next steps as proposed in July 2026, kept for the record.
 
 ---
 
@@ -58,13 +61,13 @@ Read this section as a **starting line, not a scoreboard.** Before this scan, th
 
 **23 of the 34 CNCF graduated projects publish neither an SBOM nor a signature in their release assets.**
 
-These are the projects that carry the most weight in the ecosystem — Kubernetes, containerd, etcd, Prometheus, Cilium, Harbor, cert-manager, Linkerd, and 15 others (full list in the appendix). Graduated projects are the ones downstream users trust most and inspect least. When the most-depended-on tier is also the tier with the least machine-readable provenance in release assets, that's not a per-project failing — it's **systemic-gap evidence.** The signal is about the ecosystem's defaults and tooling, not about any one project's diligence.
+These are the projects that carry the most weight in the ecosystem — Kubernetes, containerd, etcd, Prometheus, Cilium, Harbor, cert-manager, Linkerd, and 15 others (full list in the appendix). Graduated projects are the ones downstream users lean on most. When the most-depended-on tier is also the tier with the least machine-readable provenance in release assets, that's not a per-project failing — it's **systemic-gap evidence.** The signal is about the ecosystem's defaults and tooling, not about any one project's diligence.
 
 > A hard caveat, stated up front: **every number here is a lower bound.** The collector sees GitHub release assets and CI workflows. It does *not* see container image signatures in OCI registries (`cosign verify`), npm/PyPI provenance, GitHub's Attestations API, or non-GitHub CI (Prow, Jenkins, etc.). Many of the 23 almost certainly sign their container images — they just don't attach `.sig` files to GitHub releases. **Absence of evidence here is not evidence of absence.** See §5.
 
 ### Prevalence, by maturity
 
-Per-maturity view across all 236 projects (release-asset evidence):
+Per-maturity view across all 236 projects (release-asset evidence, lower bounds):
 
 | Maturity | Projects | Publish SBOM | SBOM % | Publish signature | Sig % | Both | Neither |
 |----------|----------|--------------|--------|-------------------|-------|------|---------|
@@ -74,15 +77,17 @@ Per-maturity view across all 236 projects (release-asset evidence):
 | Archived | 24 | 1 | 4.2% | 2 | 8.3% | 0 | 21 |
 | **All** | **236** | **38** | **16.1%** | **36** | **15.3%** | **14** | **176** |
 
+The April 2026 [findings report](presentations/2026-04-08-tag-sc/cncf-supply-chain-findings.md) showed 33 / 36 / 135 / 23 projects per tier because its case-sensitive join matched only 227 of 236 repos; this table matches all 236, so the graduated and sandbox rows differ slightly.
+
 The counterintuitive result: **incubating projects out-publish graduated ones** on both SBOMs and signatures. That fits a story where SBOM/signing tooling matured *after* the graduated cohort locked in their release pipelines — the newer projects adopted it as a default, the established ones haven't retrofitted.
 
 **Only 14 of 236 projects do both** — publish an SBOM *and* sign releases. That's the number that matters if the goal is verifiable provenance, and it's thin across every tier.[^both]
 
-[^both]: An earlier brain demonstrator reported **13** projects doing both; **14** is correct. The 14th is **ContainerSSH**, which was dropped from the earlier count by a case-sensitive owner/repo join — the same class of bug as the CubeFS miscount below. This report's join is case-insensitive, so both figures now reconcile at 14.
+[^both]: An earlier graph demonstrator reported **13**; the difference is **ContainerSSH** (`ContainerSSH/ContainerSSH` on GitHub, `containerssh/containerssh` in the landscape), dropped by a case-sensitive owner/repo join, the same casing issue behind the CubeFS miscount below. The per-repo table itself has 14.
 
 ### Formats — SPDX wins decisively
 
-Of the SBOM artifacts we could classify by format:
+All 2,402 SBOM artifacts found in release assets, by format (a repo can appear in more than one row):
 
 | Format | SBOM artifacts | Distinct repos |
 |--------|----------------|----------------|
@@ -90,11 +95,11 @@ Of the SBOM artifacts we could classify by format:
 | CycloneDX | 29 | 3 |
 | Unknown / unclassified | 1,316 | 19 |
 
-Among classified SBOMs, **SPDX outnumbers CycloneDX ~36:1 by artifact count** (1,057 vs 29). That ratio is artifact-skewed — a few SPDX-heavy projects attach many SBOMs per release — so read it alongside the **per-repo** count: **19 repos publish SPDX, 3 publish CycloneDX** (roughly 6:1 by project). Either way, SPDX is the de facto ecosystem default; CycloneDX presence is real but small. The large "unknown" bucket is itself a **findability** finding: a third of SBOM-like artifacts don't announce their format in a way a scanner can cheaply detect — which means any downstream aggregator (including GUAC) has to open and sniff files rather than trust naming conventions.
+Among classified SBOMs, **SPDX outnumbers CycloneDX ~36:1 by artifact count** (1,057 vs 29). That ratio is artifact-skewed — a few SPDX-heavy projects attach many SBOMs per release — so read it alongside the **per-repo** count: **19 repos publish SPDX, 3 publish CycloneDX** (roughly 6:1 by project). Either way, SPDX is the de facto ecosystem default; CycloneDX presence is real but small. The large "unknown" bucket is itself a **findability** finding: more than half of SBOM-like artifacts (1,316 of 2,402) don't announce their format in a way a scanner can cheaply detect — which means any downstream aggregator (including GUAC) has to open and sniff files rather than trust naming conventions.
 
 ### Tooling signal
 
-What CI actually references, across the 236 primary repos:
+What GitHub Actions workflows reference, across the 236 primary repos (workflow text only, so a floor):
 
 | Tool | Repos (workflow-declared) |
 |------|---------------------------|
@@ -110,20 +115,51 @@ Two things to note. First, **code scanning (CodeQL, 80) is far more adopted than
 
 ### A data-correction note, in the open
 
-The headline is **23, not 24.** The collector's own project-level rollup (`agg_cncf_project_summary`) miscounts CubeFS as publishing no signatures because of a case-sensitivity bug in how it matches artifact owners to landscape entries. CubeFS in fact ships **13 signature artifacts** (note: 13 *artifacts in one project*, not to be confused with the 14 *projects* that do both SBOM + signing in §4) — the per-repo table (`agg_repo_summary`) records them correctly. We derived every number in this report from the per-repo layer, not the buggy rollup, and CubeFS is excluded from the 23. We're flagging this because if we're asking projects to trust our numbers, we owe them the bugs we found in our own. The fix is tracked in the collector repo.
+The headline is **23, not 24.** The collector's own project-level rollup (`agg_cncf_project_summary`) miscounts CubeFS as publishing no signatures because of a case-sensitivity bug in how it matches artifact owners to landscape entries. CubeFS in fact ships **13 signature artifacts** (13 *artifacts in one project*, unrelated to the 13-vs-14 *projects* count above). The per-repo table (`agg_repo_summary`) records them correctly. We derived every number in this report from the per-repo layer, not the buggy rollup, and CubeFS is excluded from the 23. We're flagging this because if we're asking projects to trust our numbers, we owe them the bugs we found in our own. The fix is tracked in [#78](https://github.com/halcyondude/supply-chain-security-collector/issues/78).
+
+```mermaid
+flowchart LR
+    RS["agg_repo_summary<br/>236 repos, per-repo truth"]
+    PR["base_cncf_project_repos<br/>landscape owner/name"]
+    RS -->|"case-insensitive join<br/>+ name fallback"| OK["236 of 236 matched<br/>23 graduated neither · 14 both"]
+    RS -->|"case-sensitive join<br/>(rollup, earlier demonstrator)"| BAD["227 of 236 matched<br/>24 graduated neither · 13 both"]
+    PR --> OK
+    PR --> BAD
+```
+
+Nine repos miss the case-sensitive join: five differ only by case (CubeFS, ContainerSSH, KubeArmor, Kuadrant, Serverless Devs) and four were scanned under a renamed owner org (Ratify, composefs, bootc, OpenMetrics).
 
 ## 5. Methodology and reproducibility
 
 The whole point is that you can check our work.
 
 - **Open source, MIT.** The collector is on GitHub. Clone it, point it at any repo set, get a DuckDB database back.
-- **npx-runnable.** `npm install`, set a GitHub token, `npm test` runs three projects; `npm start` runs the full landscape.
-- **Every number in this report is one SQL query.** The committed Parquet lives at `site/dist/data/*.parquet`. The exact queries that produced these figures are in the appendix.
+- **Runs from a clone.** `npm install`, set a GitHub token, `npm test` runs three projects; `npm start` runs the full landscape.
+- **Every number in this report is one SQL query.** The committed Parquet lives at `site/public/data/*.parquet` (the same files the explorer loads). The exact queries that produced these figures are in the appendix.
 - **In-browser explorer.** [halcyondude.github.io/supply-chain-security-collector](https://halcyondude.github.io/supply-chain-security-collector/) runs DuckDB-WASM client-side — no backend, no signup, write your own SQL against the same data.
 
 ### Known limits — read before quoting a number
 
-The collector sees **release assets and CI workflow files on GitHub.** It does not see:
+The collector sees **release assets and CI workflow files on GitHub.**
+
+```mermaid
+flowchart LR
+    subgraph Seen["Collected today"]
+        A["GitHub release assets<br/>20 most recent releases"]
+        W["GitHub Actions<br/>workflow files"]
+        S["SECURITY-INSIGHTS.yml"]
+    end
+    subgraph Unseen["Not collected"]
+        O["OCI registries<br/>(cosign image signatures)"]
+        P["Package-manager provenance"]
+        G["GitHub Attestations API"]
+        C["Prow, Jenkins, other CI"]
+    end
+    Seen --> F["Every figure in this report<br/>is a floor"]
+    Unseen -.->|"would raise it"| F
+```
+
+It does not see:
 
 - **OCI registries** — container image signatures via cosign keyless (the big one for the graduated tier)
 - **Package-manager provenance** — npm provenance, PyPI attestations, Go module checksums
@@ -141,7 +177,7 @@ This report is the map. Here's the road.
 - **Graph federation — [#1879](https://github.com/cncf/toc/issues/1879).** The reference architecture for creating, enriching, aggregating, and federating supply chain graphs. This is where per-project graphs compose into an ecosystem view.
 - **Close the collector's blind spots.** Add OCI registry inspection and the GitHub Attestations API so the numbers move from "lower bound" toward "actual." That single change will materially revise the graduated-tier picture.
 
-There's a clean loop-closer here. The CNCF landscape graph — official CNCF infrastructure, recently revived and re-platformed off the previous Neo4j licensing terms (a stewardship move to keep it on sustainable, open footing, not a vendor escape) — carries an open question, ["Q for graph" #15](https://github.com/cncf/landscape-graph): dependency trees with a CVE overlay. **That is precisely where Milestone 1 is headed.** SCI and the landscape graph converge on the same target from two directions.
+The CNCF landscape graph has the same question on file: [cncf/landscape-graph#15](https://github.com/cncf/landscape-graph/issues/15) asks for package dependency trees overlaid with CVE announcements. **That is where Milestone 1 is headed.** SCI and the landscape graph converge on the same target from two directions.
 
 ## 7. The ask
 
@@ -159,7 +195,7 @@ To the TOC and TAG Security & Compliance:
 
 These 34 graduated projects were scanned; these 23 show neither an SBOM nor a signature **in GitHub release assets** (a lower bound — see §5). If your project signs images in an OCI registry, publishes provenance via a package manager, or uses the GitHub Attestations API, that evidence is not visible to the current collector.
 
-**To correct the record:** open a PR or issue on [the collector](https://github.com/halcyondude/supply-chain-security-collector/issues) pointing us at the channel where your artifacts live (registry, package index, attestations API), or drop a note in the [SCI meeting notes](https://notes.cncf.io/cmBr4VUwS3qSHo3ABM6Tmw). We'll extend the collector to read that channel and re-run — no re-scan required on your end.
+**To correct the record:** open an issue on [the collector](https://github.com/halcyondude/supply-chain-security-collector/issues) pointing at the channel where your artifacts live (registry, package index, attestations API). We'll extend the collector to read that channel and re-run; nothing is needed on your end.
 
 | Project | Repo |
 |---------|------|
@@ -191,7 +227,7 @@ These 34 graduated projects were scanned; these 23 show neither an SBOM nor a si
 
 ## Appendix B — Reproduce every number
 
-Run against the committed Parquet in `site/dist/data/`. The repo→maturity join is case-insensitive with a name-only fallback (4 CNCF projects were scanned under a renamed owner org).
+Run from `site/public/data/` with the DuckDB CLI (`duckdb` then paste), or in the [explorer](https://halcyondude.github.io/supply-chain-security-collector/). Verified with DuckDB 2.0.1. The repo→maturity join is case-insensitive with a name-only fallback (4 CNCF projects were scanned under a renamed owner org). It reads `agg_repo_summary`, not the project rollup, until [#78](https://github.com/halcyondude/supply-chain-security-collector/issues/78) is fixed.
 
 ```sql
 -- Base table: join per-repo summary to project maturity (all 236 matched)
@@ -215,18 +251,23 @@ WHERE maturity='graduated' AND NOT has_sbom_artifact AND NOT has_signature_artif
 -- Only 14 of 236 do both
 SELECT COUNT(*) FROM rm WHERE has_sbom_artifact AND has_signature_artifact;             -- 14
 
+-- 13 vs 14: a case-sensitive join drops ContainerSSH
+SELECT COUNT(*) FROM 'agg_repo_summary.parquet' rs
+JOIN 'base_cncf_project_repos.parquet' pr ON rs.owner=pr.owner AND rs.repo=pr.name
+WHERE rs.has_sbom_artifact AND rs.has_signature_artifact;                               -- 13
+
 -- Per-maturity prevalence table
 SELECT maturity, COUNT(*) AS projects,
   SUM(has_sbom_artifact::int) AS with_sbom,
   SUM(has_signature_artifact::int) AS with_sig,
   SUM((has_sbom_artifact AND has_signature_artifact)::int) AS both,
   SUM((NOT has_sbom_artifact AND NOT has_signature_artifact)::int) AS neither
-FROM rm GROUP BY maturity;
+FROM rm GROUP BY ROLLUP (maturity) ORDER BY maturity;   -- NULL row = All
 
--- SPDX vs CycloneDX split (by artifact)
-SELECT sbom_format, COUNT(*) AS artifacts
+-- SPDX vs CycloneDX split (by artifact and by repo)
+SELECT sbom_format, COUNT(*) AS artifacts, COUNT(DISTINCT nameWithOwner) AS repos
 FROM 'agg_artifact_patterns.parquet' WHERE is_sbom GROUP BY sbom_format;
--- unknown 1316, spdx 1057, cyclonedx 29
+-- unknown 1316 / 19, spdx 1057 / 19, cyclonedx 29 / 3  (2,402 artifacts total)
 
 -- Scan scale
 SELECT
@@ -235,9 +276,12 @@ SELECT
   (SELECT COUNT(*) FROM 'base_workflows.parquet') AS workflows;        -- 2784
 
 -- Tool adoption (workflow-declared)
-SELECT SUM(uses_codeql::int) AS codeql, SUM(uses_trivy::int) AS trivy,
-  SUM(uses_goreleaser::int) AS goreleaser, SUM(uses_cosign::int) AS cosign
-FROM 'agg_repo_summary.parquet';   -- codeql 80, trivy 19, goreleaser 22, cosign 1
+SELECT SUM(uses_codeql::int) AS codeql, SUM(uses_goreleaser::int) AS goreleaser,
+  SUM(uses_trivy::int) AS trivy, SUM(uses_dependabot::int) AS dependabot,
+  SUM(uses_renovate::int) AS renovate, SUM(uses_syft::int) AS syft,
+  SUM(uses_cosign::int) AS cosign
+FROM 'agg_repo_summary.parquet';
+-- codeql 80, goreleaser 22, trivy 19, dependabot 8, renovate 5, syft 1, cosign 1
 
 -- The rollup bug: buggy rollup says 24, per-repo truth is 23 (CubeFS signs)
 SELECT COUNT(*) FROM 'agg_cncf_project_summary.parquet'
