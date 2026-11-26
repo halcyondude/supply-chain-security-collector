@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-	"duckdb",
+	# Keep the same DuckDB minor as @duckdb/node-api: database.db files are not
+	# readable across storage versions. pygwalker requires duckdb<2.
+	"duckdb>=1.5.6,<1.6",
 	"pandas",
     "polars",
 	"numpy",
