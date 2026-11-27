@@ -23,5 +23,9 @@ dependencies = [
 	"rich",
 	"python-dotenv",
 	"pydantic",
-	"jsonschema"
+	"jsonschema",
+	"httpx",
+	"real-ladybug",
+	"opentelemetry-api",
+	"opentelemetry-sdk",
 ]

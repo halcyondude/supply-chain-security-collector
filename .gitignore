@@ -51,3 +51,8 @@ scripts/landscape.yml
 # input/cncf-full-landscape.json    (track dataset changes)  
 # input/test-*.json                 (testing convenience)
 # input/minimal-*.json              (documentation)
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
